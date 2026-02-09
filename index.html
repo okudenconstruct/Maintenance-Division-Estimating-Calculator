@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Division Estimating Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1a2332;
+            --bg-input: #0d1320;
+            --border-color: #2a3548;
+            --border-highlight: #3b4d6b;
+            --text-primary: #e8edf5;
+            --text-secondary: #9ca8bc;
+            --text-muted: #6b7a94;
+            --accent-red: #ef5350;
+            --accent-red-dim: #c62828;
+            --accent-yellow: #fdd835;
+            --accent-yellow-dim: #f9a825;
+            --accent-purple: #ab47bc;
+            --accent-purple-dim: #7b1fa2;
+            --accent-pink: #f06292;
+            --accent-pink-dim: #c2185b;
+            --accent-blue: #42a5f5;
+            --accent-blue-dim: #1565c0;
+            --accent-green: #66bb6a;
+            --accent-green-dim: #2e7d32;
+            --accent-orange: #ffa726;
+            --accent-cyan: #26c6da;
+            --accent-teal: #26a69a;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+
+        /* Header */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;
+            padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);
+        }
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-yellow));
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.3rem; color: var(--bg-primary);
+        }
+        .logo-text h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.025em; }
+        .logo-text span { font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        .header-controls { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;
+            font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;
+            font-family: inherit; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dim)); color: white; box-shadow: 0 2px 8px rgba(66,165,245,0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(66,165,245,0.4); }
+        .btn-success { background: linear-gradient(135deg, var(--accent-green), var(--accent-green-dim)); color: white; }
+        .btn-danger { background: linear-gradient(135deg, var(--accent-red), var(--accent-red-dim)); color: white; }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--border-color); }
+        .btn-small { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+
+        /* Project Info */
+        .project-info {
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1rem; margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+        }
+        .project-info label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+        .project-info input {
+            flex: 1; min-width: 250px; padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color); border-radius: 4px;
+            background: var(--bg-input); color: var(--text-primary); font-size: 1rem; font-weight: 600;
+        }
+        .project-info input:focus { outline: none; border-color: var(--accent-orange); }
+
+        /* Settings Panel */
+        .settings-panel {
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1rem; margin-bottom: 1rem;
+        }
+        .settings-row { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end; }
+        .setting-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .setting-group label {
+            font-size: 0.72rem; font-weight: 600; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .setting-group input, .setting-group select {
+            padding: 0.5rem 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 4px; background: var(--bg-input); color: var(--text-primary);
+            font-size: 0.85rem; min-width: 110px; font-family: 'JetBrains Mono', monospace;
+        }
+        .setting-group input:focus, .setting-group select:focus { outline: none; border-color: var(--accent-blue); }
+
+        /* Panel Toggle (collapsible) */
+        .panel-wrapper { margin-bottom: 0.75rem; }
+        .panel-toggle {
+            width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 0.65rem 1rem; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            color: var(--text-primary); font-weight: 600; font-size: 0.85rem;
+            transition: all 0.2s ease; font-family: inherit;
+        }
+        .panel-toggle:hover { background: var(--bg-tertiary); }
+        .panel-toggle .arrow { transition: transform 0.3s ease; font-size: 1rem; }
+        .panel-toggle.open { border-radius: 8px 8px 0 0; }
+        .panel-toggle.open .arrow { transform: rotate(180deg); }
+        .panel-toggle .toggle-left { display: flex; align-items: center; gap: 0.75rem; }
+        .panel-toggle .toggle-left input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent-orange); }
+        .panel-content {
+            display: none; background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-top: none; border-radius: 0 0 8px 8px; padding: 1.25rem;
+        }
+        .panel-content.open { display: block; }
+        .panel-toggle.disabled-look { opacity: 0.5; }
+
+        /* Work Type Card Interior */
+        .wt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .wt-grid-wide { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+        .input-group { margin-bottom: 0.65rem; }
+        .input-group:last-child { margin-bottom: 0; }
+        .input-group label {
+            display: block; font-size: 0.7rem; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 0.2rem; text-transform: uppercase;
+        }
+        .input-group .hint { font-size: 0.6rem; color: var(--text-muted); margin-bottom: 0.2rem; font-style: italic; text-transform: none; }
+        .input-group input, .input-group select {
+            width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border-color);
+            border-radius: 4px; background: var(--bg-input); color: var(--text-primary);
+            font-size: 0.8rem; font-family: 'JetBrains Mono', monospace;
+        }
+        .input-group input:focus, .input-group select:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(66,165,245,0.15); }
+        .input-group input::placeholder { color: var(--text-muted); }
+
+        /* Output rows */
+        .output-section {
+            background: var(--bg-primary); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 0.75rem; margin-top: 1rem;
+        }
+        .output-section h5 {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--accent-cyan); margin-bottom: 0.5rem; padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .output-row { display: flex; justify-content: space-between; align-items: center; padding: 0.15rem 0; font-size: 0.75rem; }
+        .output-row .lbl { color: var(--text-secondary); }
+        .output-row .val { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text-primary); }
+        .output-row.highlight .val { color: var(--accent-cyan); }
+        .output-row.cost .val { color: var(--accent-green); }
+        .output-divider { border-top: 1px dashed var(--border-color); margin: 0.3rem 0; }
+
+        /* Striping Table */
+        .stripe-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 0.5rem; }
+        .stripe-table th {
+            text-align: left; padding: 0.4rem 0.5rem; font-size: 0.65rem;
+            text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color); font-weight: 600;
+        }
+        .stripe-table td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border-color); }
+        .stripe-table input {
+            width: 80px; padding: 0.3rem 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 4px; background: var(--bg-input); color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-align: right;
+        }
+        .stripe-table input:focus { outline: none; border-color: var(--accent-blue); }
+        .stripe-table .unit { color: var(--text-muted); font-size: 0.7rem; }
+        .stripe-table .calc-val { font-family: 'JetBrains Mono', monospace; color: var(--text-primary); font-weight: 600; }
+
+        /* Cost Summary */
+        .cost-summary {
+            background: var(--bg-secondary); border: 2px solid var(--accent-green);
+            border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem;
+        }
+        .cost-summary h2 {
+            font-size: 1.1rem; font-weight: 700; color: var(--accent-green);
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);
+        }
+        .cost-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; }
+        .cost-category {
+            background: var(--bg-primary); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1rem;
+        }
+        .cost-category h4 {
+            font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan);
+            text-transform: uppercase; margin-bottom: 0.6rem;
+            padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-color);
+        }
+        .cost-line { display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; font-size: 0.78rem; }
+        .cost-line .lbl { color: var(--text-secondary); }
+        .cost-line .val { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text-primary); }
+        .cost-line.subtotal { border-top: 1px solid var(--border-color); margin-top: 0.4rem; padding-top: 0.4rem; }
+        .cost-line.subtotal .lbl, .cost-line.subtotal .val { font-weight: 700; color: var(--accent-cyan); }
+        .cost-totals { margin-top: 1.25rem; padding-top: 1rem; border-top: 2px solid var(--border-color); }
+        .cost-total-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; }
+        .cost-total-row .lbl { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); }
+        .cost-total-row .val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+        .cost-total-row.grand {
+            background: var(--bg-tertiary); margin: 0.5rem -1rem; padding: 0.75rem 1rem; border-radius: 6px;
+        }
+        .cost-total-row.grand .lbl { color: var(--accent-green); font-size: 1rem; }
+        .cost-total-row.grand .val { font-size: 1.4rem; color: var(--accent-green); }
+        .markup-row { display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0; }
+        .markup-row label { font-size: 0.85rem; color: var(--text-secondary); }
+        .markup-row input {
+            width: 80px; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 4px; background: var(--bg-input); color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; text-align: right;
+        }
+        .markup-row input:focus { outline: none; border-color: var(--accent-green); }
+
+        /* Rate Config Panel */
+        .rate-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; }
+        .rate-section {
+            background: var(--bg-primary); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1rem;
+        }
+        .rate-section h4 {
+            font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan);
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-color);
+        }
+        .rate-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+        .rate-row:last-child { margin-bottom: 0; }
+        .rate-row label { font-size: 0.78rem; color: var(--text-secondary); }
+        .rate-row input {
+            width: 100px; padding: 0.35rem 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 4px; background: var(--bg-input); color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-align: right;
+        }
+        .rate-row input:focus { outline: none; border-color: var(--accent-cyan); }
+        .rate-actions { display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); justify-content: flex-end; }
+
+        /* Color tags on panel toggles */
+        .tag { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
+        .tag-red { background: var(--accent-red); }
+        .tag-purple { background: var(--accent-purple); }
+        .tag-yellow { background: var(--accent-yellow); }
+        .tag-pink { background: var(--accent-pink); }
+        .tag-blue { background: var(--accent-blue); }
+        .tag-green { background: var(--accent-green); }
+        .tag-teal { background: var(--accent-teal); }
+        .tag-orange { background: var(--accent-orange); }
+        .tag-cyan { background: var(--accent-cyan); }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 2rem; right: 2rem; background: var(--accent-green);
+            color: white; padding: 1rem 1.5rem; border-radius: 8px; font-weight: 600;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3); transform: translateY(100px);
+            opacity: 0; transition: all 0.3s ease; z-index: 1000;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        /* Footer */
+        .footer {
+            margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color);
+            text-align: center; font-size: 0.72rem; color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .wt-grid, .wt-grid-wide, .rate-grid, .cost-grid { grid-template-columns: 1fr; }
+            .settings-row { flex-direction: column; gap: 0.75rem; }
+            .header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<!-- Header -->
+<header class="header">
+    <div class="logo">
+        <div class="logo-icon">M</div>
+        <div class="logo-text">
+            <h1>Maintenance Division Estimating Calculator</h1>
+            <span>v1.0 • American Asphalt Solutions</span>
+        </div>
+    </div>
+    <div class="header-controls">
+        <button class="btn btn-primary" onclick="calculateAll()"><span>⚡</span> Calculate</button>
+        <button class="btn btn-secondary" onclick="exportResults()"><span>📋</span> Export</button>
+        <button class="btn btn-danger" onclick="resetForm()"><span>↺</span> Reset</button>
+    </div>
+</header>
+
+<!-- Project Info -->
+<div class="project-info">
+    <label>Project</label>
+    <input type="text" id="projectName" placeholder="Enter project name...">
+</div>
+
+<!-- Global Settings -->
+<div class="settings-panel">
+    <div class="settings-row">
+        <div class="setting-group">
+            <label>Hours / Day</label>
+            <select id="hoursPerDay" onchange="calculateAll()">
+                <option value="6">6 hours</option>
+                <option value="8" selected>8 hours</option>
+                <option value="10">10 hours</option>
+            </select>
+        </div>
+        <div class="setting-group">
+            <label>9.5mm Asphalt ($/ton)</label>
+            <input type="number" id="asphaltPrice" placeholder="0.00" step="0.01" value="" oninput="calculateAll()">
+        </div>
+        <div class="setting-group">
+            <label>19mm Base Asphalt ($/ton)</label>
+            <input type="number" id="baseAsphaltPrice" placeholder="0.00" step="0.01" value="" oninput="calculateAll()">
+        </div>
+        <div class="setting-group">
+            <label>DGA ($/ton)</label>
+            <input type="number" id="dgaPrice" placeholder="0.00" step="0.01" value="" oninput="calculateAll()">
+        </div>
+        <div class="setting-group">
+            <label>Markup %</label>
+            <input type="number" id="markupPercent" value="15" step="1" oninput="calculateAll()">
+        </div>
+    </div>
+</div>
+
+<!-- Rate Configuration -->
+<div class="panel-wrapper">
+    <button class="panel-toggle" onclick="togglePanel(this,'rateContent')">
+        <span>💰 Crew Rates & Material Unit Costs (Click to Expand)</span>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="rateContent">
+        <div class="rate-grid">
+            <div class="rate-section">
+                <h4>Crew Hourly Rates (Equip + Labor)</h4>
+                <div class="rate-row"><label>Crack Fill Crew</label><input type="number" id="rateCrackFill" value="151.15" step="0.01"></div>
+                <div class="rate-row"><label>Sealcoat Crew</label><input type="number" id="rateSealcoat" value="203.80" step="0.01"></div>
+                <div class="rate-row"><label>Striping Crew</label><input type="number" id="rateStriping" value="136.55" step="0.01"></div>
+                <div class="rate-row"><label>Asphalt Repair (≤4T)</label><input type="number" id="rateAsphaltSmall" value="297.28" step="0.01"></div>
+                <div class="rate-row"><label>Asphalt Repair (>4T)</label><input type="number" id="rateAsphaltLarge" value="336.48" step="0.01"></div>
+                <div class="rate-row"><label>Wheel Stop Install</label><input type="number" id="rateWsInstall" value="192.54" step="0.01"></div>
+                <div class="rate-row"><label>Wheel Stop Reset</label><input type="number" id="rateWsReset" value="133.40" step="0.01"></div>
+                <div class="rate-row"><label>Wheel Stop Removal</label><input type="number" id="rateWsRemove" value="179.94" step="0.01"></div>
+                <div class="rate-row"><label>Rubber Speed Bump</label><input type="number" id="rateSpeedBump" value="199.90" step="0.01"></div>
+                <div class="rate-row"><label>Bollard Crew</label><input type="number" id="rateBollard" value="293.23" step="0.01"></div>
+                <div class="rate-row"><label>Sign Crew</label><input type="number" id="rateSign" value="293.23" step="0.01"></div>
+                <div class="rate-row"><label>Mastic Crew (excl machine)</label><input type="number" id="rateMastic" value="173.45" step="0.01"></div>
+                <div class="rate-row"><label>Inlet Crew</label><input type="number" id="rateInlet" value="213.55" step="0.01"></div>
+                <div class="rate-row"><label>Speed Hump Crew</label><input type="number" id="rateSpeedHump" value="336.48" step="0.01"></div>
+            </div>
+            <div class="rate-section">
+                <h4>Material Unit Costs</h4>
+                <div class="rate-row"><label>Crack Fill ($/LF)</label><input type="number" id="matCrackFill" value="0.19" step="0.01"></div>
+                <div class="rate-row"><label>Sealer ($/SF)</label><input type="number" id="matSealcoat" value="0.07" step="0.01"></div>
+                <div class="rate-row"><label>4" Paint Lines ($/LF)</label><input type="number" id="mat4Line" value="0.10" step="0.01"></div>
+                <div class="rate-row"><label>6" Paint Lines ($/LF)</label><input type="number" id="mat6Line" value="0.15" step="0.01"></div>
+                <div class="rate-row"><label>12" Paint Lines ($/LF)</label><input type="number" id="mat12Line" value="0.30" step="0.01"></div>
+                <div class="rate-row"><label>24" Paint Lines ($/LF)</label><input type="number" id="mat24Line" value="0.60" step="0.01"></div>
+                <div class="rate-row"><label>Arrows ($/EA)</label><input type="number" id="matArrow" value="8.50" step="0.01"></div>
+                <div class="rate-row"><label>HC Symbol w/ Hash ($/EA)</label><input type="number" id="matHC" value="12.50" step="0.01"></div>
+                <div class="rate-row"><label>Stencils/Lettering ($/EA)</label><input type="number" id="matStencil" value="4.25" step="0.01"></div>
+                <div class="rate-row"><label>Curb Paint ($/LF)</label><input type="number" id="matCurb" value="0.30" step="0.01"></div>
+                <div class="rate-row"><label>Wheel Stop w/ Pins ($/UN)</label><input type="number" id="matWsNew" value="55.00" step="0.01"></div>
+                <div class="rate-row"><label>WS Reset Pins ($/UN)</label><input type="number" id="matWsPin" value="4.00" step="0.01"></div>
+                <div class="rate-row"><label>WS Disposal ($/UN)</label><input type="number" id="matWsDispose" value="16.67" step="0.01"></div>
+                <div class="rate-row"><label>Rubber Speed Bump ($/UN)</label><input type="number" id="matSpeedBump" value="190.00" step="0.01"></div>
+                <div class="rate-row"><label>Bollard ($/UN)</label><input type="number" id="matBollard" value="260.00" step="0.01"></div>
+                <div class="rate-row"><label>Sign ($/UN)</label><input type="number" id="matSign" value="170.00" step="0.01"></div>
+                <div class="rate-row"><label>Mastic ($/LF)</label><input type="number" id="matMastic" value="3.64" step="0.01"></div>
+                <div class="rate-row"><label>Mastic Machine ($/DAY)</label><input type="number" id="matMasticMachine" value="584.40" step="0.01"></div>
+                <div class="rate-row"><label>Block & Mortar ($/UN)</label><input type="number" id="matBlock" value="25.00" step="0.01"></div>
+                <div class="rate-row"><label>Casting ($/EA)</label><input type="number" id="matCasting" value="300.00" step="0.01"></div>
+                <div class="rate-row"><label>Paint Removal Equip ($/DAY)</label><input type="number" id="matPaintRemoval" value="650.00" step="0.01"></div>
+            </div>
+            <div class="rate-section">
+                <h4>Production Rates (per day)</h4>
+                <div class="rate-row"><label>Crack Fill (LF/day)</label><input type="number" id="prodCrackFill" value="5000"></div>
+                <div class="rate-row"><label>Sealcoat (SF/day)</label><input type="number" id="prodSealcoat" value="50000"></div>
+                <div class="rate-row"><label>4" Lines (LF/day)</label><input type="number" id="prod4Line" value="8000"></div>
+                <div class="rate-row"><label>6" Lines (LF/day)</label><input type="number" id="prod6Line" value="1600"></div>
+                <div class="rate-row"><label>12" Lines (LF/day)</label><input type="number" id="prod12Line" value="1600"></div>
+                <div class="rate-row"><label>24" Stop Bars (EA/day)</label><input type="number" id="prod24Bar" value="80"></div>
+                <div class="rate-row"><label>HC Stalls (EA/day)</label><input type="number" id="prodHC" value="80"></div>
+                <div class="rate-row"><label>Arrows (EA/day)</label><input type="number" id="prodArrow" value="80"></div>
+                <div class="rate-row"><label>Stencils/Lettering (EA/day)</label><input type="number" id="prodStencil" value="80"></div>
+                <div class="rate-row"><label>Curbing (LF/day)</label><input type="number" id="prodCurb" value="8000"></div>
+                <div class="rate-row"><label>Asphalt Repair (SF/day)</label><input type="number" id="prodAsphaltRepair" value="500"></div>
+                <div class="rate-row"><label>Wheel Stops (UN/day)</label><input type="number" id="prodWheelStop" value="80"></div>
+                <div class="rate-row"><label>Rubber Speed Bumps (UN/day)</label><input type="number" id="prodSpeedBump" value="10"></div>
+                <div class="rate-row"><label>Bollards (UN/day)</label><input type="number" id="prodBollard" value="10"></div>
+                <div class="rate-row"><label>Signs - Post (UN/day)</label><input type="number" id="prodSignPost" value="24"></div>
+                <div class="rate-row"><label>Signs - Bollard (UN/day)</label><input type="number" id="prodSignBollard" value="10"></div>
+                <div class="rate-row"><label>Mastic (LF/day)</label><input type="number" id="prodMastic" value="560"></div>
+                <div class="rate-row"><label>Inlet Repair (hrs/unit)</label><input type="number" id="prodInletRepair" value="4"></div>
+                <div class="rate-row"><label>Inlet Reconstruct (hrs/unit)</label><input type="number" id="prodInletRecon" value="8"></div>
+                <div class="rate-row"><label>Speed Humps (UN/day)</label><input type="number" id="prodSpeedHump" value="4"></div>
+                <div class="rate-row"><label>Paint Removal (LF/day)</label><input type="number" id="prodPaintRemoval" value="2000"></div>
+            </div>
+        </div>
+        <div class="rate-actions">
+            <button class="btn btn-success btn-small" onclick="saveRates()">💾 Save Rates</button>
+            <button class="btn btn-secondary btn-small" onclick="loadRates()">📂 Load Rates</button>
+            <button class="btn btn-danger btn-small" onclick="clearSavedRates()">🗑️ Clear Saved</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- WORK TYPE SECTIONS -->
+<!-- ============================================ -->
+
+<!-- 1. CRACK FILLING -->
+<div class="panel-wrapper" id="wt_crackfill_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_crackfill')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_crackfill" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-orange"></span>Crack Filling</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_crackfill">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Linear Feet (LF)</label>
+                <input type="number" id="cf_lf" placeholder="0" oninput="calculateAll()">
+            </div>
+        </div>
+        <div class="output-section">
+            <h5>Crack Filling Output</h5>
+            <div class="output-row"><span class="lbl">Hours</span><span class="val" id="cf_hours">0</span></div>
+            <div class="output-row"><span class="lbl">Days</span><span class="val" id="cf_days">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="cf_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Material</span><span class="val" id="cf_material">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="cf_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. SEALCOATING -->
+<div class="panel-wrapper" id="wt_sealcoat_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_sealcoat')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_sealcoat" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-blue"></span>Seal Coating</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_sealcoat">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Square Feet (SF)</label>
+                <input type="number" id="sc_sf" placeholder="0" oninput="calculateAll()">
+            </div>
+        </div>
+        <div class="output-section">
+            <h5>Sealcoating Output</h5>
+            <div class="output-row"><span class="lbl">Hours</span><span class="val" id="sc_hours">0</span></div>
+            <div class="output-row"><span class="lbl">Days</span><span class="val" id="sc_days">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="sc_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Material</span><span class="val" id="sc_material">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="sc_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. STRIPING -->
+<div class="panel-wrapper" id="wt_striping_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_striping')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_striping" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-yellow"></span>Striping</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_striping">
+        <table class="stripe-table">
+            <thead>
+                <tr><th>Item</th><th>Qty</th><th>Unit</th><th>Prod/Day</th><th>Hours</th><th>Mat Cost</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>4" Lines</td>
+                    <td><input type="number" id="st_4line" placeholder="0" oninput="calculateAll()"></td>
+                    <td class="unit">LF</td>
+                    <td class="calc-val" id="st_4line_prod">8,000</td>
+                    <td class="calc-val" id="st_4line_hrs">0</td>
+                    <td class="calc-val" id="st_4line_mat">$0</td>
+                </tr>
+                <tr>
+                    <td>6" Lines</td>
+                    <td><input type="number" id="st_6line" placeholder="0" oninput="calculateAll()"></td>
+                    <td class="unit">LF</td>
+                    <td class="calc-val" id="st_6line_prod">1,600</td>
+                    <td class="calc-val" id="st_6line_hrs">0</td>
+                    <td class="calc-val" id="st_6line_mat">$0</td>
+                </tr>
+                <tr>
+                    <td>12" Lines</td>
+                    <td><input type="number" id="st_12line" placeholder="0" oninput="calculateAll()"></td>
+                    <td class="unit">LF</td>
+                    <td class="calc-val" id="st_12line_prod">1,600</td>
+                    <td class="calc-val" id="st_12line_hrs">0</td>
+                    <td class="calc-val" id="st_12line_mat">$0</td>
+                </tr>
+                <tr>
+                    <td>24" Stop Bars</td>
+                    <td><input type="number" id="st_24bar" placeholder="0" oninput="calculateAll()"></td>
+                    <td class="unit">EA</td>
+                    <td class="calc-val" id="st_24bar_prod">80</td>
+                    <td class="calc-val" id="st_24bar_hrs">0</td>
+                    <td class="calc-val" id="st_24bar_mat">$0</td>
+                </tr>
+                <tr>
+                    <td>HC Stalls</td>
+                    <td><input type="number" id="st_hc" placeholder="0" oninput="calculateAll()"></td>
+                    <td class="unit">EA</td>
+                    <td class="calc-val" id="st_hc_prod">80</td>
+                    <td class="calc-val" id="st_hc_hrs">0</td>
+                    <td class="calc-val" id="st_hc_mat">$0</td>
+                </tr>
+                <tr>
+                    <td>Arrows</td>
+                    <td><input type="number" id="st_arrow" placeholder="0" oninput="calculateAll()"></td>
+                    <td class="unit">EA</td>
+                    <td class="calc-val" id="st_arrow_prod">80</td>
+                    <td class="calc-val" id="st_arrow_hrs">0</td>
+                    <td class="calc-val" id="st_arrow_mat">$0</td>
+                </tr>
+                <tr>
+                    <td>Stencils / Lettering</td>
+                    <td><input type="number" id="st_stencil" placeholder="0" oninput="calculateAll()"></td>
+                    <td class="unit">EA</td>
+                    <td class="calc-val" id="st_stencil_prod">80</td>
+                    <td class="calc-val" id="st_stencil_hrs">0</td>
+                    <td class="calc-val" id="st_stencil_mat">$0</td>
+                </tr>
+                <tr>
+                    <td>Curbing</td>
+                    <td><input type="number" id="st_curb" placeholder="0" oninput="calculateAll()"></td>
+                    <td class="unit">LF</td>
+                    <td class="calc-val" id="st_curb_prod">8,000</td>
+                    <td class="calc-val" id="st_curb_hrs">0</td>
+                    <td class="calc-val" id="st_curb_mat">$0</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="output-section">
+            <h5>Striping Output</h5>
+            <div class="output-row"><span class="lbl">Total Crew Hours</span><span class="val" id="st_hours">0</span></div>
+            <div class="output-row"><span class="lbl">Days</span><span class="val" id="st_days">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="st_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Material</span><span class="val" id="st_material">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="st_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. ASPHALT REPAIRS -->
+<div class="panel-wrapper" id="wt_asphalt_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_asphalt')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_asphalt" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-red"></span>Asphalt Repairs</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_asphalt">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Total Repair Area (SF)</label>
+                <input type="number" id="ar_sf" placeholder="0" oninput="calculateAll()">
+            </div>
+            <div class="input-group">
+                <label>Depth Configuration</label>
+                <select id="ar_depth" onchange="calculateAll()">
+                    <option value="2s">2" Surface Only (9.5mm)</option>
+                    <option value="2s4b">2" Surface + 4" Base (19mm)</option>
+                    <option value="2s4d">2" Surface + 4" DGA</option>
+                    <option value="2s4b4d">2" Surface + 4" Base + 4" DGA</option>
+                    <option value="2s4b6d">2" Surface + 4" Base + 6" DGA</option>
+                    <option value="2s6d">2" Surface + 6" DGA</option>
+                </select>
+            </div>
+        </div>
+        <div class="output-section">
+            <h5>Asphalt Repair Output</h5>
+            <div class="output-row"><span class="lbl">9.5mm Surface (tons)</span><span class="val" id="ar_surfTons">0</span></div>
+            <div class="output-row"><span class="lbl">19mm Base (tons)</span><span class="val" id="ar_baseTons">0</span></div>
+            <div class="output-row"><span class="lbl">DGA (tons)</span><span class="val" id="ar_dgaTons">0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total Asphalt (tons)</span><span class="val" id="ar_totalTons">0</span></div>
+            <div class="output-row"><span class="lbl">Crew Type</span><span class="val" id="ar_crewType">—</span></div>
+            <div class="output-row"><span class="lbl">Hours</span><span class="val" id="ar_hours">0</span></div>
+            <div class="output-row"><span class="lbl">Days</span><span class="val" id="ar_days">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="ar_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Asphalt Material</span><span class="val" id="ar_matAsphalt">$0</span></div>
+            <div class="output-row cost"><span class="lbl">DGA Material</span><span class="val" id="ar_matDGA">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="ar_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 5. MASTIC CRACK FILLING -->
+<div class="panel-wrapper" id="wt_mastic_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_mastic')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_mastic" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-purple"></span>Mastic Crack Filling</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_mastic">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Linear Feet (LF)</label>
+                <input type="number" id="ma_lf" placeholder="0" oninput="calculateAll()">
+            </div>
+        </div>
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.5rem; font-style:italic;">
+            Includes 1 full day labor for machine pickup/dropoff. Machine rental charged per day.
+        </p>
+        <div class="output-section">
+            <h5>Mastic Output</h5>
+            <div class="output-row"><span class="lbl">Production Hours</span><span class="val" id="ma_hours">0</span></div>
+            <div class="output-row"><span class="lbl">Production Days</span><span class="val" id="ma_days">0</span></div>
+            <div class="output-row"><span class="lbl">Total Days (incl P/U & D/O)</span><span class="val" id="ma_totalDays">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip (production)</span><span class="val" id="ma_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Labor (pickup/dropoff)</span><span class="val" id="ma_pudo">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Machine Rental</span><span class="val" id="ma_machine">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Material</span><span class="val" id="ma_material">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="ma_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 6. WHEEL STOPS -->
+<div class="panel-wrapper" id="wt_wheelstop_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_wheelstop')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_wheelstop" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-teal"></span>Wheel Stops</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_wheelstop">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>New Installs (qty)</label>
+                <input type="number" id="ws_new" placeholder="0" oninput="calculateAll()">
+            </div>
+            <div class="input-group">
+                <label>Reset / Re-pin (qty)</label>
+                <input type="number" id="ws_reset" placeholder="0" oninput="calculateAll()">
+            </div>
+            <div class="input-group">
+                <label>Remove & Dispose (qty)</label>
+                <input type="number" id="ws_remove" placeholder="0" oninput="calculateAll()">
+            </div>
+        </div>
+        <div class="output-section">
+            <h5>Wheel Stop Output</h5>
+            <div class="output-row"><span class="lbl">Install Hours</span><span class="val" id="ws_newHrs">0</span></div>
+            <div class="output-row"><span class="lbl">Reset Hours</span><span class="val" id="ws_resetHrs">0</span></div>
+            <div class="output-row"><span class="lbl">Removal Hours</span><span class="val" id="ws_removeHrs">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Install (L+E+M)</span><span class="val" id="ws_newCost">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Reset (L+E+M)</span><span class="val" id="ws_resetCost">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Removal (L+E+M)</span><span class="val" id="ws_removeCost">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="ws_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 7. SIGNS -->
+<div class="panel-wrapper" id="wt_sign_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_sign')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_sign" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-green"></span>Signs</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_sign">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Signs on Post (qty)</label>
+                <input type="number" id="sg_post" placeholder="0" oninput="calculateAll()">
+            </div>
+            <div class="input-group">
+                <label>Signs in Bollard (qty)</label>
+                <input type="number" id="sg_bollard" placeholder="0" oninput="calculateAll()">
+            </div>
+        </div>
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.5rem; font-style:italic;">
+            Signs in bollard include sign + bollard material costs. Crew is blended sign/bollard.
+        </p>
+        <div class="output-section">
+            <h5>Sign Output</h5>
+            <div class="output-row"><span class="lbl">Post Hours</span><span class="val" id="sg_postHrs">0</span></div>
+            <div class="output-row"><span class="lbl">Bollard Hours</span><span class="val" id="sg_bollardHrs">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="sg_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Material</span><span class="val" id="sg_material">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="sg_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 8. BOLLARD REPLACEMENT -->
+<div class="panel-wrapper" id="wt_bollard_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_bollard')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_bollard" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-pink"></span>Bollard Replacement</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_bollard">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Bollards (qty)</label>
+                <input type="number" id="bo_qty" placeholder="0" oninput="calculateAll()">
+            </div>
+        </div>
+        <div class="output-section">
+            <h5>Bollard Output</h5>
+            <div class="output-row"><span class="lbl">Hours</span><span class="val" id="bo_hours">0</span></div>
+            <div class="output-row"><span class="lbl">Days</span><span class="val" id="bo_days">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="bo_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Material</span><span class="val" id="bo_material">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="bo_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 9. RUBBER SPEED BUMPS -->
+<div class="panel-wrapper" id="wt_speedbump_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_speedbump')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_speedbump" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-cyan"></span>Rubber Speed Bumps</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_speedbump">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Speed Bumps (qty)</label>
+                <input type="number" id="sb_qty" placeholder="0" oninput="calculateAll()">
+            </div>
+        </div>
+        <div class="output-section">
+            <h5>Rubber Speed Bump Output</h5>
+            <div class="output-row"><span class="lbl">Hours</span><span class="val" id="sb_hours">0</span></div>
+            <div class="output-row"><span class="lbl">Days</span><span class="val" id="sb_days">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="sb_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Material</span><span class="val" id="sb_material">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="sb_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 10. SPEED HUMPS -->
+<div class="panel-wrapper" id="wt_speedhump_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_speedhump')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_speedhump" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-orange"></span>Asphalt Speed Humps</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_speedhump">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Speed Humps (qty)</label>
+                <input type="number" id="sh_qty" placeholder="0" oninput="calculateAll()">
+            </div>
+            <div class="input-group">
+                <label>Installation Context</label>
+                <select id="sh_type" onchange="calculateAll()">
+                    <option value="existing">Existing Asphalt</option>
+                    <option value="millpave">During Mill & Pave</option>
+                </select>
+            </div>
+        </div>
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.5rem; font-style:italic;">
+            2.13 tons of 9.5mm asphalt per hump (sinusoidal profile, 16'×13'×2.64").
+        </p>
+        <div class="output-section">
+            <h5>Speed Hump Output</h5>
+            <div class="output-row"><span class="lbl">Asphalt (tons)</span><span class="val" id="sh_tons">0</span></div>
+            <div class="output-row"><span class="lbl">Hours</span><span class="val" id="sh_hours">0</span></div>
+            <div class="output-row"><span class="lbl">Days</span><span class="val" id="sh_days">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="sh_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Material</span><span class="val" id="sh_material">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="sh_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 11. INLET REPAIR -->
+<div class="panel-wrapper" id="wt_inlet_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_inlet')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_inlet" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-red"></span>Inlet Repair / Reconstruction</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_inlet">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Inlet Repairs (qty)</label>
+                <input type="number" id="in_repair" placeholder="0" oninput="calculateAll()">
+            </div>
+            <div class="input-group">
+                <label>Inlet Reconstructions (qty)</label>
+                <input type="number" id="in_recon" placeholder="0" oninput="calculateAll()">
+            </div>
+            <div class="input-group">
+                <label>Castings Required (qty)</label>
+                <input type="number" id="in_casting" placeholder="0" oninput="calculateAll()">
+            </div>
+        </div>
+        <div class="output-section">
+            <h5>Inlet Output</h5>
+            <div class="output-row"><span class="lbl">Repair Hours</span><span class="val" id="in_repairHrs">0</span></div>
+            <div class="output-row"><span class="lbl">Reconstruction Hours</span><span class="val" id="in_reconHrs">0</span></div>
+            <div class="output-row"><span class="lbl">Total Hours</span><span class="val" id="in_totalHrs">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="in_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Block & Mortar</span><span class="val" id="in_block">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Castings</span><span class="val" id="in_castingCost">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="in_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 12. PAINT STRIPING REMOVAL -->
+<div class="panel-wrapper" id="wt_paintremoval_wrapper">
+    <button class="panel-toggle" onclick="toggleWorkType(this,'wt_paintremoval')">
+        <div class="toggle-left">
+            <input type="checkbox" id="en_paintremoval" onclick="event.stopPropagation(); calculateAll();" checked>
+            <span><span class="tag tag-pink"></span>Paint Striping Removal</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="wt_paintremoval">
+        <div class="wt-grid">
+            <div class="input-group">
+                <label>Linear Feet (LF)</label>
+                <input type="number" id="pr_lf" placeholder="0" oninput="calculateAll()">
+            </div>
+        </div>
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.5rem; font-style:italic;">
+            Uses striping crew + shot blaster/grinder rental per day.
+        </p>
+        <div class="output-section">
+            <h5>Paint Removal Output</h5>
+            <div class="output-row"><span class="lbl">Hours</span><span class="val" id="pr_hours">0</span></div>
+            <div class="output-row"><span class="lbl">Days</span><span class="val" id="pr_days">0</span></div>
+            <div class="output-divider"></div>
+            <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="pr_labor">$0</span></div>
+            <div class="output-row cost"><span class="lbl">Equipment Rental</span><span class="val" id="pr_rental">$0</span></div>
+            <div class="output-row highlight"><span class="lbl">Total</span><span class="val" id="pr_total">$0</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- COMBINED COST SUMMARY -->
+<!-- ============================================ -->
+<div class="cost-summary">
+    <h2>💵 Combined Cost Summary</h2>
+    <div class="cost-grid">
+        <div class="cost-category">
+            <h4>Labor & Equipment by Work Type</h4>
+            <div class="cost-line" id="sum_cf_row"><span class="lbl">Crack Filling</span><span class="val" id="sum_cf">$0</span></div>
+            <div class="cost-line" id="sum_sc_row"><span class="lbl">Seal Coating</span><span class="val" id="sum_sc">$0</span></div>
+            <div class="cost-line" id="sum_st_row"><span class="lbl">Striping</span><span class="val" id="sum_st">$0</span></div>
+            <div class="cost-line" id="sum_ar_row"><span class="lbl">Asphalt Repairs</span><span class="val" id="sum_ar">$0</span></div>
+            <div class="cost-line" id="sum_ma_row"><span class="lbl">Mastic Crack Fill</span><span class="val" id="sum_ma">$0</span></div>
+            <div class="cost-line" id="sum_ws_row"><span class="lbl">Wheel Stops</span><span class="val" id="sum_ws">$0</span></div>
+            <div class="cost-line" id="sum_sg_row"><span class="lbl">Signs</span><span class="val" id="sum_sg">$0</span></div>
+            <div class="cost-line" id="sum_bo_row"><span class="lbl">Bollards</span><span class="val" id="sum_bo">$0</span></div>
+            <div class="cost-line" id="sum_sb_row"><span class="lbl">Rubber Speed Bumps</span><span class="val" id="sum_sb">$0</span></div>
+            <div class="cost-line" id="sum_sh_row"><span class="lbl">Speed Humps</span><span class="val" id="sum_sh">$0</span></div>
+            <div class="cost-line" id="sum_in_row"><span class="lbl">Inlet Repair</span><span class="val" id="sum_in">$0</span></div>
+            <div class="cost-line" id="sum_pr_row"><span class="lbl">Paint Removal</span><span class="val" id="sum_pr">$0</span></div>
+            <div class="cost-line subtotal"><span class="lbl">Labor & Equip Subtotal</span><span class="val" id="sum_laborTotal">$0</span></div>
+        </div>
+        <div class="cost-category">
+            <h4>Materials by Work Type</h4>
+            <div class="cost-line" id="summ_cf_row"><span class="lbl">Crack Fill Material</span><span class="val" id="summ_cf">$0</span></div>
+            <div class="cost-line" id="summ_sc_row"><span class="lbl">Sealer</span><span class="val" id="summ_sc">$0</span></div>
+            <div class="cost-line" id="summ_st_row"><span class="lbl">Striping Paint</span><span class="val" id="summ_st">$0</span></div>
+            <div class="cost-line" id="summ_ar_row"><span class="lbl">Asphalt / DGA</span><span class="val" id="summ_ar">$0</span></div>
+            <div class="cost-line" id="summ_ma_row"><span class="lbl">Mastic + Machine</span><span class="val" id="summ_ma">$0</span></div>
+            <div class="cost-line" id="summ_ws_row"><span class="lbl">Wheel Stops</span><span class="val" id="summ_ws">$0</span></div>
+            <div class="cost-line" id="summ_sg_row"><span class="lbl">Signs</span><span class="val" id="summ_sg">$0</span></div>
+            <div class="cost-line" id="summ_bo_row"><span class="lbl">Bollards</span><span class="val" id="summ_bo">$0</span></div>
+            <div class="cost-line" id="summ_sb_row"><span class="lbl">Speed Bumps</span><span class="val" id="summ_sb">$0</span></div>
+            <div class="cost-line" id="summ_sh_row"><span class="lbl">Speed Humps</span><span class="val" id="summ_sh">$0</span></div>
+            <div class="cost-line" id="summ_in_row"><span class="lbl">Inlet (Block/Casting)</span><span class="val" id="summ_in">$0</span></div>
+            <div class="cost-line" id="summ_pr_row"><span class="lbl">Paint Removal Rental</span><span class="val" id="summ_pr">$0</span></div>
+            <div class="cost-line subtotal"><span class="lbl">Materials Subtotal</span><span class="val" id="sum_matTotal">$0</span></div>
+        </div>
+    </div>
+    <div class="cost-totals">
+        <div class="cost-total-row">
+            <span class="lbl">Direct Cost Total</span>
+            <span class="val" id="directCostTotal">$0</span>
+        </div>
+        <div class="markup-row">
+            <label>Markup %</label>
+            <input type="number" id="markupPercent2" value="15" step="1" oninput="syncMarkup(this); calculateAll();">
+            <span style="color:var(--text-muted)">%</span>
+            <span class="val" style="margin-left:auto;" id="markupAmount">$0</span>
+        </div>
+        <div class="cost-total-row grand">
+            <span class="lbl">BID PRICE</span>
+            <span class="val" id="bidPrice">$0</span>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <p>Maintenance Division Estimating Calculator v1.0 • American Asphalt Solutions</p>
+    <p style="margin-top:0.35rem;">In-house crew rates and benchmark production data</p>
+</footer>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">Saved!</div>
+
+<script>
+// ===== UTILITY FUNCTIONS =====
+function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function sv(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
+function fmt(val) { return '$' + val.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function fmt2(val) { return '$' + val.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function isOn(id) { return document.getElementById(id).checked; }
+function roundUp(val) { return Math.ceil(val); }
+
+function togglePanel(btn, contentId) {
+    btn.classList.toggle('open');
+    document.getElementById(contentId).classList.toggle('open');
+}
+
+function toggleWorkType(btn, contentId) {
+    btn.classList.toggle('open');
+    document.getElementById(contentId).classList.toggle('open');
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function syncMarkup(el) {
+    const other = el.id === 'markupPercent' ? 'markupPercent2' : 'markupPercent';
+    document.getElementById(other).value = el.value;
+}
+
+// ===== MIN HOURS HELPER =====
+function applyMin(hours, minHrs) {
+    return hours > 0 ? Math.max(hours, minHrs) : 0;
+}
+
+// ===== MAIN CALCULATION =====
+function calculateAll() {
+    const hpd = gv('hoursPerDay');
+    const minHrs = 4; // 4-hour minimum for all crews
+    const asphaltPrice = gv('asphaltPrice');
+    const baseAsphaltPrice = gv('baseAsphaltPrice');
+    const dgaPrice = gv('dgaPrice');
+
+    // Accumulators for summary
+    let sumLabor = {}, sumMat = {};
+    const workTypes = ['cf','sc','st','ar','ma','ws','sg','bo','sb','sh','in','pr'];
+    workTypes.forEach(k => { sumLabor[k] = 0; sumMat[k] = 0; });
+
+    // === CRACK FILLING ===
+    if (isOn('en_crackfill')) {
+        const lf = gv('cf_lf');
+        const rate = gv('rateCrackFill');
+        const prod = gv('prodCrackFill');
+        const matCost = gv('matCrackFill');
+        const rawHrs = lf > 0 ? (lf / prod) * hpd : 0;
+        const hrs = applyMin(rawHrs, minHrs);
+        const days = hrs > 0 ? Math.ceil(hrs / hpd * 10) / 10 : 0;
+        const labor = hrs * rate;
+        const material = lf * matCost;
+        sv('cf_hours', hrs.toFixed(1));
+        sv('cf_days', days.toFixed(1));
+        sv('cf_labor', fmt(labor));
+        sv('cf_material', fmt(material));
+        sv('cf_total', fmt(labor + material));
+        sumLabor.cf = labor;
+        sumMat.cf = material;
+    } else {
+        ['cf_hours','cf_days'].forEach(id => sv(id, '0'));
+        ['cf_labor','cf_material','cf_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === SEALCOATING ===
+    if (isOn('en_sealcoat')) {
+        const sf = gv('sc_sf');
+        const rate = gv('rateSealcoat');
+        const prod = gv('prodSealcoat');
+        const matCost = gv('matSealcoat');
+        const rawHrs = sf > 0 ? (sf / prod) * hpd : 0;
+        const hrs = applyMin(rawHrs, minHrs);
+        const days = hrs > 0 ? Math.ceil(hrs / hpd * 10) / 10 : 0;
+        const labor = hrs * rate;
+        const material = sf * matCost;
+        sv('sc_hours', hrs.toFixed(1));
+        sv('sc_days', days.toFixed(1));
+        sv('sc_labor', fmt(labor));
+        sv('sc_material', fmt(material));
+        sv('sc_total', fmt(labor + material));
+        sumLabor.sc = labor;
+        sumMat.sc = material;
+    } else {
+        ['sc_hours','sc_days'].forEach(id => sv(id, '0'));
+        ['sc_labor','sc_material','sc_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === STRIPING ===
+    if (isOn('en_striping')) {
+        const rate = gv('rateStriping');
+        const items = [
+            { qtyId:'st_4line', prodId:'prod4Line', matId:'mat4Line', hrsId:'st_4line_hrs', matOutId:'st_4line_mat', prodOutId:'st_4line_prod' },
+            { qtyId:'st_6line', prodId:'prod6Line', matId:'mat6Line', hrsId:'st_6line_hrs', matOutId:'st_6line_mat', prodOutId:'st_6line_prod' },
+            { qtyId:'st_12line', prodId:'prod12Line', matId:'mat12Line', hrsId:'st_12line_hrs', matOutId:'st_12line_mat', prodOutId:'st_12line_prod' },
+            { qtyId:'st_24bar', prodId:'prod24Bar', matId:'mat24Line', hrsId:'st_24bar_hrs', matOutId:'st_24bar_mat', prodOutId:'st_24bar_prod' },
+            { qtyId:'st_hc', prodId:'prodHC', matId:'matHC', hrsId:'st_hc_hrs', matOutId:'st_hc_mat', prodOutId:'st_hc_prod' },
+            { qtyId:'st_arrow', prodId:'prodArrow', matId:'matArrow', hrsId:'st_arrow_hrs', matOutId:'st_arrow_mat', prodOutId:'st_arrow_prod' },
+            { qtyId:'st_stencil', prodId:'prodStencil', matId:'matStencil', hrsId:'st_stencil_hrs', matOutId:'st_stencil_mat', prodOutId:'st_stencil_prod' },
+            { qtyId:'st_curb', prodId:'prodCurb', matId:'matCurb', hrsId:'st_curb_hrs', matOutId:'st_curb_mat', prodOutId:'st_curb_prod' },
+        ];
+        let totalHrs = 0, totalMat = 0;
+        items.forEach(item => {
+            const qty = gv(item.qtyId);
+            const prod = gv(item.prodId);
+            const matUnit = gv(item.matId);
+            const itemHrs = qty > 0 && prod > 0 ? (qty / prod) * hpd : 0;
+            const itemMat = qty * matUnit;
+            totalHrs += itemHrs;
+            totalMat += itemMat;
+            sv(item.hrsId, itemHrs.toFixed(1));
+            sv(item.matOutId, fmt2(itemMat));
+            sv(item.prodOutId, prod.toLocaleString());
+        });
+        const hrs = applyMin(totalHrs, minHrs);
+        const days = hrs > 0 ? Math.ceil(hrs / hpd * 10) / 10 : 0;
+        const labor = hrs * rate;
+        sv('st_hours', hrs.toFixed(1));
+        sv('st_days', days.toFixed(1));
+        sv('st_labor', fmt(labor));
+        sv('st_material', fmt(totalMat));
+        sv('st_total', fmt(labor + totalMat));
+        sumLabor.st = labor;
+        sumMat.st = totalMat;
+    } else {
+        ['st_hours','st_days'].forEach(id => sv(id, '0'));
+        ['st_labor','st_material','st_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === ASPHALT REPAIRS ===
+    if (isOn('en_asphalt')) {
+        const sf = gv('ar_sf');
+        const depthConfig = document.getElementById('ar_depth').value;
+        const prod = gv('prodAsphaltRepair');
+
+        // Calculate tons per layer. Formula: SF / 9 (to SY) × depth(in) × 0.0575
+        // But for simplicity: tons = SF × depth(in) × 0.0575 / 9
+        // DGA: CY = SF × depth / (12 × 27) = SF × depth / 324; tons = CY × 1.9
+        // Actually using the simpler approach: SY = SF/9, tons = SY × depth × 0.0575
+        const sy = sf / 9;
+        let surfTons = 0, baseTons = 0, dgaTons = 0;
+
+        if (depthConfig.includes('2s')) surfTons = Math.ceil(sy * 2 * 0.0575);
+        if (depthConfig.includes('4b')) baseTons = Math.ceil(sy * 4 * 0.0575);
+        if (depthConfig.includes('4d')) dgaTons = Math.ceil((sf * 4 / 324) * 1.9);
+        if (depthConfig.includes('6d')) dgaTons = Math.ceil((sf * 6 / 324) * 1.9);
+
+        if (sf === 0) { surfTons = 0; baseTons = 0; dgaTons = 0; }
+
+        const totalAsphaltTons = surfTons + baseTons;
+        const crewIsLarge = totalAsphaltTons > 4;
+        const crewRate = crewIsLarge ? gv('rateAsphaltLarge') : gv('rateAsphaltSmall');
+
+        const rawHrs = sf > 0 ? (sf / prod) * hpd : 0;
+        const hrs = applyMin(rawHrs, minHrs);
+        const days = hrs > 0 ? Math.ceil(hrs / hpd * 10) / 10 : 0;
+        const labor = hrs * crewRate;
+        const matAsphalt = (surfTons * asphaltPrice) + (baseTons * baseAsphaltPrice);
+        const matDGA = dgaTons * dgaPrice;
+
+        sv('ar_surfTons', surfTons);
+        sv('ar_baseTons', baseTons);
+        sv('ar_dgaTons', dgaTons);
+        sv('ar_totalTons', totalAsphaltTons);
+        sv('ar_crewType', crewIsLarge ? '> 4T (Triaxle)' : '≤ 4T (Hot Box)');
+        sv('ar_hours', hrs.toFixed(1));
+        sv('ar_days', days.toFixed(1));
+        sv('ar_labor', fmt(labor));
+        sv('ar_matAsphalt', fmt(matAsphalt));
+        sv('ar_matDGA', fmt(matDGA));
+        sv('ar_total', fmt(labor + matAsphalt + matDGA));
+        sumLabor.ar = labor;
+        sumMat.ar = matAsphalt + matDGA;
+    } else {
+        ['ar_surfTons','ar_baseTons','ar_dgaTons','ar_totalTons'].forEach(id => sv(id, '0'));
+        sv('ar_crewType', '—');
+        ['ar_hours','ar_days'].forEach(id => sv(id, '0'));
+        ['ar_labor','ar_matAsphalt','ar_matDGA','ar_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === MASTIC ===
+    if (isOn('en_mastic')) {
+        const lf = gv('ma_lf');
+        const crewRate = gv('rateMastic');
+        const prod = gv('prodMastic');
+        const matPerLF = gv('matMastic');
+        const machinePerDay = gv('matMasticMachine');
+
+        const rawHrs = lf > 0 ? (lf / prod) * hpd : 0;
+        const prodHrs = applyMin(rawHrs, minHrs);
+        const prodDays = prodHrs > 0 ? Math.ceil(prodHrs / hpd * 10) / 10 : 0;
+        const machineDays = prodDays > 0 ? Math.ceil(prodDays) : 0;
+        const totalDays = prodDays > 0 ? prodDays + 1 : 0; // +1 for pickup/dropoff
+
+        const laborProd = prodHrs * crewRate;
+        // Pickup/dropoff: 1 day labor for full crew
+        const pudoLabor = lf > 0 ? hpd * crewRate : 0;
+        const machineRental = machineDays * machinePerDay;
+        const material = lf * matPerLF;
+
+        sv('ma_hours', prodHrs.toFixed(1));
+        sv('ma_days', prodDays.toFixed(1));
+        sv('ma_totalDays', totalDays.toFixed(1));
+        sv('ma_labor', fmt(laborProd));
+        sv('ma_pudo', fmt(pudoLabor));
+        sv('ma_machine', fmt(machineRental));
+        sv('ma_material', fmt(material));
+        sv('ma_total', fmt(laborProd + pudoLabor + machineRental + material));
+        sumLabor.ma = laborProd + pudoLabor;
+        sumMat.ma = material + machineRental;
+    } else {
+        ['ma_hours','ma_days','ma_totalDays'].forEach(id => sv(id, '0'));
+        ['ma_labor','ma_pudo','ma_machine','ma_material','ma_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === WHEEL STOPS ===
+    if (isOn('en_wheelstop')) {
+        const newQty = gv('ws_new');
+        const resetQty = gv('ws_reset');
+        const removeQty = gv('ws_remove');
+        const prodPerDay = gv('prodWheelStop');
+
+        // Install
+        const newRawHrs = newQty > 0 ? (newQty / prodPerDay) * hpd : 0;
+        const newHrs = applyMin(newRawHrs, minHrs);
+        const newLabor = newHrs * gv('rateWsInstall');
+        const newMat = newQty * gv('matWsNew');
+
+        // Reset
+        const resetRawHrs = resetQty > 0 ? (resetQty / prodPerDay) * hpd : 0;
+        const resetHrs = applyMin(resetRawHrs, minHrs);
+        const resetLabor = resetHrs * gv('rateWsReset');
+        const resetMat = resetQty * gv('matWsPin');
+
+        // Remove
+        const removeRawHrs = removeQty > 0 ? (removeQty / prodPerDay) * hpd : 0;
+        const removeHrs = applyMin(removeRawHrs, minHrs);
+        const removeLabor = removeHrs * gv('rateWsRemove');
+        const removeMat = removeQty * gv('matWsDispose');
+
+        sv('ws_newHrs', newHrs.toFixed(1));
+        sv('ws_resetHrs', resetHrs.toFixed(1));
+        sv('ws_removeHrs', removeHrs.toFixed(1));
+        sv('ws_newCost', fmt(newLabor + newMat));
+        sv('ws_resetCost', fmt(resetLabor + resetMat));
+        sv('ws_removeCost', fmt(removeLabor + removeMat));
+        sv('ws_total', fmt(newLabor + newMat + resetLabor + resetMat + removeLabor + removeMat));
+        sumLabor.ws = newLabor + resetLabor + removeLabor;
+        sumMat.ws = newMat + resetMat + removeMat;
+    } else {
+        ['ws_newHrs','ws_resetHrs','ws_removeHrs'].forEach(id => sv(id, '0'));
+        ['ws_newCost','ws_resetCost','ws_removeCost','ws_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === SIGNS ===
+    if (isOn('en_sign')) {
+        const postQty = gv('sg_post');
+        const bollQty = gv('sg_bollard');
+        const crewRate = gv('rateSign');
+        const prodPost = gv('prodSignPost');
+        const prodBoll = gv('prodSignBollard');
+        const signMat = gv('matSign');
+        const bollMat = gv('matBollard');
+
+        const postRawHrs = postQty > 0 ? (postQty / prodPost) * hpd : 0;
+        const bollRawHrs = bollQty > 0 ? (bollQty / prodBoll) * hpd : 0;
+        const totalRawHrs = postRawHrs + bollRawHrs;
+        const hrs = applyMin(totalRawHrs, minHrs);
+        const labor = hrs * crewRate;
+        // Signs in bollard: sign + bollard material
+        const material = (postQty * signMat) + (bollQty * (signMat + bollMat));
+
+        sv('sg_postHrs', postRawHrs.toFixed(1));
+        sv('sg_bollardHrs', bollRawHrs.toFixed(1));
+        sv('sg_labor', fmt(labor));
+        sv('sg_material', fmt(material));
+        sv('sg_total', fmt(labor + material));
+        sumLabor.sg = labor;
+        sumMat.sg = material;
+    } else {
+        ['sg_postHrs','sg_bollardHrs'].forEach(id => sv(id, '0'));
+        ['sg_labor','sg_material','sg_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === BOLLARD REPLACEMENT ===
+    if (isOn('en_bollard')) {
+        const qty = gv('bo_qty');
+        const crewRate = gv('rateBollard');
+        const prod = gv('prodBollard');
+        const matCost = gv('matBollard');
+        const rawHrs = qty > 0 ? (qty / prod) * hpd : 0;
+        const hrs = applyMin(rawHrs, minHrs);
+        const days = hrs > 0 ? Math.ceil(hrs / hpd * 10) / 10 : 0;
+        const labor = hrs * crewRate;
+        const material = qty * matCost;
+        sv('bo_hours', hrs.toFixed(1));
+        sv('bo_days', days.toFixed(1));
+        sv('bo_labor', fmt(labor));
+        sv('bo_material', fmt(material));
+        sv('bo_total', fmt(labor + material));
+        sumLabor.bo = labor;
+        sumMat.bo = material;
+    } else {
+        ['bo_hours','bo_days'].forEach(id => sv(id, '0'));
+        ['bo_labor','bo_material','bo_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === RUBBER SPEED BUMPS ===
+    if (isOn('en_speedbump')) {
+        const qty = gv('sb_qty');
+        const crewRate = gv('rateSpeedBump');
+        const prod = gv('prodSpeedBump');
+        const matCost = gv('matSpeedBump');
+        const rawHrs = qty > 0 ? (qty / prod) * hpd : 0;
+        const hrs = applyMin(rawHrs, minHrs);
+        const days = hrs > 0 ? Math.ceil(hrs / hpd * 10) / 10 : 0;
+        const labor = hrs * crewRate;
+        const material = qty * matCost;
+        sv('sb_hours', hrs.toFixed(1));
+        sv('sb_days', days.toFixed(1));
+        sv('sb_labor', fmt(labor));
+        sv('sb_material', fmt(material));
+        sv('sb_total', fmt(labor + material));
+        sumLabor.sb = labor;
+        sumMat.sb = material;
+    } else {
+        ['sb_hours','sb_days'].forEach(id => sv(id, '0'));
+        ['sb_labor','sb_material','sb_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === SPEED HUMPS ===
+    if (isOn('en_speedhump')) {
+        const qty = gv('sh_qty');
+        const crewRate = gv('rateSpeedHump');
+        const prod = gv('prodSpeedHump');
+        const tonsPerHump = 2.13;
+        const tons = qty > 0 ? Math.ceil(qty * tonsPerHump) : 0;
+        const rawHrs = qty > 0 ? (qty / prod) * hpd : 0;
+        const hrs = applyMin(rawHrs, minHrs);
+        const days = hrs > 0 ? Math.ceil(hrs / hpd * 10) / 10 : 0;
+        const labor = hrs * crewRate;
+        const material = tons * asphaltPrice;
+        sv('sh_tons', tons);
+        sv('sh_hours', hrs.toFixed(1));
+        sv('sh_days', days.toFixed(1));
+        sv('sh_labor', fmt(labor));
+        sv('sh_material', fmt(material));
+        sv('sh_total', fmt(labor + material));
+        sumLabor.sh = labor;
+        sumMat.sh = material;
+    } else {
+        sv('sh_tons', '0');
+        ['sh_hours','sh_days'].forEach(id => sv(id, '0'));
+        ['sh_labor','sh_material','sh_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === INLET REPAIR ===
+    if (isOn('en_inlet')) {
+        const repairQty = gv('in_repair');
+        const reconQty = gv('in_recon');
+        const castingQty = gv('in_casting');
+        const crewRate = gv('rateInlet');
+        const hrsPerRepair = gv('prodInletRepair');
+        const hrsPerRecon = gv('prodInletRecon');
+
+        const repairHrs = repairQty * hrsPerRepair;
+        const reconHrs = reconQty * hrsPerRecon;
+        const totalRaw = repairHrs + reconHrs;
+        const totalHrs = applyMin(totalRaw, minHrs);
+        const labor = totalHrs * crewRate;
+        const blockCost = (repairQty + reconQty) * gv('matBlock');
+        const castingCost = castingQty * gv('matCasting');
+
+        sv('in_repairHrs', repairHrs.toFixed(1));
+        sv('in_reconHrs', reconHrs.toFixed(1));
+        sv('in_totalHrs', totalHrs.toFixed(1));
+        sv('in_labor', fmt(labor));
+        sv('in_block', fmt(blockCost));
+        sv('in_castingCost', fmt(castingCost));
+        sv('in_total', fmt(labor + blockCost + castingCost));
+        sumLabor.in = labor;
+        sumMat.in = blockCost + castingCost;
+    } else {
+        ['in_repairHrs','in_reconHrs','in_totalHrs'].forEach(id => sv(id, '0'));
+        ['in_labor','in_block','in_castingCost','in_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === PAINT REMOVAL ===
+    if (isOn('en_paintremoval')) {
+        const lf = gv('pr_lf');
+        const crewRate = gv('rateStriping'); // same crew
+        const prod = gv('prodPaintRemoval');
+        const rentalPerDay = gv('matPaintRemoval');
+        const rawHrs = lf > 0 ? (lf / prod) * hpd : 0;
+        const hrs = applyMin(rawHrs, minHrs);
+        const days = hrs > 0 ? Math.ceil(hrs / hpd * 10) / 10 : 0;
+        const rentalDays = Math.ceil(days);
+        const labor = hrs * crewRate;
+        const rental = lf > 0 ? rentalDays * rentalPerDay : 0;
+        sv('pr_hours', hrs.toFixed(1));
+        sv('pr_days', days.toFixed(1));
+        sv('pr_labor', fmt(labor));
+        sv('pr_rental', fmt(rental));
+        sv('pr_total', fmt(labor + rental));
+        sumLabor.pr = labor;
+        sumMat.pr = rental;
+    } else {
+        ['pr_hours','pr_days'].forEach(id => sv(id, '0'));
+        ['pr_labor','pr_rental','pr_total'].forEach(id => sv(id, '$0'));
+    }
+
+    // === COMBINED SUMMARY ===
+    let totalLabor = 0, totalMat = 0;
+    workTypes.forEach(k => {
+        sv('sum_' + k, fmt(sumLabor[k]));
+        sv('summ_' + k, fmt(sumMat[k]));
+        totalLabor += sumLabor[k];
+        totalMat += sumMat[k];
+        // Show/hide rows based on whether they have values
+        const laborRow = document.getElementById('sum_' + k + '_row');
+        const matRow = document.getElementById('summ_' + k + '_row');
+        if (laborRow) laborRow.style.display = sumLabor[k] > 0 ? 'flex' : 'none';
+        if (matRow) matRow.style.display = sumMat[k] > 0 ? 'flex' : 'none';
+    });
+
+    sv('sum_laborTotal', fmt(totalLabor));
+    sv('sum_matTotal', fmt(totalMat));
+
+    const directCost = totalLabor + totalMat;
+    const markup = gv('markupPercent') || gv('markupPercent2');
+    const markupAmt = directCost * (markup / 100);
+
+    sv('directCostTotal', fmt(directCost));
+    sv('markupAmount', fmt(markupAmt));
+    sv('bidPrice', fmt(directCost + markupAmt));
+}
+
+// ===== RATE SAVE/LOAD =====
+function getRateIds() {
+    return [...document.querySelectorAll('#rateContent input')].map(el => el.id);
+}
+
+function saveRates() {
+    const data = {};
+    getRateIds().forEach(id => { data[id] = document.getElementById(id).value; });
+    // Also save global settings
+    data._asphaltPrice = document.getElementById('asphaltPrice').value;
+    data._baseAsphaltPrice = document.getElementById('baseAsphaltPrice').value;
+    data._dgaPrice = document.getElementById('dgaPrice').value;
+    localStorage.setItem('maintCalcRates', JSON.stringify(data));
+    showToast('Rates saved locally!');
+}
+
+function loadRates() {
+    const saved = localStorage.getItem('maintCalcRates');
+    if (saved) {
+        const data = JSON.parse(saved);
+        Object.keys(data).forEach(key => {
+            if (key.startsWith('_')) {
+                const realId = key.substring(1);
+                const el = document.getElementById(realId);
+                if (el) el.value = data[key];
+            } else {
+                const el = document.getElementById(key);
+                if (el) el.value = data[key];
+            }
+        });
+        showToast('Rates loaded!');
+        calculateAll();
+    } else {
+        showToast('No saved rates found');
+    }
+}
+
+function clearSavedRates() {
+    localStorage.removeItem('maintCalcRates');
+    showToast('Saved rates cleared');
+}
+
+// ===== RESET =====
+function resetForm() {
+    // Clear quantity inputs only, not rates
+    const quantityInputs = [
+        'cf_lf','sc_sf',
+        'st_4line','st_6line','st_12line','st_24bar','st_hc','st_arrow','st_stencil','st_curb',
+        'ar_sf','ma_lf',
+        'ws_new','ws_reset','ws_remove',
+        'sg_post','sg_bollard',
+        'bo_qty','sb_qty','sh_qty',
+        'in_repair','in_recon','in_casting',
+        'pr_lf'
+    ];
+    quantityInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('projectName').value = '';
+    document.getElementById('ar_depth').selectedIndex = 0;
+    document.getElementById('sh_type').selectedIndex = 0;
+    calculateAll();
+    showToast('Form reset');
+}
+
+// ===== EXPORT =====
+function exportResults() {
+    const proj = document.getElementById('projectName').value || 'Unnamed Project';
+    const hpd = gv('hoursPerDay');
+    const markup = gv('markupPercent') || gv('markupPercent2');
+
+    let lines = [];
+    lines.push('MAINTENANCE DIVISION ESTIMATE');
+    lines.push('='.repeat(50));
+    lines.push(`Project: ${proj}`);
+    lines.push(`Generated: ${new Date().toLocaleString()}`);
+    lines.push(`Hours/Day: ${hpd}`);
+    lines.push(`9.5mm Asphalt: $${gv('asphaltPrice')}/ton`);
+    lines.push('='.repeat(50));
+    lines.push('');
+
+    // Collect enabled work types
+    const sections = [
+        { en: 'en_crackfill', name: 'CRACK FILLING', fields: [
+            ['LF', 'cf_lf'], ['Hours', 'cf_hours'], ['Days', 'cf_days'],
+            ['Labor & Equip', 'cf_labor'], ['Material', 'cf_material'], ['Total', 'cf_total']
+        ]},
+        { en: 'en_sealcoat', name: 'SEAL COATING', fields: [
+            ['SF', 'sc_sf'], ['Hours', 'sc_hours'], ['Days', 'sc_days'],
+            ['Labor & Equip', 'sc_labor'], ['Material', 'sc_material'], ['Total', 'sc_total']
+        ]},
+        { en: 'en_striping', name: 'STRIPING', fields: [
+            ['Total Crew Hours', 'st_hours'], ['Days', 'st_days'],
+            ['Labor & Equip', 'st_labor'], ['Material', 'st_material'], ['Total', 'st_total']
+        ]},
+        { en: 'en_asphalt', name: 'ASPHALT REPAIRS', fields: [
+            ['Repair Area (SF)', 'ar_sf'], ['Surface Tons', 'ar_surfTons'], ['Base Tons', 'ar_baseTons'],
+            ['DGA Tons', 'ar_dgaTons'], ['Crew Type', 'ar_crewType'], ['Hours', 'ar_hours'],
+            ['Labor & Equip', 'ar_labor'], ['Asphalt Material', 'ar_matAsphalt'],
+            ['DGA Material', 'ar_matDGA'], ['Total', 'ar_total']
+        ]},
+        { en: 'en_mastic', name: 'MASTIC CRACK FILLING', fields: [
+            ['LF', 'ma_lf'], ['Production Hours', 'ma_hours'], ['Total Days', 'ma_totalDays'],
+            ['Labor (production)', 'ma_labor'], ['Labor (P/U & D/O)', 'ma_pudo'],
+            ['Machine Rental', 'ma_machine'], ['Material', 'ma_material'], ['Total', 'ma_total']
+        ]},
+        { en: 'en_wheelstop', name: 'WHEEL STOPS', fields: [
+            ['New Installs', 'ws_new'], ['Resets', 'ws_reset'], ['Removals', 'ws_remove'],
+            ['Install Cost', 'ws_newCost'], ['Reset Cost', 'ws_resetCost'],
+            ['Removal Cost', 'ws_removeCost'], ['Total', 'ws_total']
+        ]},
+        { en: 'en_sign', name: 'SIGNS', fields: [
+            ['On Post', 'sg_post'], ['In Bollard', 'sg_bollard'],
+            ['Labor & Equip', 'sg_labor'], ['Material', 'sg_material'], ['Total', 'sg_total']
+        ]},
+        { en: 'en_bollard', name: 'BOLLARD REPLACEMENT', fields: [
+            ['Qty', 'bo_qty'], ['Hours', 'bo_hours'],
+            ['Labor & Equip', 'bo_labor'], ['Material', 'bo_material'], ['Total', 'bo_total']
+        ]},
+        { en: 'en_speedbump', name: 'RUBBER SPEED BUMPS', fields: [
+            ['Qty', 'sb_qty'], ['Hours', 'sb_hours'],
+            ['Labor & Equip', 'sb_labor'], ['Material', 'sb_material'], ['Total', 'sb_total']
+        ]},
+        { en: 'en_speedhump', name: 'ASPHALT SPEED HUMPS', fields: [
+            ['Qty', 'sh_qty'], ['Asphalt Tons', 'sh_tons'], ['Hours', 'sh_hours'],
+            ['Labor & Equip', 'sh_labor'], ['Material', 'sh_material'], ['Total', 'sh_total']
+        ]},
+        { en: 'en_inlet', name: 'INLET REPAIR / RECONSTRUCTION', fields: [
+            ['Repairs', 'in_repair'], ['Reconstructions', 'in_recon'], ['Castings', 'in_casting'],
+            ['Total Hours', 'in_totalHrs'], ['Labor & Equip', 'in_labor'],
+            ['Block & Mortar', 'in_block'], ['Castings', 'in_castingCost'], ['Total', 'in_total']
+        ]},
+        { en: 'en_paintremoval', name: 'PAINT STRIPING REMOVAL', fields: [
+            ['LF', 'pr_lf'], ['Hours', 'pr_hours'],
+            ['Labor & Equip', 'pr_labor'], ['Equipment Rental', 'pr_rental'], ['Total', 'pr_total']
+        ]},
+    ];
+
+    sections.forEach(sec => {
+        if (isOn(sec.en)) {
+            lines.push(sec.name);
+            lines.push('-'.repeat(30));
+            sec.fields.forEach(([label, id]) => {
+                const el = document.getElementById(id);
+                const val = el ? (el.value || el.textContent) : '0';
+                lines.push(`  ${label}: ${val}`);
+            });
+            lines.push('');
+        }
+    });
+
+    lines.push('='.repeat(50));
+    lines.push('COST SUMMARY');
+    lines.push('='.repeat(50));
+    lines.push(`Labor & Equipment: ${document.getElementById('sum_laborTotal').textContent}`);
+    lines.push(`Materials: ${document.getElementById('sum_matTotal').textContent}`);
+    lines.push(`Direct Cost: ${document.getElementById('directCostTotal').textContent}`);
+    lines.push(`Markup (${markup}%): ${document.getElementById('markupAmount').textContent}`);
+    lines.push(`BID PRICE: ${document.getElementById('bidPrice').textContent}`);
+
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Results copied to clipboard!');
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Results copied to clipboard!');
+    });
+}
+
+// Load saved rates on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const saved = localStorage.getItem('maintCalcRates');
+    if (saved) {
+        const data = JSON.parse(saved);
+        Object.keys(data).forEach(key => {
+            if (key.startsWith('_')) {
+                const realId = key.substring(1);
+                const el = document.getElementById(realId);
+                if (el) el.value = data[key];
+            } else {
+                const el = document.getElementById(key);
+                if (el) el.value = data[key];
+            }
+        });
+    }
+    calculateAll();
+});
+</script>
+</body>
+</html>
