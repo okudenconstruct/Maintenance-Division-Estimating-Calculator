@@ -17,7 +17,7 @@ The tool runs entirely in the browser with zero dependencies, zero build steps, 
 |-----------|-----------|--------------|
 | **Crack Filling** | LF | Hot rubberized sealant, configurable crew rate |
 | **Seal Coating** | SF | Spray application, 2-coat system with sand |
-| **Striping** | LF / EA | 8 line items (4"/6"/12" lines, stop bars, HC stalls, arrows, stencils, curbing) with per-item production rates |
+| **Striping** | LF / EA | 8 line items (4"/6"/12"/24" lines, HC stalls, arrows, stencils, curbing) with per-item production rates |
 | **Asphalt Repairs** | SF | Depth configuration dropdown (2" surface through full-depth with DGA), auto-selects hot box vs. triaxle crew at 4-ton threshold, rounds tonnage up |
 | **Mastic Crack Filling** | LF | Machine rental per day, includes 1 full day labor for pickup/dropoff |
 | **Wheel Stops** | EA | Three operations: new install, reset/re-pin, remove & dispose — each with separate crew and material costs |
