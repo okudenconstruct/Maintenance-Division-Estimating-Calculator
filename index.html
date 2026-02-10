@@ -289,7 +289,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v1.0 • Asphalt Maintenance Estimating</span>
+            <span>v2.0 • Data-Calibrated • Asphalt Maintenance Estimating</span>
         </div>
     </div>
     <div class="header-controls">
@@ -377,7 +377,8 @@
                 <div class="rate-row"><label>WS Disposal ($/UN)</label><input type="number" id="matWsDispose" value="16.67" step="0.01"></div>
                 <div class="rate-row"><label>Rubber Speed Bump ($/UN)</label><input type="number" id="matSpeedBump" value="190.00" step="0.01"></div>
                 <div class="rate-row"><label>Bollard ($/UN)</label><input type="number" id="matBollard" value="260.00" step="0.01"></div>
-                <div class="rate-row"><label>Sign ($/UN)</label><input type="number" id="matSign" value="170.00" step="0.01"></div>
+                <div class="rate-row"><label>Small Sign ($/UN)</label><input type="number" id="matSignSmall" value="30.00" step="0.01"></div>
+                <div class="rate-row"><label>Large Sign ($/UN)</label><input type="number" id="matSignLarge" value="170.00" step="0.01"></div>
                 <div class="rate-row"><label>Mastic ($/LF)</label><input type="number" id="matMastic" value="3.64" step="0.01"></div>
                 <div class="rate-row"><label>Mastic Machine ($/DAY)</label><input type="number" id="matMasticMachine" value="584.40" step="0.01"></div>
                 <div class="rate-row"><label>Block & Mortar ($/UN)</label><input type="number" id="matBlock" value="25.00" step="0.01"></div>
@@ -386,22 +387,23 @@
             </div>
             <div class="rate-section">
                 <h4>Production Rates (per day)</h4>
-                <div class="rate-row"><label>Crack Fill (LF/day)</label><input type="number" id="prodCrackFill" value="5000"></div>
-                <div class="rate-row"><label>Sealcoat (SF/day)</label><input type="number" id="prodSealcoat" value="50000"></div>
+                <div class="rate-row"><label>Crack Fill (LF/day)</label><input type="number" id="prodCrackFill" value="3500"></div>
+                <div class="rate-row"><label>Sealcoat (SF/day)</label><input type="number" id="prodSealcoat" value="60000"></div>
                 <div class="rate-row"><label>4" Lines (LF/day)</label><input type="number" id="prod4Line" value="8000"></div>
                 <div class="rate-row"><label>6" Lines (LF/day)</label><input type="number" id="prod6Line" value="7500"></div>
                 <div class="rate-row"><label>12" Lines (LF/day)</label><input type="number" id="prod12Line" value="6000"></div>
                 <div class="rate-row"><label>24" Lines (LF/day)</label><input type="number" id="prod24Bar" value="4000"></div>
                 <div class="rate-row"><label>HC Stalls (EA/day)</label><input type="number" id="prodHC" value="80"></div>
                 <div class="rate-row"><label>Arrows (EA/day)</label><input type="number" id="prodArrow" value="80"></div>
-                <div class="rate-row"><label>Stencils/Lettering (EA/day)</label><input type="number" id="prodStencil" value="80"></div>
+                <div class="rate-row"><label>Stencils/Lettering (EA/day)</label><input type="number" id="prodStencil" value="100"></div>
                 <div class="rate-row"><label>Curbing (LF/day)</label><input type="number" id="prodCurb" value="6000"></div>
-                <div class="rate-row"><label>Asphalt Repair (SF/day)</label><input type="number" id="prodAsphaltRepair" value="500"></div>
+                <div class="rate-row"><label>Asphalt Repair (SF/day)</label><input type="number" id="prodAsphaltRepair" value="600"></div>
                 <div class="rate-row"><label>Wheel Stops (UN/day)</label><input type="number" id="prodWheelStop" value="80"></div>
                 <div class="rate-row"><label>Rubber Speed Bumps (UN/day)</label><input type="number" id="prodSpeedBump" value="10"></div>
                 <div class="rate-row"><label>Bollards (UN/day)</label><input type="number" id="prodBollard" value="10"></div>
-                <div class="rate-row"><label>Signs - Post (UN/day)</label><input type="number" id="prodSignPost" value="24"></div>
-                <div class="rate-row"><label>Signs - Bollard (UN/day)</label><input type="number" id="prodSignBollard" value="10"></div>
+                <div class="rate-row"><label>Small Signs (UN/day)</label><input type="number" id="prodSignSmall" value="48"></div>
+                <div class="rate-row"><label>Large Signs - Post (UN/day)</label><input type="number" id="prodSignLgPost" value="16"></div>
+                <div class="rate-row"><label>Large Signs - Bollard (UN/day)</label><input type="number" id="prodSignLgBoll" value="8"></div>
                 <div class="rate-row"><label>Mastic (LF/day)</label><input type="number" id="prodMastic" value="550"></div>
                 <div class="rate-row"><label>Inlet Repair (hrs/unit)</label><input type="number" id="prodInletRepair" value="4"></div>
                 <div class="rate-row"><label>Inlet Reconstruct (hrs/unit)</label><input type="number" id="prodInletRecon" value="8"></div>
@@ -699,21 +701,26 @@
     <div class="panel-content" id="wt_sign">
         <div class="wt-grid">
             <div class="input-group">
-                <label>Signs on Post (qty)</label>
-                <input type="number" id="sg_post" placeholder="0" oninput="calculateAll()">
+                <label>Small Signs on Post (qty)</label>
+                <input type="number" id="sg_sm_post" placeholder="0" oninput="calculateAll()">
             </div>
             <div class="input-group">
-                <label>Signs in Bollard (qty)</label>
-                <input type="number" id="sg_bollard" placeholder="0" oninput="calculateAll()">
+                <label>Large Signs on Post (qty)</label>
+                <input type="number" id="sg_lg_post" placeholder="0" oninput="calculateAll()">
+            </div>
+            <div class="input-group">
+                <label>Large Signs in Bollard (qty)</label>
+                <input type="number" id="sg_lg_bollard" placeholder="0" oninput="calculateAll()">
             </div>
         </div>
         <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.5rem; font-style:italic;">
-            Signs in bollard include sign + bollard material costs. Crew is blended sign/bollard.
+            Small signs = U-channel post-mounted. Large signs in bollard include sign + bollard material costs.
         </p>
         <div class="output-section">
             <h5>Sign Output</h5>
-            <div class="output-row"><span class="lbl">Post Hours</span><span class="val" id="sg_postHrs">0</span></div>
-            <div class="output-row"><span class="lbl">Bollard Hours</span><span class="val" id="sg_bollardHrs">0</span></div>
+            <div class="output-row"><span class="lbl">Small Sign Hours</span><span class="val" id="sg_smHrs">0</span></div>
+            <div class="output-row"><span class="lbl">Large Post Hours</span><span class="val" id="sg_lgPostHrs">0</span></div>
+            <div class="output-row"><span class="lbl">Large Bollard Hours</span><span class="val" id="sg_lgBollHrs">0</span></div>
             <div class="output-divider"></div>
             <div class="output-row cost"><span class="lbl">Labor & Equip</span><span class="val" id="sg_labor">$0</span></div>
             <div class="output-row cost"><span class="lbl">Material</span><span class="val" id="sg_material">$0</span></div>
@@ -943,10 +950,93 @@
     </div>
 </div>
 
+<!-- HISTORICAL BENCHMARKING REFERENCE -->
+<div class="panel-wrapper">
+    <button class="panel-toggle" onclick="this.nextElementSibling.classList.toggle('collapsed'); this.querySelector('.arrow').textContent = this.nextElementSibling.classList.contains('collapsed') ? '▶' : '▼';">
+        <div class="toggle-left">
+            <span><span class="tag" style="background:var(--accent-cyan);"></span>Historical Benchmarking Reference</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content">
+        <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:0.75rem; font-style:italic;">
+            All-in unit costs (labor + equipment + material) from historical job data. Use to gut-check estimates.
+            Costs are heavily influenced by job size — small quantities carry proportionally higher crew mobilization costs.
+        </p>
+        <div style="overflow-x:auto;">
+        <table class="striping-table" style="font-size:0.72rem;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;">Item</th>
+                    <th>n</th>
+                    <th>25th %ile</th>
+                    <th>Median</th>
+                    <th>75th %ile</th>
+                    <th>Wtd Avg</th>
+                    <th>Unit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Crack Fill</td><td>52</td><td>$0.62</td><td>$0.84</td><td>$1.12</td><td>$0.91</td><td>LF</td></tr>
+                <tr><td>Seal Coat</td><td>40</td><td>$0.10</td><td>$0.11</td><td>$0.14</td><td>$0.11</td><td>SF</td></tr>
+                <tr><td>4" Lines</td><td>63</td><td>$0.30</td><td>$0.53</td><td>$1.07</td><td>$0.40</td><td>LF</td></tr>
+                <tr><td>12" Lines</td><td>7</td><td>$1.68</td><td>$1.93</td><td>$5.86</td><td>$2.32</td><td>LF</td></tr>
+                <tr><td>24" Lines</td><td>10</td><td>$1.75</td><td>$4.05</td><td>$8.36</td><td>$2.82</td><td>LF</td></tr>
+                <tr><td>Arrows</td><td>30</td><td>$20.27</td><td>$25.62</td><td>$34.94</td><td>$26.45</td><td>EA</td></tr>
+                <tr><td>HC Symbols</td><td>38</td><td>$25.28</td><td>$45.66</td><td>$71.36</td><td>$34.00</td><td>EA</td></tr>
+                <tr><td>Stencils</td><td>20</td><td>$11.00</td><td>$22.09</td><td>$43.02</td><td>$23.25</td><td>EA</td></tr>
+                <tr><td>Curb Paint</td><td>6</td><td>$0.43</td><td>$0.91</td><td>$1.32</td><td>$0.60</td><td>LF</td></tr>
+                <tr><td>Asphalt Repair</td><td>36</td><td>$5.10</td><td>$7.57</td><td>$13.46</td><td>$6.33</td><td>SF</td></tr>
+                <tr><td>Wheel Stops (new)</td><td>7</td><td>$32.63</td><td>$93.26</td><td>$99.77</td><td>$93.97</td><td>UN</td></tr>
+                <tr><td>Small Signs</td><td>3</td><td>—</td><td>$53.67</td><td>—</td><td>$63.40</td><td>UN</td></tr>
+                <tr><td>Large Signs</td><td>4</td><td>—</td><td>$277.90</td><td>—</td><td>$292.31</td><td>UN</td></tr>
+                <tr><td>Bollards</td><td>2</td><td>—</td><td>$351.26</td><td>—</td><td>$335.11</td><td>UN</td></tr>
+                <tr><td>Rubber Speed Bumps</td><td>2</td><td>—</td><td>$554.62</td><td>—</td><td>$571.33</td><td>UN</td></tr>
+                <tr><td>Inlet Reconstruction</td><td>17</td><td>$835.31</td><td>$966.74</td><td>$1,212.53</td><td>$823.84</td><td>UN</td></tr>
+                <tr><td>Inlet Reset (B&M)</td><td>2</td><td>—</td><td>$1,053.26</td><td>—</td><td>$1,053.26</td><td>UN</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <div style="margin-top:0.75rem;">
+            <p style="font-size:0.68rem; color:var(--text-muted);"><strong style="color:var(--accent-cyan);">Job-Size Effect (examples from data):</strong></p>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:0.5rem; margin-top:0.4rem; font-size:0.68rem; color:var(--text-secondary);">
+                <div style="background:var(--bg-input); padding:0.5rem; border-radius:4px; border:1px solid var(--border-color);">
+                    <strong>Crack Fill</strong><br>
+                    ≤500 LF → $2.01/LF median<br>
+                    501-2,000 LF → $0.92/LF median<br>
+                    >2,000 LF → $0.70/LF median
+                </div>
+                <div style="background:var(--bg-input); padding:0.5rem; border-radius:4px; border:1px solid var(--border-color);">
+                    <strong>4" Lines</strong><br>
+                    ≤500 LF → $1.55/LF median<br>
+                    501-3,000 LF → $0.53/LF median<br>
+                    >3,000 LF → $0.28/LF median
+                </div>
+                <div style="background:var(--bg-input); padding:0.5rem; border-radius:4px; border:1px solid var(--border-color);">
+                    <strong>Asphalt Repair</strong><br>
+                    ≤100 SF → $21.94/SF median<br>
+                    101-600 SF → $7.15/SF median<br>
+                    >600 SF → $4.61/SF median
+                </div>
+                <div style="background:var(--bg-input); padding:0.5rem; border-radius:4px; border:1px solid var(--border-color);">
+                    <strong>Seal Coat</strong><br>
+                    ≤20K SF → $0.15/SF median<br>
+                    20-80K SF → $0.12/SF median<br>
+                    >80K SF → $0.10/SF median
+                </div>
+            </div>
+        </div>
+        <p style="font-size:0.65rem; color:var(--text-muted); margin-top:0.75rem; font-style:italic;">
+            Data source: 347 job records, Dec 2024 – Dec 2025. Weighted averages favor larger jobs.
+            Small sample sizes (n<5) shown without percentiles.
+        </p>
+    </div>
+</div>
+
 <!-- Footer -->
 <footer class="footer">
-    <p>Maintenance Division Estimating Calculator v1.0</p>
-    <p style="margin-top:0.35rem;">In-house crew rates and benchmark production data</p>
+    <p>Maintenance Division Estimating Calculator v2.0</p>
+    <p style="margin-top:0.35rem;">Data-calibrated crew rates, production benchmarks, and historical unit costs</p>
 </footer>
 
 </div>
@@ -1217,31 +1307,36 @@ function calculateAll() {
 
     // === SIGNS ===
     if (isOn('en_sign')) {
-        const postQty = gv('sg_post');
-        const bollQty = gv('sg_bollard');
+        const smPostQty = gv('sg_sm_post');
+        const lgPostQty = gv('sg_lg_post');
+        const lgBollQty = gv('sg_lg_bollard');
         const crewRate = gv('rateSign');
-        const prodPost = gv('prodSignPost');
-        const prodBoll = gv('prodSignBollard');
-        const signMat = gv('matSign');
+        const prodSmall = gv('prodSignSmall');
+        const prodLgPost = gv('prodSignLgPost');
+        const prodLgBoll = gv('prodSignLgBoll');
+        const matSmall = gv('matSignSmall');
+        const matLarge = gv('matSignLarge');
         const bollMat = gv('matBollard');
 
-        const postRawHrs = postQty > 0 ? (postQty / prodPost) * hpd : 0;
-        const bollRawHrs = bollQty > 0 ? (bollQty / prodBoll) * hpd : 0;
-        const totalRawHrs = postRawHrs + bollRawHrs;
+        const smHrs = smPostQty > 0 ? (smPostQty / prodSmall) * hpd : 0;
+        const lgPostHrs = lgPostQty > 0 ? (lgPostQty / prodLgPost) * hpd : 0;
+        const lgBollHrs = lgBollQty > 0 ? (lgBollQty / prodLgBoll) * hpd : 0;
+        const totalRawHrs = smHrs + lgPostHrs + lgBollHrs;
         const hrs = applyMin(totalRawHrs, minHrs);
         const labor = hrs * crewRate;
-        // Signs in bollard: sign + bollard material
-        const material = (postQty * signMat) + (bollQty * (signMat + bollMat));
+        // Large signs in bollard: sign + bollard material
+        const material = (smPostQty * matSmall) + (lgPostQty * matLarge) + (lgBollQty * (matLarge + bollMat));
 
-        sv('sg_postHrs', postRawHrs.toFixed(1));
-        sv('sg_bollardHrs', bollRawHrs.toFixed(1));
+        sv('sg_smHrs', smHrs.toFixed(1));
+        sv('sg_lgPostHrs', lgPostHrs.toFixed(1));
+        sv('sg_lgBollHrs', lgBollHrs.toFixed(1));
         sv('sg_labor', fmt(labor));
         sv('sg_material', fmt(material));
         sv('sg_total', fmt(labor + material));
         sumLabor.sg = labor;
         sumMat.sg = material;
     } else {
-        ['sg_postHrs','sg_bollardHrs'].forEach(id => sv(id, '0'));
+        ['sg_smHrs','sg_lgPostHrs','sg_lgBollHrs'].forEach(id => sv(id, '0'));
         ['sg_labor','sg_material','sg_total'].forEach(id => sv(id, '$0'));
     }
 
@@ -1448,7 +1543,7 @@ function resetForm() {
         'st_4line','st_6line','st_12line','st_24bar','st_hc','st_arrow','st_stencil','st_curb',
         'ar_sf','ma_lf',
         'ws_new','ws_reset','ws_remove',
-        'sg_post','sg_bollard',
+        'sg_sm_post','sg_lg_post','sg_lg_bollard',
         'bo_qty','sb_qty','sh_qty',
         'in_repair','in_recon','in_casting',
         'pr_lf'
@@ -1511,7 +1606,7 @@ function exportResults() {
             ['Removal Cost', 'ws_removeCost'], ['Total', 'ws_total']
         ]},
         { en: 'en_sign', name: 'SIGNS', fields: [
-            ['On Post', 'sg_post'], ['In Bollard', 'sg_bollard'],
+            ['Small - Post', 'sg_sm_post'], ['Large - Post', 'sg_lg_post'], ['Large - Bollard', 'sg_lg_bollard'],
             ['Labor & Equip', 'sg_labor'], ['Material', 'sg_material'], ['Total', 'sg_total']
         ]},
         { en: 'en_bollard', name: 'BOLLARD REPLACEMENT', fields: [
