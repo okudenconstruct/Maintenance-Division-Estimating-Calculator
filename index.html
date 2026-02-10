@@ -1499,7 +1499,7 @@ function getRateIds() {
 }
 
 function saveRates() {
-    const data = {};
+    const data = { _version: CALC_VERSION };
     getRateIds().forEach(id => { data[id] = document.getElementById(id).value; });
     // Also save global settings
     data._asphaltPrice = document.getElementById('asphaltPrice').value;
@@ -1667,20 +1667,29 @@ function exportResults() {
 }
 
 // Load saved rates on page load
+const CALC_VERSION = '2.0';
+
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('maintCalcRates');
     if (saved) {
         const data = JSON.parse(saved);
-        Object.keys(data).forEach(key => {
-            if (key.startsWith('_')) {
-                const realId = key.substring(1);
-                const el = document.getElementById(realId);
-                if (el) el.value = data[key];
-            } else {
-                const el = document.getElementById(key);
-                if (el) el.value = data[key];
-            }
-        });
+        // If saved data is from an older version, clear it and use new defaults
+        if (data._version !== CALC_VERSION) {
+            localStorage.removeItem('maintCalcRates');
+            showToast('Rates reset to v' + CALC_VERSION + ' defaults (previous version cleared)');
+        } else {
+            Object.keys(data).forEach(key => {
+                if (key === '_version') return;
+                if (key.startsWith('_')) {
+                    const realId = key.substring(1);
+                    const el = document.getElementById(realId);
+                    if (el) el.value = data[key];
+                } else {
+                    const el = document.getElementById(key);
+                    if (el) el.value = data[key];
+                }
+            });
+        }
     }
     calculateAll();
 });
