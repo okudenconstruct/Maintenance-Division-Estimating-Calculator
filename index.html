@@ -313,7 +313,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v3.0 | Field-Calibrated | Three-Tier Output | Striping Concurrency</span>
+            <span>v3.1 | Field-Calibrated | Three-Tier Output | Striping Concurrency</span>
         </div>
     </div>
     <div class="header-controls">
@@ -403,8 +403,8 @@
                 <div class="rate-row"><label>Bollard ($/UN)</label><input type="number" id="matBollard" value="260.00" step="0.01"></div>
                 <div class="rate-row"><label>Small Sign ($/UN)</label><input type="number" id="matSignSmall" value="30.00" step="0.01"></div>
                 <div class="rate-row"><label>Large Sign ($/UN)</label><input type="number" id="matSignLarge" value="170.00" step="0.01"></div>
-                <div class="rate-row"><label>Mastic ($/LF)</label><input type="number" id="matMastic" value="3.64" step="0.01"></div>
-                <div class="rate-row"><label>Mastic Machine ($/DAY)</label><input type="number" id="matMasticMachine" value="584.40" step="0.01"></div>
+                <div class="rate-row"><label>Mastic Box 30lb ($/box incl tax)</label><input type="number" id="matMasticBox" value="31.99" step="0.01"></div>
+                <div class="rate-row"><label>Mastic Machine ($/DAY incl tax)</label><input type="number" id="matMasticMachine" value="586.44" step="0.01"></div>
                 <div class="rate-row"><label>Block & Mortar ($/UN)</label><input type="number" id="matBlock" value="25.00" step="0.01"></div>
                 <div class="rate-row"><label>Casting ($/EA)</label><input type="number" id="matCasting" value="300.00" step="0.01"></div>
                 <div class="rate-row"><label>Grinder Rental ($/DAY)</label><input type="number" id="matPaintRemoval" value="650.00" step="0.01"></div>
@@ -444,7 +444,7 @@
                 <div class="rate-row"><label>Rubber Speed Bump</label><input type="number" id="crewSpeedBump" value="3" min="2" max="5"></div>
                 <div class="rate-row"><label>Bollard</label><input type="number" id="crewBollard" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Sign</label><input type="number" id="crewSign" value="3" min="2" max="5"></div>
-                <div class="rate-row"><label>Mastic</label><input type="number" id="crewMastic" value="3" min="2" max="5"></div>
+                <div class="rate-row"><label>Mastic</label><input type="number" id="crewMastic" value="5" min="2" max="6"></div>
                 <div class="rate-row"><label>Inlet</label><input type="number" id="crewInlet" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Speed Hump</label><input type="number" id="crewSpeedHump" value="4" min="2" max="5"></div>
             </div>
@@ -586,10 +586,13 @@
     </button>
     <div class="panel-content" id="wt_mastic">
         <div class="wt-grid">
-            <div class="input-group"><label>Linear Feet (LF)</label><input type="number" id="ma_lf" placeholder="0" oninput="calculateAll()"></div>
+            <div class="input-group"><label>Total Linear Feet (LF)</label><input type="number" id="ma_lf" placeholder="0" oninput="calculateAll()"></div>
+            <div class="input-group"><label>Avg Crack Width (inches)</label><input type="number" id="ma_width" value="1.0" min="0.25" step="0.25" oninput="calculateAll()"></div>
+            <div class="input-group"><label>Avg Crack Depth (inches)</label><input type="number" id="ma_depth" value="0.5" min="0.25" step="0.25" oninput="calculateAll()"></div>
             <div class="input-group"><label>Phases</label><input type="number" id="ma_phases" class="phase-input" value="1" min="1" oninput="calculateAll()"></div>
         </div>
-        <p class="note">Includes 1 full day labor for machine pickup/dropoff. Machine rental charged per production day.</p>
+        <p class="note">5-man crew: 2 dumping buckets, 2 on hot irons, 1 driving/traffic. Includes 1 full day labor for machine pickup/dropoff. Machine rental charged per production day.<br>
+        Material: 30 lb box yields ~57.5 cu. in. of fill. Coverage per box = 57.5 / (width x depth). For deep voids, fill with sand to 1/2" from surface before mastic.</p>
         <div class="output-section"><h5>Mastic Output</h5><div id="ma_output"></div></div>
     </div>
 </div>
@@ -872,7 +875,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v3.0 | Field-Calibrated Production Rates | Three-Tier Output | Striping Concurrency Model<br>
+    Maintenance Division Estimating Calculator v3.1 | Field-Calibrated Production Rates | Three-Tier Output | Striping Concurrency Model<br>
     All rates subject to superintendent review.
 </div>
 
@@ -1153,22 +1156,31 @@ function calculateAll() {
         const prod = gv('prodMastic');
         const phases = Math.max(gv('ma_phases'), 1);
         const crew = gv('crewMastic');
-        const matPerLF = gv('matMastic');
+        const crackWidth = gv('ma_width') || 1.0;
+        const crackDepth = gv('ma_depth') || 0.5;
+        const boxPrice = gv('matMasticBox');
         const machinePerDay = gv('matMasticMachine');
 
         if (lf > 0) {
+            // Box calculation: 57.5 cu in per 30lb box
+            const crossSection = crackWidth * crackDepth;
+            const lfPerBox = crossSection > 0 ? 57.5 / crossSection : 230;
+            const boxesNeeded = Math.ceil(lf / lfPerBox);
+
             const tier = calcThreeTier(lf, prod, hpd, phases, minHrs, crew);
-            // Add 1 day for pickup/dropoff to all tiers
             const pudoHrs = hpd;
             const pudoLabor = pudoHrs * crewRate;
 
             const stdProdDays = Math.ceil(tier.std.days);
             const machineRental = stdProdDays * machinePerDay;
-            const material = lf * matPerLF;
+            const material = boxesNeeded * boxPrice;
 
-            // Standard-only render for mastic (has extra lines for P/U-D/O and machine rental)
+            // Custom render for mastic
             const el = document.getElementById('ma_output');
             let html = '';
+            html += `<div class="output-row"><span class="lbl">Coverage per Box (at ${crackWidth}" x ${crackDepth}")</span><span class="val">${lfPerBox.toFixed(1)} LF</span></div>`;
+            html += `<div class="output-row highlight"><span class="lbl">Boxes Required (30 lb)</span><span class="val">${boxesNeeded}</span></div>`;
+            html += `<div class="output-divider"></div>`;
             html += `<div class="output-row"><span class="lbl">Crew Size</span><span class="val">${tier.std.crew}</span></div>`;
             html += `<div class="output-row"><span class="lbl">Production Hours</span><span class="val">${tier.std.hours.toFixed(1)}</span></div>`;
             html += `<div class="output-row"><span class="lbl">Production Days</span><span class="val">${stdProdDays}</span></div>`;
@@ -1177,13 +1189,13 @@ function calculateAll() {
             html += `<div class="output-row cost"><span class="lbl">Labor & Equip (production)</span><span class="val">${fmt(tier.std.hours * crewRate)}</span></div>`;
             html += `<div class="output-row cost"><span class="lbl">Labor (pickup/dropoff)</span><span class="val">${fmt(pudoLabor)}</span></div>`;
             html += `<div class="output-row cost"><span class="lbl">Machine Rental (${stdProdDays} day${stdProdDays>1?'s':''})</span><span class="val">${fmt(machineRental)}</span></div>`;
-            html += `<div class="output-row cost"><span class="lbl">Material</span><span class="val">${fmt(material)}</span></div>`;
+            html += `<div class="output-row cost"><span class="lbl">Material (${boxesNeeded} boxes x ${fmt(boxPrice)})</span><span class="val">${fmt(material)}</span></div>`;
             html += `<div class="output-row highlight"><span class="lbl">Total</span><span class="val">${fmt(tier.std.hours * crewRate + pudoLabor + machineRental + material)}</span></div>`;
             el.innerHTML = html;
 
             sumLabor.ma = tier.std.hours * crewRate + pudoLabor;
             sumMat.ma = material + machineRental;
-            hbRows.push({ name: 'Mastic', tier, note: `+1 day P/U-D/O` });
+            hbRows.push({ name: 'Mastic', tier, note: `+1 day P/U-D/O | ${boxesNeeded} boxes` });
         } else {
             renderTierTable('ma_output', null);
         }
@@ -1459,7 +1471,7 @@ function saveRates() {
         'rateMastic','rateInlet','rateSpeedHump',
         'matCrackFill','matSealcoat','mat4Line','mat6Line','mat12Line','mat24Line',
         'matArrow','matHC','matStencil','matCurb','matWsNew','matWsPin','matWsDispose',
-        'matSpeedBump','matBollard','matSignSmall','matSignLarge','matMastic','matMasticMachine',
+        'matSpeedBump','matBollard','matSignSmall','matSignLarge','matMasticBox','matMasticMachine',
         'matBlock','matCasting','matPaintRemoval',
         'prodCrackFill','prodSealcoat','prod4Line','prod6Line','prod12Line','prod24Bar',
         'prodHC','prodArrow','prodStencil','prodCurb','prodAsphaltRepair','prodWheelStop',
@@ -1517,6 +1529,8 @@ function resetForm() {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
+    document.getElementById('ma_width').value = '1.0';
+    document.getElementById('ma_depth').value = '0.5';
     phaseInputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '1';
@@ -1535,7 +1549,7 @@ function exportResults() {
     const markup = gv('markupPercent') || gv('markupPercent2');
 
     let lines = [];
-    lines.push('MAINTENANCE DIVISION ESTIMATE (v3.0 Three-Tier)');
+    lines.push('MAINTENANCE DIVISION ESTIMATE (v3.1 Three-Tier)');
     lines.push('='.repeat(60));
     lines.push('Project: ' + proj);
     lines.push('Generated: ' + new Date().toLocaleString());
@@ -1593,7 +1607,7 @@ function padR(str, len) {
 }
 
 // ===== INIT =====
-const CALC_VERSION = '3.0';
+const CALC_VERSION = '3.1';
 
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('maintCalcRates');
