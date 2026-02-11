@@ -910,9 +910,10 @@ function syncMarkup(el) {
 function calcPhasedHours(qty, prodPerDay, hpd, phases, minHrs) {
     if (qty <= 0) return { hours: 0, days: 0, productionDays: 0 };
     const productionDays = qty / prodPerDay;
-    const actualDays = Math.max(productionDays, phases);
-    const hours = Math.max(actualDays * hpd, minHrs);
-    const days = hours / hpd;
+    const rawDays = Math.max(productionDays, phases);
+    // Days are always whole numbers; hours snap to full-shift increments
+    const days = Math.max(Math.ceil(rawDays), Math.ceil(minHrs / hpd));
+    const hours = days * hpd;
     return { hours, days, productionDays };
 }
 
@@ -1071,24 +1072,23 @@ function calculateAll() {
         if (hasQty) {
             // Convert concurrent hours back to equivalent "production days"
             const equivProdDays = concurrentHrs / hpd;
-            const actualDays = Math.max(equivProdDays, phases);
-            const stdHrs = Math.max(actualDays * hpd, minHrs);
-            const stdDays = stdHrs / hpd;
+            const stdDays = Math.max(Math.ceil(Math.max(equivProdDays, phases)), Math.ceil(minHrs / hpd));
+            const stdHrs = stdDays * hpd;
 
             // Conservative: 80% rate means more hours
             const consEquivDays = (concurrentHrs / 0.80) / hpd;
-            const consActualDays = Math.max(consEquivDays, phases);
-            const consHrs = Math.max(consActualDays * hpd, minHrs);
+            const consDays = Math.max(Math.ceil(Math.max(consEquivDays, phases)), Math.ceil(minHrs / hpd));
+            const consHrs = consDays * hpd;
 
             // Aggressive: 120% rate means fewer hours
             const aggEquivDays = (concurrentHrs / 1.20) / hpd;
-            const aggActualDays = Math.max(aggEquivDays, phases);
-            const aggHrs = Math.max(aggActualDays * hpd, minHrs);
+            const aggDays = Math.max(Math.ceil(Math.max(aggEquivDays, phases)), Math.ceil(minHrs / hpd));
+            const aggHrs = aggDays * hpd;
 
             const tier = {
-                cons: { crew: crew, hours: consHrs, days: Math.ceil(consActualDays) },
-                std:  { crew: crew, hours: stdHrs, days: Math.ceil(stdHrs / hpd) },
-                agg:  { crew: crew, hours: aggHrs, days: Math.ceil(aggActualDays) }
+                cons: { crew: crew, hours: consHrs, days: consDays },
+                std:  { crew: crew, hours: stdHrs, days: stdDays },
+                agg:  { crew: crew, hours: aggHrs, days: aggDays }
             };
 
             renderTierTable('st_output', tier, rate, totalMat);
@@ -1336,21 +1336,23 @@ function calculateAll() {
 
             // Use combined hours approach with phasing
             const prodDays = combinedHrs / hpd;
-            const actualDays = Math.max(prodDays, phases);
-            const stdHrs = Math.max(actualDays * hpd, minHrs);
+            const stdDays = Math.max(Math.ceil(Math.max(prodDays, phases)), Math.ceil(minHrs / hpd));
+            const stdHrs = stdDays * hpd;
 
             // Conservative: 80% production
-            const consDays = Math.max(combinedHrs / (hpd * 0.80), phases);
-            const consHrs = Math.max(consDays * hpd, minHrs);
+            const consDaysRaw = combinedHrs / (hpd * 0.80);
+            const consDays = Math.max(Math.ceil(Math.max(consDaysRaw, phases)), Math.ceil(minHrs / hpd));
+            const consHrs = consDays * hpd;
 
             // Aggressive: 120% production
-            const aggDays = Math.max(combinedHrs / (hpd * 1.20), phases);
-            const aggHrs = Math.max(aggDays * hpd, minHrs);
+            const aggDaysRaw = combinedHrs / (hpd * 1.20);
+            const aggDays = Math.max(Math.ceil(Math.max(aggDaysRaw, phases)), Math.ceil(minHrs / hpd));
+            const aggHrs = aggDays * hpd;
 
             const tier = {
-                cons: { crew: crew, hours: consHrs, days: Math.ceil(consDays) },
-                std:  { crew: crew, hours: stdHrs, days: Math.ceil(actualDays) },
-                agg:  { crew: crew, hours: aggHrs, days: Math.ceil(aggDays) }
+                cons: { crew: crew, hours: consHrs, days: consDays },
+                std:  { crew: crew, hours: stdHrs, days: stdDays },
+                agg:  { crew: crew, hours: aggHrs, days: aggDays }
             };
 
             const blockCost = totalQty * gv('matBlock');
