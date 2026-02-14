@@ -1963,6 +1963,25 @@ function generateAnalysis(snap) {
     const totalStdHrs = snap.hbRows.reduce((s, r) => s + r.tier.std.hours, 0);
     const totalTravel = snap.hbRows.reduce((s, r) => s + (r.travel || 0), 0);
 
+    // Production rate confidence bands (from Field Ops Q17: which rates swing most)
+    const RATE_CONFIDENCE = {
+        crackFill:     { band: 20, label: '±20%',  reliability: 'Moderate — crack density and access vary' },
+        sealcoat:      { band: 15, label: '±15%',  reliability: 'Moderate-High — spray rig is consistent, lot complexity is the variable' },
+        striping:      { band: 10, label: '±10%',  reliability: 'High — machine speed is very consistent' },
+        asphaltRepair: { band: 35, label: '±35%',  reliability: 'Low — every patch is different (depth, sub-base condition, delamination)' },
+        mastic:        { band: 20, label: '±20%',  reliability: 'Moderate — machine rate is fixed but crack width variance changes material consumption' },
+        wheelStops:    { band: 15, label: '±15%',  reliability: 'Moderate-High' },
+        bollards:      { band: 25, label: '±25%',  reliability: 'Moderate — removal of existing bollards is unpredictable (unknown foundation depth)' },
+        speedBumps:    { band: 15, label: '±15%',  reliability: 'Moderate-High' },
+        speedHumps:    { band: 20, label: '±20%',  reliability: 'Moderate' },
+        inletRepair:   { band: 40, label: '±40%',  reliability: 'Low — deterioration is invisible until opened; 20-30% of repairs escalate to reconstruction' },
+        paintRemoval:  { band: 15, label: '±15%',  reliability: 'Moderate-High — thermoplastic vs standard paint is the main variable' },
+        signs:         { band: 15, label: '±15%',  reliability: 'Moderate-High' },
+    };
+
+    // Field ops wheel stop production rates (Q21) vs calculator's single 80/day rate
+    const WS_FIELD_RATES = { install: 80, reset: 155, removal: 220 };
+
     // Map unit check names back to snapshot keys and QTY_RANGES keys
     const checkMap = {
         'Crack Fill':       { actKey: 'crackFill',    qtyKey: 'cf',  getQty: () => acts.crackFill?.inputs?.lf },
@@ -1988,50 +2007,91 @@ function generateAnalysis(snap) {
         const isLow = check.status.includes('LOW');
         const qtyRange = QTY_RANGES[mapping.qtyKey];
         const qty = check.qty;
+        const stdHrs = act.tiers?.std?.hours || 0;
+        const rateConf = RATE_CONFIDENCE[mapping.actKey];
 
-        // --- Quantity-based reasoning ---
+        // --- Quantity-based reasoning (enhanced with Q1 crew-sizing context) ---
         if (qtyRange) {
             if (isHigh && qty <= qtyRange.low) {
-                reasons.push(`Small quantity (${qty.toLocaleString()} ${check.unit}) -- fixed crew mobilization is spread over fewer units, inflating per-unit cost. Typical jobs have ${qtyRange.low.toLocaleString()}+ ${check.unit}.`);
+                reasons.push(`Small quantity (${qty.toLocaleString()} ${check.unit}) — fixed crew mobilization spread over fewer units inflates per-unit cost. Typical jobs have ${qtyRange.low.toLocaleString()}+ ${check.unit}.`);
+                // Q1: When qty < 50% of daily max, a smaller crew could handle it
+                if (act.rates?.prodPerDay && qty < act.rates.prodPerDay * 0.5) {
+                    reasons.push(`Quantity is under 50% of the crew's daily capacity (${act.rates.prodPerDay.toLocaleString()}/day). Field experience (Q1) indicates a reduced crew size could handle this volume — the bottleneck is the equipment, not hands. The extra person's value (staging, traffic) diminishes on small-scope simple jobs.`);
+                }
             }
             if (isLow && qty > qtyRange.high * 0.75) {
-                reasons.push(`Large quantity (${qty.toLocaleString()} ${check.unit}) -- crew mobilization is amortized over many units, reducing per-unit cost. This exceeds 75% of the typical high-end range.`);
+                reasons.push(`Large quantity (${qty.toLocaleString()} ${check.unit}) — crew mobilization amortized over many units reduces per-unit cost. Exceeds 75% of the typical high-end range.`);
             }
         }
 
         // --- Minimum shift utilization check ---
-        const stdHrs = act.tiers?.std?.hours || 0;
         if (stdHrs > 0 && act.rates?.prodPerDay && isHigh) {
             const prodRate = act.rates.prodPerDay;
             const rawProdHrs = (qty / prodRate) * snap.settings.stdShift;
             if (rawProdHrs < 3.5 && stdHrs >= 4) {
                 const utilization = (rawProdHrs / stdHrs * 100).toFixed(0);
-                reasons.push(`Low shift utilization: actual production work is ~${rawProdHrs.toFixed(1)} hrs but snapped to a ${stdHrs.toFixed(0)}-hour minimum shift (${utilization}% utilization). The crew has capacity for more units in the same shift.`);
+                reasons.push(`Low shift utilization: actual production work is ~${rawProdHrs.toFixed(1)} hrs but snapped to ${stdHrs.toFixed(0)}-hour minimum shift (${utilization}% utilization). The crew has capacity for more units in the same shift.`);
             }
         }
 
-        // --- Phase-based reasoning ---
-        const phases = act.inputs?.phases;
-        if (phases && phases > 1 && isHigh) {
-            reasons.push(`Multiple phases (${phases}) means ${phases} separate mobilizations, adding setup/breakdown overhead that wouldn't exist in a single-visit job.`);
-        }
-        if (phases === 1 && isLow) {
-            reasons.push('Single-phase job minimizes setup and breakdown overhead.');
+        // --- Setup/breakdown overhead (Q15, Q26: biggest missing element in rate-based estimating) ---
+        if (isHigh && stdHrs > 0) {
+            // Production rates measure productive output only — every job starts/ends with non-productive time
+            // Q15: Setup+breakdown is 10% of a large job, 25%+ of a small job
+            const prodRate = act.rates?.prodPerDay;
+            if (prodRate && qty > 0) {
+                const rawProdHrs = (qty / prodRate) * snap.settings.stdShift;
+                const overheadRatio = (stdHrs - rawProdHrs) / stdHrs;
+                if (rawProdHrs <= 4 && overheadRatio > 0.20) {
+                    reasons.push(`Setup/breakdown overhead: production rates measure productive output only. On small-scope jobs, the 1-2 hrs of non-productive time (equipment unloading, material heating, barricading, breakdown) represents ${(overheadRatio * 100).toFixed(0)}% of the shift. This is the most common reason field actuals exceed rate-based estimates.`);
+                }
+            }
         }
 
-        // --- Travel-based reasoning ---
+        // --- Phase-based reasoning (enhanced with Q13 phase efficiency) ---
+        const phases = act.inputs?.phases;
+        if (phases && phases > 1 && isHigh) {
+            reasons.push(`Multiple phases (${phases}) = ${phases} separate mobilizations with setup/breakdown each time. Phase 2+ typically runs 10-15% faster (crew knows the site, staging is familiar), but the additional mobilization overhead still adds cost.`);
+        }
+        if (phases === 1 && isLow) {
+            reasons.push('Single-phase job — no repeated mobilization overhead, and all production is concentrated in one visit.');
+        }
+
+        // --- Travel-based reasoning (enhanced with Q8 distance thresholds) ---
         const travel = act.inputs?.travel || 0;
         if (travel > 0 && stdHrs > 0) {
             const travelRatio = travel / stdHrs;
             if (isHigh && travelRatio > 0.25) {
-                reasons.push(`Travel time (${travel.toFixed(1)} hrs) represents ${(travelRatio * 100).toFixed(0)}% of production hours (${stdHrs.toFixed(1)} hrs), significantly increasing per-unit cost.`);
+                reasons.push(`Travel time (${travel.toFixed(1)} hrs) is ${(travelRatio * 100).toFixed(0)}% of production hours (${stdHrs.toFixed(1)} hrs), significantly increasing per-unit cost.`);
+                if (travel > 1.5) {
+                    reasons.push(`Extended travel (>${(travel * 60).toFixed(0)} min round-trip). Jobs over 45-60 min one-way should consider staging equipment the night before on multi-day work, or scheduling nearby jobs on the same day to reduce dead-heading.`);
+                }
             }
         }
         if (travel === 0 && isLow) {
             reasons.push('Zero travel time keeps costs purely production-driven.');
         }
 
-        // --- Asphalt-specific reasoning ---
+        // --- Crack fill quantity reliability (Q18, Q25: most unreliable scope number) ---
+        if (mapping.actKey === 'crackFill') {
+            if (isLow) {
+                reasons.push(`⚠ Crack fill scope quantities are the least reliable number in maintenance estimating (Q18/Q25). Field quantities routinely come in 30-60% higher than scope descriptions. If this quantity came from a salesperson walkthrough rather than field measurement, actual production may require significantly more time and material.`);
+            }
+        }
+
+        // --- Sealcoat crew sizing context (Q3: 3-man vs 4-man threshold) ---
+        if (mapping.actKey === 'sealcoat') {
+            const sf = act.inputs?.sf || 0;
+            const crew = act.rates?.crewSize;
+            if (isHigh && crew >= 4 && sf < 35000) {
+                reasons.push(`Running a 4-person crew on ${sf.toLocaleString()} SF. Field threshold (Q3): below ~35,000 SF per phase, a 3-person crew can typically handle the spray application, edging, and barricade management without bottlenecking. The fourth person's value is primarily barricade setup/teardown and keeping the spray rig moving — less critical on smaller lots.`);
+            }
+            if (isLow && sf >= 60000) {
+                reasons.push(`${sf.toLocaleString()} SF is in the efficient production zone for a ${crew}-person crew. Wide-open lots at this scale allow long, uninterrupted spray passes with minimal repositioning.`);
+            }
+        }
+
+        // --- Asphalt-specific reasoning (enhanced with Q9 hot box vs triaxle context) ---
         if (mapping.actKey === 'asphaltRepair' && act.inputs?.depthConfig) {
             const dc = act.inputs.depthConfig;
             const layers = (dc.includes('2s') ? 1 : 0) + (dc.includes('4b') ? 1 : 0) + (dc.includes('d') ? 1 : 0);
@@ -2040,15 +2100,23 @@ function generateAnalysis(snap) {
                 if (dc.includes('2s')) layerNames.push('9.5mm surface');
                 if (dc.includes('4b')) layerNames.push('19mm base');
                 if (dc.includes('d')) layerNames.push('DGA');
-                reasons.push(`Multi-layer depth config (${layerNames.join(' + ')}) increases material tonnage and cost per SF compared to surface-only jobs.`);
+                reasons.push(`Multi-layer depth config (${layerNames.join(' + ')}) increases material tonnage and cost per SF vs. surface-only jobs.`);
             }
             if (isLow && layers === 1) {
                 reasons.push('Simple depth config (surface only) minimizes material layers and tonnage.');
             }
+            // Q9: Hot box vs triaxle decision context
             if (act.crewType === 'large' && isHigh) {
-                reasons.push(`Total asphalt exceeds 4 tons (${act.tonnage.totalAsphaltTons}T), triggering the triaxle crew at $${act.rates.crewRate.toFixed(2)}/hr (includes truck rental) instead of the hot box crew.`);
+                reasons.push(`Total asphalt exceeds 4 tons (${act.tonnage.totalAsphaltTons}T), triggering the triaxle crew at $${act.rates.crewRate.toFixed(2)}/hr (includes truck rental). The hot box carries ~3T and cannot handle this volume in one load. On sites with tight access, multiple hot box loads might be forced even above 4T (slower but feasible).`);
             }
-            // Material cost ratio check — asphalt material is typically a large portion of the total
+            if (act.crewType === 'small' && act.tonnage?.totalAsphaltTons > 3 && act.tonnage?.totalAsphaltTons <= 4) {
+                reasons.push(`Tonnage (${act.tonnage.totalAsphaltTons}T) is near the hot box limit (~3T capacity). If additional deterioration is found during saw cutting, tonnage may push past 4T requiring a triaxle crew at a higher rate.`);
+            }
+            // Patching rate confidence (Q17: widest variance of any work type)
+            if (rateConf) {
+                reasons.push(`Asphalt patching has the widest estimate-to-actuals variance of any work type (${rateConf.label}). Every patch differs in sub-base condition, depth, water presence, and whether the saw cut reveals worse deterioration than scoped. Build contingency accordingly.`);
+            }
+            // Material cost ratio check
             if (act.costs && act.costs.total > 0) {
                 const matRatio = act.costs.material / act.costs.total;
                 const laborRatio = 1 - matRatio;
@@ -2056,7 +2124,7 @@ function generateAnalysis(snap) {
                     reasons.push(`Material cost (${fmt(act.costs.material)}) is only ${(matRatio * 100).toFixed(0)}% of total cost. Low asphalt unit pricing (${snap.settings.asphaltPrice > 0 ? '$' + snap.settings.asphaltPrice.toFixed(2) + '/ton' : 'not set'}) may be driving the low $/SF. Verify asphalt pricing is current.`);
                 }
                 if (isLow && laborRatio > 0.75 && act.tonnage?.totalAsphaltTons > 4) {
-                    reasons.push(`Labor dominates at ${(laborRatio * 100).toFixed(0)}% of cost. The >4T triaxle crew rate ($${act.rates.crewRate.toFixed(2)}/hr) is being used, but the high production capacity for ${act.inputs.sf.toLocaleString()} SF keeps the labor-per-SF efficient.`);
+                    reasons.push(`Labor dominates at ${(laborRatio * 100).toFixed(0)}% of cost. The >4T triaxle crew rate ($${act.rates.crewRate.toFixed(2)}/hr) is being used, but high production capacity for ${act.inputs.sf.toLocaleString()} SF keeps labor-per-SF efficient.`);
                 }
                 if (isHigh && matRatio > 0.5 && layers >= 2) {
                     reasons.push(`Material is ${(matRatio * 100).toFixed(0)}% of total cost — multi-layer depth configs concentrate more material cost per SF.`);
@@ -2064,34 +2132,72 @@ function generateAnalysis(snap) {
             }
         }
 
-        // --- Mastic-specific reasoning ---
+        // --- Mastic-specific reasoning (enhanced with Q20 crack width production impact) ---
         if (mapping.actKey === 'mastic' && act.boxCalc) {
             if (isHigh && act.inputs.crackWidth * act.inputs.crackDepth > 1.0) {
                 reasons.push(`Large crack cross-section (${act.inputs.crackWidth}" x ${act.inputs.crackDepth}") reduces coverage to ${act.boxCalc.lfPerBox.toFixed(1)} LF/box, increasing material cost per LF.`);
             }
+            // Q20: Wider cracks slow machine speed AND increase material consumption
+            if (act.inputs?.crackWidth >= 2) {
+                reasons.push(`Wide cracks (${act.inputs.crackWidth}"+) require slower machine speed for proper fill depth and consume 2-3x material per LF vs standard cracks. Production may drop to 750-800 LF/day vs the 1,000 LF/day standard rate. Also increases resupply frequency.`);
+            }
         }
 
-        // --- Striping concurrency reasoning ---
+        // --- Striping concurrency reasoning (Q4: confirmed concurrent ops model) ---
         if (mapping.actKey === 'striping' && act.concurrency) {
             const { machineHrs, handHrs, concurrentHrs } = act.concurrency;
             if (isLow && machineHrs > 0 && handHrs > 0) {
                 const savedHrs = (machineHrs + handHrs) - concurrentHrs;
                 if (savedHrs > 0.5) {
-                    reasons.push(`High concurrency: machine (${machineHrs.toFixed(1)}h) and hand work (${handHrs.toFixed(1)}h) overlap, saving ${savedHrs.toFixed(1)} hours vs. sequential work.`);
+                    reasons.push(`High concurrency: machine (${machineHrs.toFixed(1)}h) and hand work (${handHrs.toFixed(1)}h) run in parallel. Hand crew starts opposite end from machine, working toward each other — saves ${savedHrs.toFixed(1)} hrs vs sequential work. Duration = max(machine, hand), not sum.`);
                 }
             }
-            // For 4" line check specifically: if hand work dominates, the line cost carries shared crew time
             if (isHigh && check.name === '4" Lines' && handHrs > machineHrs) {
-                reasons.push(`Hand work (${handHrs.toFixed(1)}h) exceeds machine line work (${machineHrs.toFixed(1)}h), so the crew shift is driven by hand items. The 4" line share of the crew cost includes time where the machine crew is waiting on hand work.`);
+                reasons.push(`Hand work (${handHrs.toFixed(1)}h) exceeds machine line work (${machineHrs.toFixed(1)}h), so the crew shift is driven by hand items. The 4" line share of crew cost includes time the machine crew is waiting on hand work.`);
+            }
+            // Q17: Striping machine rates are the most reliable (±10%)
+            if (rateConf) {
+                reasons.push(`Striping machine production rates are the most predictable of all work types (${rateConf.label}). Machine speed is very consistent. The main variable is hand work volume.`);
             }
         }
 
-        // --- Wheel stop mixed ops ---
+        // --- Wheel stop analysis (enhanced with Q21 differentiated field rates) ---
         if (mapping.actKey === 'wheelStops' && act.inputs) {
             const { newQty, resetQty, removeQty } = act.inputs;
-            const opTypes = [newQty > 0, resetQty > 0, removeQty > 0].filter(Boolean).length;
+            const totalWs = (newQty || 0) + (resetQty || 0) + (removeQty || 0);
+            const opTypes = [(newQty || 0) > 0, (resetQty || 0) > 0, (removeQty || 0) > 0].filter(Boolean).length;
             if (opTypes > 1 && isHigh) {
                 reasons.push(`Blended rate from ${opTypes} operation types (${newQty > 0 ? 'install' : ''}${resetQty > 0 ? ', reset' : ''}${removeQty > 0 ? ', remove' : ''}) affects the per-unit cost calculation.`.replace(', ,', ',').replace('(, ', '('));
+            }
+            // Q21: Calculator uses 80/day for all ops, but field rates differ significantly
+            if (act.rates?.prodPerDay) {
+                const calcRate = act.rates.prodPerDay;
+                if ((resetQty || 0) > 0 && calcRate <= 80) {
+                    reasons.push(`Calculator uses ${calcRate}/day production rate for all wheel stop operations. Field experience (Q21): resets run ~${WS_FIELD_RATES.reset}/day (2x faster than new installs) because the drilling step is eliminated — just pull pins, reposition, reset. Actual hours for the ${resetQty} resets may be less than calculated.`);
+                }
+                if ((removeQty || 0) > 0 && calcRate <= 80) {
+                    reasons.push(`Removals run ~${WS_FIELD_RATES.removal}/day in the field (Q21) — 2.5-3x faster than new installs. No alignment or anchoring needed. The ${removeQty} removals may take significantly less time than the ${calcRate}/day rate implies.`);
+                }
+            }
+        }
+
+        // --- Inlet repair / reconstruction context (Q22: repair → recon escalation) ---
+        if (mapping.actKey === 'inletRepair') {
+            if (check.name === 'Inlet Repair') {
+                reasons.push(`⚠ Inlet repair has the highest estimate-to-actuals variance (${rateConf?.label || '±40%'}). 20-30% of jobs scoped as "repair" end up as reconstruction once the structure is opened (Q22). Deterioration is largely invisible from the surface — block wall condition, base washout, and pipe connections are unknown until excavation. Consider pricing 75% at repair rate / 25% at reconstruction rate as a hedge.`);
+            }
+            if (check.name === 'Inlet Reconstruct' && rateConf) {
+                reasons.push(`Reconstruction scope inherently has high variance (${rateConf.label}). Unknown sub-surface conditions are the primary risk.`);
+            }
+        }
+
+        // --- Bollard context (Q23: surface type and removal) ---
+        if (mapping.actKey === 'bollards') {
+            if (isHigh && act.inputs?.qty <= 4) {
+                reasons.push(`Small bollard quantity (${act.inputs.qty}). A 3-person crew is typical for 4 or fewer bollards (Q23) — reduced crew may be appropriate since the lower output per day doesn't matter when the job is small regardless.`);
+            }
+            if (rateConf && act.inputs?.qty > 0) {
+                reasons.push(`Bollard production is ${rateConf.reliability} (Q23). Concrete surface installations run ~20-25% slower than asphalt. Remove-and-replace is ~1.5x slower than new install due to extraction and hole cleanup.`);
             }
         }
 
@@ -2100,10 +2206,13 @@ function generateAnalysis(snap) {
             reasons.push(`Includes ${act.inputs.bollQty} bollard-mounted sign(s) at slower production rate (${act.rates.prodBoll}/day vs ${act.rates.prodPost}/day for post signs), plus bollard material cost.`);
         }
 
-        // If no specific reasons found, provide a generic one
+        // If no specific reasons found, add rate confidence context at minimum
         if (reasons.length === 0) {
-            if (isHigh) reasons.push('Unit cost is above the P75 benchmark. Review quantities and rates for this activity.');
+            if (isHigh) reasons.push('Unit cost is above the P75 benchmark. Review quantities and production rates for this activity.');
             if (isLow) reasons.push('Unit cost is below the P25 benchmark. Verify production rates are achievable for this scope.');
+            if (rateConf) {
+                reasons.push(`Production rate confidence for this work type: ${rateConf.label} (${rateConf.reliability}).`);
+            }
         }
 
         observations.push({
@@ -2122,33 +2231,79 @@ function generateAnalysis(snap) {
     const flaggedLow = snap.unitChecks.filter(c => c.status.includes('LOW')).length;
     const totalChecks = snap.unitChecks.length;
 
-    if (activeCount > 1 && totalTravel > 0) {
+    // Standalone rate context — benchmarks are from standalone-bid jobs
+    if (activeCount > 1) {
+        const reasons = [];
+        reasons.push(`${activeCount} activities on this job. Benchmarks are based on standalone-bid production rates (Darrell's rates: one crew, one activity, full day). Multi-activity jobs naturally differ from standalone benchmarks.`);
+        if (totalTravel > 0) {
+            reasons.push(`Travel is calculated per-activity (${totalTravel.toFixed(1)} hrs total, ${activeCount} activities). On combined jobs, crews may share mobilization — actual travel overhead per activity could be lower than calculated.`);
+        }
+        // Q14: Small add-on activities on multi-scope jobs
+        const smallAddOns = [];
+        Object.entries(acts).forEach(([key, a]) => {
+            if (!a || !a.enabled || !a.rates?.prodPerDay) return;
+            const qty = a.inputs?.lf || a.inputs?.sf || a.inputs?.qty || ((a.inputs?.newQty || 0) + (a.inputs?.resetQty || 0) + (a.inputs?.removeQty || 0)) || 0;
+            if (qty > 0 && qty < a.rates.prodPerDay * 0.25) {
+                const name = key.replace(/([A-Z])/g, ' $1').trim();
+                smallAddOns.push(name);
+            }
+        });
+        if (smallAddOns.length > 0) {
+            reasons.push(`Potential tack-on activities: ${smallAddOns.join(', ')} — each is under 25% of its crew's daily capacity (Q14). If these use similar crew/equipment as the primary scope, they may be absorbed into the primary crew's day rather than requiring separate mobilization. This would reduce actual hours vs calculated.`);
+        }
+        observations.push({ activity: 'Standalone Rate Context', flag: 'INFO', reasons });
+    }
+
+    // Q12: Sequencing context for multi-activity jobs
+    if (activeCount > 1) {
+        const hasPatching = acts.asphaltRepair?.enabled;
+        const hasCrackFill = acts.crackFill?.enabled;
+        const hasSealcoat = acts.sealcoat?.enabled;
+        const hasStriping = acts.striping?.enabled;
+        const sequence = [];
+        if (hasPatching) sequence.push('Patch');
+        if (hasCrackFill) sequence.push('Crack Fill');
+        if (hasSealcoat) sequence.push('Sealcoat');
+        if (hasStriping) sequence.push('Stripe');
+        if (sequence.length >= 2) {
+            const reasons = [`Standard field sequence: ${sequence.join(' → ')} (Q12). Each layer depends on the one below being cured.`];
+            if (hasCrackFill && hasSealcoat) reasons.push('Crack fill → sealcoat requires 24-48 hrs cure time. Sealcoat → striping requires 24-48 hrs cure. Scheduling in HeavyBid should account for cure windows between mobilizations.');
+            observations.push({ activity: 'Work Sequencing', flag: 'INFO', reasons });
+        }
+    }
+
+    if (totalStdHrs > 40) {
         observations.push({
-            activity: 'Cross-Activity', flag: 'INFO', reasons: [
-                `${activeCount} activities share this job. Travel is bid per-activity (${totalTravel.toFixed(1)} hrs total), but in practice crews may share travel, making actual per-unit costs lower than calculated.`
+            activity: 'Job Scale', flag: 'INFO', reasons: [
+                `Large job scope: ${totalStdHrs.toFixed(1)} standard hours, ${snap.hbRows.reduce((s, r) => s + r.tier.std.days, 0)} crew-days across ${activeCount} activities. Verify shift scheduling in HeavyBid accounts for crew availability, sequencing, and cure windows between activities.`
             ]
         });
     }
 
-    if (snap.summary.directCost > 10000 || totalStdHrs > 40) {
-        observations.push({
-            activity: 'Job Scale', flag: 'INFO', reasons: [
-                `Large job scope (${fmt(snap.summary.directCost)} direct cost, ${totalStdHrs.toFixed(1)} std hours across ${activeCount} activities). Volume generally validates competitive unit pricing.`
-            ]
-        });
-    }
+    // Q5: Overtime threshold warning
+    Object.entries(acts).forEach(([key, a]) => {
+        if (!a || !a.enabled || !a.tiers?.std) return;
+        if (a.tiers.std.hours > 10 && a.tiers.std.days === 1) {
+            const name = key.replace(/([A-Z])/g, ' $1').trim();
+            observations.push({
+                activity: 'Overtime Alert', flag: 'INFO', reasons: [
+                    `${name}: ${a.tiers.std.hours.toFixed(1)} hrs estimated on a single day exceeds the 10-hour practical limit (Q5). Consider splitting into multiple days or adding crew to finish within standard hours. A single crew past 10 hrs faces fatigue-related production loss.`
+                ]
+            });
+        }
+    });
 
     if (totalChecks > 2 && flaggedHigh > totalChecks * 0.5) {
         observations.push({
             activity: 'Pattern', flag: 'INFO', reasons: [
-                `${flaggedHigh} of ${totalChecks} benchmarked activities are flagged HIGH. This may indicate the job has unusual conditions (small scope, multiple phases, high travel) or pricing that needs review.`
+                `${flaggedHigh} of ${totalChecks} benchmarked activities are flagged HIGH. Common causes on multi-activity jobs: small quantities hitting minimum shift floors, per-activity travel overhead, or add-on work types that could be tacked onto a primary crew's day (Q14). Review whether combining activities in HeavyBid reduces effective overhead.`
             ]
         });
     }
     if (totalChecks > 2 && flaggedLow > totalChecks * 0.5) {
         observations.push({
             activity: 'Pattern', flag: 'INFO', reasons: [
-                `${flaggedLow} of ${totalChecks} benchmarked activities are flagged LOW. This suggests a high-volume job where economies of scale are working across the board.`
+                `${flaggedLow} of ${totalChecks} benchmarked activities are flagged LOW. Typical for high-volume jobs where production rates are fully utilized. Verify aggressive-tier hours are achievable — field actuals for patching and inlet work can swing ${RATE_CONFIDENCE.asphaltRepair.label} and ${RATE_CONFIDENCE.inletRepair.label} respectively (Q17).`
             ]
         });
     }
@@ -2156,7 +2311,7 @@ function generateAnalysis(snap) {
     if (observations.length === 0 && totalChecks > 0) {
         observations.push({
             activity: 'All Activities', flag: 'OK', reasons: [
-                'All calculated unit costs fall within the P25-P75 historical range. Pricing appears consistent with comparable jobs.'
+                'All calculated unit costs fall within the P25-P75 historical range from 347 jobs. Crew sizes and hours are consistent with Darrell\'s standalone production rates. Field confidence varies by work type — striping is most reliable (±10%), patching has the widest variance (±35%).'
             ]
         });
     }
@@ -2216,16 +2371,41 @@ function exportComprehensiveText() {
     const L = [];
     const W = 80;
 
-    L.push('MAINTENANCE DIVISION ESTIMATE - FULL REPORT (v' + snap.meta.version + ')');
+    L.push('MAINTENANCE DIVISION ESTIMATING CALCULATOR - FULL REPORT (v' + snap.meta.version + ')');
     L.push('='.repeat(W));
     L.push('Project: ' + snap.meta.projectName);
     L.push('Generated: ' + new Date().toLocaleString());
-    L.push('Standard Shift: ' + snap.settings.stdShift + 'h | Max Shift: ' + snap.settings.maxShift + 'h');
-    L.push('Asphalt 9.5mm: $' + snap.settings.asphaltPrice + '/ton | 19mm Base: $' + snap.settings.baseAsphaltPrice + '/ton | DGA: $' + snap.settings.dgaPrice + '/ton');
-    L.push('Markup: ' + snap.settings.markupPercent + '%');
     L.push('');
 
-    // Per-activity details
+    // ── PRIMARY OUTPUT: CREW & DURATION SUMMARY (HeavyBid Input Data) ──
+    if (snap.hbRows.length > 0) {
+        L.push('='.repeat(W));
+        L.push('CREW & DURATION SUMMARY');
+        L.push('Primary output for HeavyBid line-item entry');
+        L.push('='.repeat(W));
+        L.push(padR('Activity', 22) + padR('Crew', 6) + padR('Cons', 9) + padR('Std', 9) + padR('Agg', 9) + padR('Travel', 8));
+        L.push('-'.repeat(W));
+        let totC = 0, totS = 0, totA = 0, totT = 0;
+        snap.hbRows.forEach(r => {
+            const c = r.tier.cons.hours, s = r.tier.std.hours, a = r.tier.agg.hours, tv = r.travel || 0;
+            totC += c; totS += s; totA += a; totT += tv;
+            L.push(padR(r.name, 22) + padR(r.tier.std.crew, 6) + padR(c.toFixed(1) + 'h', 9) + padR(s.toFixed(1) + 'h', 9) + padR(a.toFixed(1) + 'h', 9) + padR(tv > 0 ? tv.toFixed(1) + 'h' : '-', 8));
+        });
+        L.push('-'.repeat(W));
+        L.push(padR('TOTAL', 22) + padR('-', 6) + padR(totC.toFixed(1) + 'h', 9) + padR(totS.toFixed(1) + 'h', 9) + padR(totA.toFixed(1) + 'h', 9) + padR(totT > 0 ? totT.toFixed(1) + 'h' : '-', 8));
+        L.push('');
+        L.push('Shift Settings: Standard ' + snap.settings.stdShift + 'h | Max ' + snap.settings.maxShift + 'h');
+        L.push('Three-Tier: Conservative (80% prod) | Standard (100%) | Aggressive (120%)');
+        L.push('');
+    }
+
+    // ── ACTIVITY DETAIL BLOCKS ──
+    L.push('='.repeat(W));
+    L.push('ACTIVITY DETAILS');
+    L.push('Crew sizing, production rates, and duration calculations');
+    L.push('='.repeat(W));
+    L.push('');
+
     const actNames = {
         crackFill: 'CRACK FILLING', sealcoat: 'SEALCOATING', striping: 'STRIPING',
         asphaltRepair: 'ASPHALT REPAIRS', mastic: 'MASTIC CRACK FILL', wheelStops: 'WHEEL STOPS',
@@ -2240,7 +2420,24 @@ function exportComprehensiveText() {
         L.push(name);
         L.push('-'.repeat(W));
 
-        // Inputs
+        // Crew & production rate (lead with HeavyBid-relevant data)
+        if (act.rates) {
+            const rateParts = [];
+            if (act.rates.crewSize) rateParts.push('Crew: ' + act.rates.crewSize);
+            if (act.rates.crewRate) rateParts.push('Crew Rate: $' + act.rates.crewRate.toFixed(2) + '/hr');
+            if (act.rates.prodPerDay) rateParts.push('Production: ' + act.rates.prodPerDay.toLocaleString() + '/day');
+            L.push('  ' + rateParts.join(' | '));
+        }
+
+        // Three-tier hours/days (the primary deliverable)
+        if (act.tiers) {
+            L.push('  Duration (three-tier):');
+            L.push('    Conservative: ' + act.tiers.cons.hours.toFixed(1) + 'h / ' + act.tiers.cons.days + ' days');
+            L.push('    Standard:     ' + act.tiers.std.hours.toFixed(1) + 'h / ' + act.tiers.std.days + ' days' + (act.tiers.std.hustle ? ' (hustle)' : ''));
+            L.push('    Aggressive:   ' + act.tiers.agg.hours.toFixed(1) + 'h / ' + act.tiers.agg.days + ' days');
+        }
+
+        // Scope inputs
         const inp = act.inputs || {};
         const inputParts = [];
         if (inp.lf !== undefined) inputParts.push('Qty: ' + inp.lf.toLocaleString() + ' LF');
@@ -2253,16 +2450,7 @@ function exportComprehensiveText() {
         if (inp.travel) inputParts.push('Travel: ' + inp.travel + 'h');
         if (inp.depthConfig) inputParts.push('Depth: ' + inp.depthConfig);
         if (inp.crackWidth) inputParts.push('Crack: ' + inp.crackWidth + '" x ' + inp.crackDepth + '"');
-        L.push('  ' + inputParts.join(' | '));
-
-        // Rates
-        if (act.rates) {
-            const rateParts = [];
-            if (act.rates.crewSize) rateParts.push('Crew: ' + act.rates.crewSize);
-            if (act.rates.crewRate) rateParts.push('Rate: $' + act.rates.crewRate.toFixed(2) + '/hr');
-            if (act.rates.prodPerDay) rateParts.push('Prod: ' + act.rates.prodPerDay.toLocaleString() + '/day');
-            L.push('  ' + rateParts.join(' | '));
-        }
+        if (inputParts.length > 0) L.push('  Scope: ' + inputParts.join(' | '));
 
         // Tonnage (asphalt/speed humps)
         if (act.tonnage) {
@@ -2288,17 +2476,9 @@ function exportComprehensiveText() {
             L.push('  Concurrency: Machine ' + act.concurrency.machineHrs.toFixed(1) + 'h | Hand ' + act.concurrency.handHrs.toFixed(1) + 'h | Effective ' + act.concurrency.concurrentHrs.toFixed(1) + 'h');
         }
 
-        // Three-tier hours
-        if (act.tiers) {
-            L.push('  Three-Tier:');
-            L.push('    Conservative: ' + act.tiers.cons.hours.toFixed(1) + 'h / ' + act.tiers.cons.days + ' days');
-            L.push('    Standard:     ' + act.tiers.std.hours.toFixed(1) + 'h / ' + act.tiers.std.days + ' days' + (act.tiers.std.hustle ? ' (hustle)' : ''));
-            L.push('    Aggressive:   ' + act.tiers.agg.hours.toFixed(1) + 'h / ' + act.tiers.agg.days + ' days');
-        }
-
-        // Cost breakdown
+        // Cost detail (secondary — HeavyBid owns final costing)
         if (act.costs) {
-            L.push('  Costs:');
+            L.push('  Cost Detail (calculator estimate):');
             if (act.costs.laborShift !== undefined) L.push('    Labor (shift):  ' + fmt(act.costs.laborShift));
             if (act.costs.laborTotal !== undefined) L.push('    Labor (total):  ' + fmt(act.costs.laborTotal));
             if (act.costs.laborTravel > 0) L.push('    Labor (travel): ' + fmt(act.costs.laborTravel));
@@ -2310,28 +2490,11 @@ function exportComprehensiveText() {
         L.push('');
     });
 
-    // Estimate summary table
-    if (snap.hbRows.length > 0) {
-        L.push('='.repeat(W));
-        L.push('ESTIMATE SUMMARY (THREE-TIER)');
-        L.push('='.repeat(W));
-        L.push(padR('Activity', 22) + padR('Crew', 6) + padR('Cons', 9) + padR('Std', 9) + padR('Agg', 9) + padR('Travel', 8));
-        L.push('-'.repeat(W));
-        let totC = 0, totS = 0, totA = 0, totT = 0;
-        snap.hbRows.forEach(r => {
-            const c = r.tier.cons.hours, s = r.tier.std.hours, a = r.tier.agg.hours, tv = r.travel || 0;
-            totC += c; totS += s; totA += a; totT += tv;
-            L.push(padR(r.name, 22) + padR(r.tier.std.crew, 6) + padR(c.toFixed(1) + 'h', 9) + padR(s.toFixed(1) + 'h', 9) + padR(a.toFixed(1) + 'h', 9) + padR(tv > 0 ? tv.toFixed(1) + 'h' : '-', 8));
-        });
-        L.push('-'.repeat(W));
-        L.push(padR('TOTAL', 22) + padR('-', 6) + padR(totC.toFixed(1) + 'h', 9) + padR(totS.toFixed(1) + 'h', 9) + padR(totA.toFixed(1) + 'h', 9) + padR(totT > 0 ? totT.toFixed(1) + 'h' : '-', 8));
-        L.push('');
-    }
-
-    // Unit cost checks
+    // ── UNIT COST CHECKS ──
     if (snap.unitChecks.length > 0) {
         L.push('='.repeat(W));
         L.push('UNIT COST REASONABLENESS CHECK');
+        L.push('Benchmarked against 347 historical jobs (Darrell\'s standalone rates)');
         L.push('='.repeat(W));
         snap.unitChecks.forEach(c => {
             L.push(padR(c.name, 22) + padR(c.qty.toLocaleString() + ' ' + c.unit, 12) + padR('$' + c.unitCost.toFixed(2) + '/' + c.unit, 14) + padR('P25-P75: $' + c.p25.toFixed(2) + '-$' + c.p75.toFixed(2), 24) + c.status);
@@ -2339,7 +2502,7 @@ function exportComprehensiveText() {
         L.push('');
     }
 
-    // Analysis observations
+    // ── ANALYSIS OBSERVATIONS ──
     const analysis = generateAnalysis(snap);
     if (analysis.length > 0) {
         L.push('='.repeat(W));
@@ -2353,15 +2516,18 @@ function exportComprehensiveText() {
         });
     }
 
-    // Cost summary
+    // ── COST SUMMARY (sanity check — HeavyBid owns final bid pricing) ──
     L.push('='.repeat(W));
-    L.push('COST SUMMARY (Standard Tier)');
+    L.push('COST SUMMARY — CALCULATOR ESTIMATE (Standard Tier)');
+    L.push('Reference only — HeavyBid owns final cost buildup, overhead, and bid pricing');
     L.push('='.repeat(W));
     L.push('Labor & Equipment:  ' + fmt(snap.summary.totalLabor));
     L.push('Materials:          ' + fmt(snap.summary.totalMat));
     L.push('Direct Cost:        ' + fmt(snap.summary.directCost));
     L.push('Markup (' + snap.summary.markupPercent + '%):       ' + fmt(snap.summary.markupAmount));
-    L.push('BID PRICE:          ' + fmt(snap.summary.bidPrice));
+    L.push('Calculator Total:   ' + fmt(snap.summary.bidPrice));
+    L.push('');
+    L.push('Material Pricing: Asphalt 9.5mm $' + snap.settings.asphaltPrice + '/ton | 19mm Base $' + snap.settings.baseAsphaltPrice + '/ton | DGA $' + snap.settings.dgaPrice + '/ton');
 
     const text = L.join('\n');
     navigator.clipboard.writeText(text).then(() => {
