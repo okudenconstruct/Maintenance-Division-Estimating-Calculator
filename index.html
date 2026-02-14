@@ -339,7 +339,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v3.3 | Field-Calibrated | Three-Tier Output | Job Analysis Engine</span>
+            <span>v3.4 | Field-Calibrated | Three-Tier Output | Field Operations Intelligence</span>
         </div>
     </div>
     <div class="header-controls">
@@ -967,7 +967,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v3.3 | Field-Calibrated Production Rates | Job Analysis Engine | Full Export<br>
+    Maintenance Division Estimating Calculator v3.4 | Field-Calibrated Production Rates | Field Operations Intelligence | Full Export<br>
     All rates subject to superintendent review.
 </div>
 
@@ -1897,7 +1897,7 @@ function exportResults() {
     const markup = gv('markupPercent') || gv('markupPercent2');
 
     let lines = [];
-    lines.push('MAINTENANCE DIVISION ESTIMATE (v3.3)');
+    lines.push('MAINTENANCE DIVISION ESTIMATE (v3.4)');
     lines.push('='.repeat(70));
     lines.push('Project: ' + proj);
     lines.push('Generated: ' + new Date().toLocaleString());
@@ -2560,7 +2560,7 @@ function exportJSON() {
 }
 
 // ===== INIT =====
-const CALC_VERSION = '3.3';
+const CALC_VERSION = '3.4';
 
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('maintCalcRates');
