@@ -1375,7 +1375,7 @@ function calculateAll() {
         sv('ar_baseTons', baseTons);
         sv('ar_dgaTons', dgaTons);
         sv('ar_totalTons', totalAsphaltTons);
-        sv('ar_crewType', crewIsLarge ? '> 4T (Triaxle)' : '≤ 4T (Hot Box)');
+        sv('ar_crewType', crewIsLarge ? '> 4T (Triaxle + crew @ $' + crewRate.toFixed(2) + '/hr)' : '≤ 4T (Hot Box + crew @ $' + crewRate.toFixed(2) + '/hr)');
 
         const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
         const travelCost = travel * crewRate;
@@ -1991,11 +1991,22 @@ function generateAnalysis(snap) {
 
         // --- Quantity-based reasoning ---
         if (qtyRange) {
-            if (isHigh && qty < qtyRange.low) {
+            if (isHigh && qty <= qtyRange.low) {
                 reasons.push(`Small quantity (${qty.toLocaleString()} ${check.unit}) -- fixed crew mobilization is spread over fewer units, inflating per-unit cost. Typical jobs have ${qtyRange.low.toLocaleString()}+ ${check.unit}.`);
             }
             if (isLow && qty > qtyRange.high * 0.75) {
                 reasons.push(`Large quantity (${qty.toLocaleString()} ${check.unit}) -- crew mobilization is amortized over many units, reducing per-unit cost. This exceeds 75% of the typical high-end range.`);
+            }
+        }
+
+        // --- Minimum shift utilization check ---
+        const stdHrs = act.tiers?.std?.hours || 0;
+        if (stdHrs > 0 && act.rates?.prodPerDay && isHigh) {
+            const prodRate = act.rates.prodPerDay;
+            const rawProdHrs = (qty / prodRate) * snap.settings.stdShift;
+            if (rawProdHrs < 3.5 && stdHrs >= 4) {
+                const utilization = (rawProdHrs / stdHrs * 100).toFixed(0);
+                reasons.push(`Low shift utilization: actual production work is ~${rawProdHrs.toFixed(1)} hrs but snapped to a ${stdHrs.toFixed(0)}-hour minimum shift (${utilization}% utilization). The crew has capacity for more units in the same shift.`);
             }
         }
 
@@ -2010,7 +2021,6 @@ function generateAnalysis(snap) {
 
         // --- Travel-based reasoning ---
         const travel = act.inputs?.travel || 0;
-        const stdHrs = act.tiers?.std?.hours || 0;
         if (travel > 0 && stdHrs > 0) {
             const travelRatio = travel / stdHrs;
             if (isHigh && travelRatio > 0.25) {
@@ -2036,7 +2046,21 @@ function generateAnalysis(snap) {
                 reasons.push('Simple depth config (surface only) minimizes material layers and tonnage.');
             }
             if (act.crewType === 'large' && isHigh) {
-                reasons.push(`Total asphalt exceeds 4 tons, triggering the higher-rate triaxle crew ($${act.rates.crewRate.toFixed(2)}/hr) instead of the hot box crew.`);
+                reasons.push(`Total asphalt exceeds 4 tons (${act.tonnage.totalAsphaltTons}T), triggering the triaxle crew at $${act.rates.crewRate.toFixed(2)}/hr (includes truck rental) instead of the hot box crew.`);
+            }
+            // Material cost ratio check — asphalt material is typically a large portion of the total
+            if (act.costs && act.costs.total > 0) {
+                const matRatio = act.costs.material / act.costs.total;
+                const laborRatio = 1 - matRatio;
+                if (isLow && matRatio < 0.25) {
+                    reasons.push(`Material cost (${fmt(act.costs.material)}) is only ${(matRatio * 100).toFixed(0)}% of total cost. Low asphalt unit pricing (${snap.settings.asphaltPrice > 0 ? '$' + snap.settings.asphaltPrice.toFixed(2) + '/ton' : 'not set'}) may be driving the low $/SF. Verify asphalt pricing is current.`);
+                }
+                if (isLow && laborRatio > 0.75 && act.tonnage?.totalAsphaltTons > 4) {
+                    reasons.push(`Labor dominates at ${(laborRatio * 100).toFixed(0)}% of cost. The >4T triaxle crew rate ($${act.rates.crewRate.toFixed(2)}/hr) is being used, but the high production capacity for ${act.inputs.sf.toLocaleString()} SF keeps the labor-per-SF efficient.`);
+                }
+                if (isHigh && matRatio > 0.5 && layers >= 2) {
+                    reasons.push(`Material is ${(matRatio * 100).toFixed(0)}% of total cost — multi-layer depth configs concentrate more material cost per SF.`);
+                }
             }
         }
 
@@ -2055,6 +2079,10 @@ function generateAnalysis(snap) {
                 if (savedHrs > 0.5) {
                     reasons.push(`High concurrency: machine (${machineHrs.toFixed(1)}h) and hand work (${handHrs.toFixed(1)}h) overlap, saving ${savedHrs.toFixed(1)} hours vs. sequential work.`);
                 }
+            }
+            // For 4" line check specifically: if hand work dominates, the line cost carries shared crew time
+            if (isHigh && check.name === '4" Lines' && handHrs > machineHrs) {
+                reasons.push(`Hand work (${handHrs.toFixed(1)}h) exceeds machine line work (${machineHrs.toFixed(1)}h), so the crew shift is driven by hand items. The 4" line share of the crew cost includes time where the machine crew is waiting on hand work.`);
             }
         }
 
