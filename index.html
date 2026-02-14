@@ -297,6 +297,32 @@
             width: 60px !important; display: inline-block;
         }
         .note { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem; font-style: italic; }
+        .analysis-card {
+            background: var(--bg-primary); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; border-left: 3px solid var(--accent-orange);
+        }
+        .analysis-card.flag-low { border-left-color: var(--accent-blue); }
+        .analysis-card.flag-very-high, .analysis-card.flag-very-low { border-left-color: var(--accent-red); }
+        .analysis-card.flag-info { border-left-color: var(--accent-cyan); }
+        .analysis-card.flag-ok { border-left-color: var(--accent-green); }
+        .analysis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .analysis-header .activity-name { font-weight: 700; font-size: 0.85rem; }
+        .analysis-badge {
+            display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em;
+        }
+        .analysis-badge.high { background: rgba(255,167,38,0.15); color: var(--accent-orange); }
+        .analysis-badge.low { background: rgba(66,165,245,0.15); color: var(--accent-blue); }
+        .analysis-badge.very-high, .analysis-badge.very-low { background: rgba(239,83,80,0.15); color: var(--accent-red); }
+        .analysis-badge.info { background: rgba(38,198,218,0.15); color: var(--accent-cyan); }
+        .analysis-badge.ok { background: rgba(102,187,106,0.15); color: var(--accent-green); }
+        .analysis-benchmark { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.4rem; font-family: 'JetBrains Mono', monospace; }
+        .analysis-reasons { list-style: none; padding: 0; }
+        .analysis-reasons li {
+            font-size: 0.75rem; color: var(--text-secondary); padding: 0.2rem 0 0.2rem 1rem;
+            position: relative;
+        }
+        .analysis-reasons li::before { content: ''; position: absolute; left: 0; top: 0.55rem; width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
         @media (max-width: 768px) {
             .wt-grid, .wt-grid-wide, .rate-grid, .cost-grid { grid-template-columns: 1fr; }
             .settings-row { flex-direction: column; gap: 0.75rem; }
@@ -313,12 +339,14 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v3.1 | Field-Calibrated | Three-Tier Output | Striping Concurrency</span>
+            <span>v3.3 | Field-Calibrated | Three-Tier Output | Job Analysis Engine</span>
         </div>
     </div>
     <div class="header-controls">
         <button class="btn btn-primary" onclick="calculateAll()"><span>⚡</span> Calculate</button>
-        <button class="btn btn-secondary" onclick="exportResults()"><span>📋</span> Export</button>
+        <button class="btn btn-secondary" onclick="exportResults()"><span>📋</span> Quick Export</button>
+        <button class="btn btn-secondary" onclick="exportComprehensiveText()"><span>📄</span> Full Export</button>
+        <button class="btn btn-secondary" onclick="exportJSON()"><span>💾</span> JSON</button>
         <button class="btn btn-danger" onclick="resetForm()"><span>↺</span> Reset</button>
     </div>
 </header>
@@ -829,6 +857,17 @@
 </div>
 
 <!-- ============================================ -->
+<!-- JOB ANALYSIS -->
+<!-- ============================================ -->
+<div class="hb-summary" id="analysisSection" style="display:none; border-color: var(--accent-orange);">
+    <h2 style="color: var(--accent-orange);">🔍 Job Analysis</h2>
+    <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:1rem;">
+        Deterministic analysis of unit cost flags based on quantities, phases, travel, and production parameters relative to 347 historical jobs.
+    </p>
+    <div id="analysisBody"></div>
+</div>
+
+<!-- ============================================ -->
 <!-- COMBINED COST SUMMARY -->
 <!-- ============================================ -->
 <div class="cost-summary">
@@ -928,7 +967,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v3.2 | Field-Calibrated Production Rates | Shift Buffer Zones | Unit Cost Checks<br>
+    Maintenance Division Estimating Calculator v3.3 | Field-Calibrated Production Rates | Job Analysis Engine | Full Export<br>
     All rates subject to superintendent review.
 </div>
 
@@ -976,6 +1015,19 @@ const BENCHMARKS = {
     sb:  { name: 'Speed Bumps',      unit: 'UN', p25: 280.00, med: 350.00, p75: 500.00 },
     in_r:{ name: 'Inlet Repair',     unit: 'UN', p25: 750.00, med: 967.00, p75: 1200.00 },
     in_c:{ name: 'Inlet Reconstruct',unit: 'UN', p25: 800.00, med: 1053.00, p75: 1500.00 },
+};
+
+// Typical quantity ranges from historical data (for analysis engine)
+const QTY_RANGES = {
+    cf:  { low: 500, high: 10000 },
+    sc:  { low: 15000, high: 300000 },
+    st4: { low: 1000, high: 25000 },
+    ar:  { low: 50, high: 2000 },
+    ws:  { low: 5, high: 100 },
+    bo:  { low: 2, high: 20 },
+    sb:  { low: 2, high: 10 },
+    in_r:{ low: 1, high: 8 },
+    in_c:{ low: 1, high: 4 },
 };
 
 // Snap raw hours to next billing increment, with hustle detection at stdShift boundary
@@ -1171,6 +1223,7 @@ function calculateAll() {
 
     let hbRows = [];
     let unitChecks = [];
+    let snapshot = { activities: {} };
 
     // === CRACK FILLING ===
     if (isOn('en_crackfill')) {
@@ -1189,6 +1242,7 @@ function calculateAll() {
             sumLabor.cf = tier.std.hours * rate + travelCost;
             sumMat.cf = matCost;
             hbRows.push({ name: 'Crack Filling', tier, travel });
+            snapshot.activities.crackFill = { enabled: true, inputs: { lf, phases, travel }, rates: { crewRate: rate, prodPerDay: prod, crewSize: crew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.cf + sumMat.cf } };
         }
     } else { renderTierTable('cf_output', null); }
 
@@ -1209,6 +1263,7 @@ function calculateAll() {
             sumLabor.sc = tier.std.hours * rate + travelCost;
             sumMat.sc = matCost;
             hbRows.push({ name: 'Sealcoating', tier, travel });
+            snapshot.activities.sealcoat = { enabled: true, inputs: { sf, phases, travel }, rates: { crewRate: rate, prodPerDay: prod, crewSize: crew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
         }
     } else { renderTierTable('sc_output', null); }
 
@@ -1234,8 +1289,9 @@ function calculateAll() {
         ];
 
         let machineHrs = 0, handHrs = 0, totalMat = 0;
+        let lineItemData = [];
 
-        function calcStripingGroup(items) {
+        function calcStripingGroup(items, groupName) {
             let groupHrs = 0;
             items.forEach(item => {
                 const qty = gv(item.qtyId);
@@ -1248,12 +1304,13 @@ function calculateAll() {
                 sv(item.hrsId, itemHrs.toFixed(1));
                 sv(item.matOutId, fmt2(itemMat));
                 sv(item.prodOutId, prod.toLocaleString());
+                if (qty > 0) lineItemData.push({ id: item.qtyId, qty, prod, hours: itemHrs, matCost: itemMat, group: groupName });
             });
             return groupHrs;
         }
 
-        machineHrs = calcStripingGroup(machineItems);
-        handHrs = calcStripingGroup(handItems);
+        machineHrs = calcStripingGroup(machineItems, 'machine');
+        handHrs = calcStripingGroup(handItems, 'hand');
         const concurrentHrs = Math.max(machineHrs, handHrs);
 
         sv('st_machineHrs', machineHrs.toFixed(1));
@@ -1280,6 +1337,7 @@ function calculateAll() {
             sumLabor.st = stdR.hours * rate + travelCost;
             sumMat.st = totalMat;
             hbRows.push({ name: 'Striping', tier, travel, note: `Mach: ${machineHrs.toFixed(1)}h / Hand: ${handHrs.toFixed(1)}h / Concurrent: ${concurrentHrs.toFixed(1)}h` });
+            snapshot.activities.striping = { enabled: true, inputs: { phases, travel }, lineItems: lineItemData, concurrency: { machineHrs, handHrs, concurrentHrs }, rates: { crewRate: rate, crewSize: crew }, tiers: tier, costs: { laborShift: stdR.hours * rate, laborTravel: travelCost, material: totalMat, total: sumLabor.st + sumMat.st } };
         } else {
             renderTierTable('st_output', null);
         }
@@ -1326,6 +1384,7 @@ function calculateAll() {
             sumLabor.ar = tier.std.hours * crewRate + travelCost;
             sumMat.ar = totalMat;
             hbRows.push({ name: 'Asphalt Repair', tier, travel });
+            snapshot.activities.asphaltRepair = { enabled: true, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
         }
     } else {
         ['ar_surfTons','ar_baseTons','ar_dgaTons','ar_totalTons'].forEach(id => sv(id, '0'));
@@ -1383,6 +1442,7 @@ function calculateAll() {
             sumLabor.ma = tier.std.hours * crewRate + travelCost;
             sumMat.ma = material + machineRental;
             hbRows.push({ name: 'Mastic', tier, travel, note: `${boxesNeeded} boxes` });
+            snapshot.activities.mastic = { enabled: true, inputs: { lf, crackWidth, crackDepth, phases, travel }, boxCalc: { crossSection, lfPerBox, boxesNeeded }, rates: { crewRate, crewSize: crew, prodPerDay: prod, boxPrice, machinePerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, machineRental, material, total: sumLabor.ma + sumMat.ma } };
         } else {
             renderTierTable('ma_output', null);
         }
@@ -1423,6 +1483,7 @@ function calculateAll() {
             sumLabor.ws = totalLabor + travelCost;
             sumMat.ws = totalMatCost;
             hbRows.push({ name: 'Wheel Stops', tier, travel });
+            snapshot.activities.wheelStops = { enabled: true, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, prodPerDay }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
         } else {
             renderTierTable('ws_output', null);
         }
@@ -1449,6 +1510,7 @@ function calculateAll() {
             sumLabor.sg = tier.std.hours * crewRate + travelCost;
             sumMat.sg = matCost;
             hbRows.push({ name: 'Signs', tier, travel });
+            snapshot.activities.signs = { enabled: true, inputs: { postQty, bollQty, equivQty, phases, travel }, rates: { crewRate, crewSize: crew, prodPost, prodBoll }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sg + sumMat.sg } };
         } else {
             renderTierTable('sg_output', null);
         }
@@ -1470,6 +1532,7 @@ function calculateAll() {
             sumLabor.bo = tier.std.hours * crewRate + travelCost;
             sumMat.bo = matCost;
             hbRows.push({ name: 'Bollards', tier, travel });
+            snapshot.activities.bollards = { enabled: true, inputs: { qty, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.bo + sumMat.bo } };
         }
     } else { renderTierTable('bo_output', null); }
 
@@ -1489,6 +1552,7 @@ function calculateAll() {
             sumLabor.sb = tier.std.hours * crewRate + travelCost;
             sumMat.sb = matCost;
             hbRows.push({ name: 'Rubber Speed Bumps', tier, travel });
+            snapshot.activities.speedBumps = { enabled: true, inputs: { qty, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sb + sumMat.sb } };
         }
     } else { renderTierTable('sb_output', null); }
 
@@ -1511,6 +1575,7 @@ function calculateAll() {
             sumLabor.sh = tier.std.hours * crewRate + travelCost;
             sumMat.sh = matCost;
             hbRows.push({ name: 'Speed Humps', tier, travel });
+            snapshot.activities.speedHumps = { enabled: true, inputs: { qty, phases, travel }, tonnage: { tonsPerHump, totalTons: tons }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
         }
     } else {
         sv('sh_tons', '0');
@@ -1560,6 +1625,7 @@ function calculateAll() {
             sumLabor.in = stdR.hours * crewRate + travelCost;
             sumMat.in = totalMat;
             hbRows.push({ name: 'Inlet Repair', tier, travel });
+            snapshot.activities.inletRepair = { enabled: true, inputs: { repairQty, reconQty, castingQty, phases, travel }, rates: { crewRate, crewSize: crew, repairProd, hrsPerRecon }, combinedRawHrs: combinedHrs, tiers: tier, costs: { laborShift: stdR.hours * crewRate, laborTravel: travelCost, blockCost, castingCost, material: totalMat, total: sumLabor.in + sumMat.in } };
         } else {
             renderTierTable('in_output', null);
         }
@@ -1584,6 +1650,7 @@ function calculateAll() {
             sumLabor.pr = tier.std.hours * crewRate + travelCost;
             sumMat.pr = rental;
             hbRows.push({ name: 'Paint Removal', tier, travel, note: 'Grinder rental' });
+            snapshot.activities.paintRemoval = { enabled: true, inputs: { lf, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod, rentalPerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, rental, total: sumLabor.pr + sumMat.pr } };
         } else {
             renderTierTable('pr_output', null);
         }
@@ -1720,6 +1787,17 @@ function calculateAll() {
         ucSection.style.display = 'none';
     }
 
+    // === BUILD FINAL SNAPSHOT ===
+    snapshot.meta = { version: CALC_VERSION, timestamp: new Date().toISOString(), projectName: document.getElementById('projectName').value || 'Unnamed Project' };
+    snapshot.settings = { stdShift, maxShift, asphaltPrice, baseAsphaltPrice, dgaPrice, markupPercent: markup, wasteFactors: { cf: wf.cf, sc: wf.sc, st: wf.st, ar: wf.ar, ma: wf.ma, sh: wf.sh } };
+    snapshot.summary = { laborByType: { ...sumLabor }, materialByType: { ...sumMat }, totalLabor, totalMat, directCost, markupPercent: markup, markupAmount: markupAmt, bidPrice: directCost + markupAmt };
+    snapshot.hbRows = hbRows;
+    snapshot.unitChecks = unitChecks;
+    window.lastCalcSnapshot = snapshot;
+
+    // === RENDER JOB ANALYSIS ===
+    renderAnalysis();
+
     checkAsphaltPrices();
 }
 
@@ -1819,7 +1897,7 @@ function exportResults() {
     const markup = gv('markupPercent') || gv('markupPercent2');
 
     let lines = [];
-    lines.push('MAINTENANCE DIVISION ESTIMATE (v3.2 Buffer Zone Shifts)');
+    lines.push('MAINTENANCE DIVISION ESTIMATE (v3.3)');
     lines.push('='.repeat(70));
     lines.push('Project: ' + proj);
     lines.push('Generated: ' + new Date().toLocaleString());
@@ -1876,8 +1954,419 @@ function padR(str, len) {
     return str.length >= len ? str : str + ' '.repeat(len - str.length);
 }
 
+// ===== JOB ANALYSIS ENGINE =====
+function generateAnalysis(snap) {
+    if (!snap || !snap.unitChecks || snap.unitChecks.length === 0) return [];
+    const observations = [];
+    const acts = snap.activities;
+    const activeCount = Object.values(acts).filter(a => a && a.enabled).length;
+    const totalStdHrs = snap.hbRows.reduce((s, r) => s + r.tier.std.hours, 0);
+    const totalTravel = snap.hbRows.reduce((s, r) => s + (r.travel || 0), 0);
+
+    // Map unit check names back to snapshot keys and QTY_RANGES keys
+    const checkMap = {
+        'Crack Fill':       { actKey: 'crackFill',    qtyKey: 'cf',  getQty: () => acts.crackFill?.inputs?.lf },
+        'Sealcoat':         { actKey: 'sealcoat',     qtyKey: 'sc',  getQty: () => acts.sealcoat?.inputs?.sf },
+        '4" Lines':         { actKey: 'striping',     qtyKey: 'st4', getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_4line')?.qty },
+        'Asphalt Repair':   { actKey: 'asphaltRepair',qtyKey: 'ar',  getQty: () => acts.asphaltRepair?.inputs?.sf },
+        'Wheel Stops (new)':{ actKey: 'wheelStops',   qtyKey: 'ws',  getQty: () => acts.wheelStops?.inputs?.newQty },
+        'Bollards':         { actKey: 'bollards',     qtyKey: 'bo',  getQty: () => acts.bollards?.inputs?.qty },
+        'Speed Bumps':      { actKey: 'speedBumps',   qtyKey: 'sb',  getQty: () => acts.speedBumps?.inputs?.qty },
+        'Inlet Repair':     { actKey: 'inletRepair',  qtyKey: 'in_r',getQty: () => acts.inletRepair?.inputs?.repairQty },
+        'Inlet Reconstruct':{ actKey: 'inletRepair',  qtyKey: 'in_c',getQty: () => acts.inletRepair?.inputs?.reconQty },
+    };
+
+    snap.unitChecks.forEach(check => {
+        if (check.status === 'IN RANGE') return;
+        const mapping = checkMap[check.name];
+        if (!mapping) return;
+        const act = acts[mapping.actKey];
+        if (!act || !act.enabled) return;
+
+        const reasons = [];
+        const isHigh = check.status.includes('HIGH');
+        const isLow = check.status.includes('LOW');
+        const qtyRange = QTY_RANGES[mapping.qtyKey];
+        const qty = check.qty;
+
+        // --- Quantity-based reasoning ---
+        if (qtyRange) {
+            if (isHigh && qty < qtyRange.low) {
+                reasons.push(`Small quantity (${qty.toLocaleString()} ${check.unit}) -- fixed crew mobilization is spread over fewer units, inflating per-unit cost. Typical jobs have ${qtyRange.low.toLocaleString()}+ ${check.unit}.`);
+            }
+            if (isLow && qty > qtyRange.high * 0.75) {
+                reasons.push(`Large quantity (${qty.toLocaleString()} ${check.unit}) -- crew mobilization is amortized over many units, reducing per-unit cost. This exceeds 75% of the typical high-end range.`);
+            }
+        }
+
+        // --- Phase-based reasoning ---
+        const phases = act.inputs?.phases;
+        if (phases && phases > 1 && isHigh) {
+            reasons.push(`Multiple phases (${phases}) means ${phases} separate mobilizations, adding setup/breakdown overhead that wouldn't exist in a single-visit job.`);
+        }
+        if (phases === 1 && isLow) {
+            reasons.push('Single-phase job minimizes setup and breakdown overhead.');
+        }
+
+        // --- Travel-based reasoning ---
+        const travel = act.inputs?.travel || 0;
+        const stdHrs = act.tiers?.std?.hours || 0;
+        if (travel > 0 && stdHrs > 0) {
+            const travelRatio = travel / stdHrs;
+            if (isHigh && travelRatio > 0.25) {
+                reasons.push(`Travel time (${travel.toFixed(1)} hrs) represents ${(travelRatio * 100).toFixed(0)}% of production hours (${stdHrs.toFixed(1)} hrs), significantly increasing per-unit cost.`);
+            }
+        }
+        if (travel === 0 && isLow) {
+            reasons.push('Zero travel time keeps costs purely production-driven.');
+        }
+
+        // --- Asphalt-specific reasoning ---
+        if (mapping.actKey === 'asphaltRepair' && act.inputs?.depthConfig) {
+            const dc = act.inputs.depthConfig;
+            const layers = (dc.includes('2s') ? 1 : 0) + (dc.includes('4b') ? 1 : 0) + (dc.includes('d') ? 1 : 0);
+            if (isHigh && layers >= 2) {
+                const layerNames = [];
+                if (dc.includes('2s')) layerNames.push('9.5mm surface');
+                if (dc.includes('4b')) layerNames.push('19mm base');
+                if (dc.includes('d')) layerNames.push('DGA');
+                reasons.push(`Multi-layer depth config (${layerNames.join(' + ')}) increases material tonnage and cost per SF compared to surface-only jobs.`);
+            }
+            if (isLow && layers === 1) {
+                reasons.push('Simple depth config (surface only) minimizes material layers and tonnage.');
+            }
+            if (act.crewType === 'large' && isHigh) {
+                reasons.push(`Total asphalt exceeds 4 tons, triggering the higher-rate triaxle crew ($${act.rates.crewRate.toFixed(2)}/hr) instead of the hot box crew.`);
+            }
+        }
+
+        // --- Mastic-specific reasoning ---
+        if (mapping.actKey === 'mastic' && act.boxCalc) {
+            if (isHigh && act.inputs.crackWidth * act.inputs.crackDepth > 1.0) {
+                reasons.push(`Large crack cross-section (${act.inputs.crackWidth}" x ${act.inputs.crackDepth}") reduces coverage to ${act.boxCalc.lfPerBox.toFixed(1)} LF/box, increasing material cost per LF.`);
+            }
+        }
+
+        // --- Striping concurrency reasoning ---
+        if (mapping.actKey === 'striping' && act.concurrency) {
+            const { machineHrs, handHrs, concurrentHrs } = act.concurrency;
+            if (isLow && machineHrs > 0 && handHrs > 0) {
+                const savedHrs = (machineHrs + handHrs) - concurrentHrs;
+                if (savedHrs > 0.5) {
+                    reasons.push(`High concurrency: machine (${machineHrs.toFixed(1)}h) and hand work (${handHrs.toFixed(1)}h) overlap, saving ${savedHrs.toFixed(1)} hours vs. sequential work.`);
+                }
+            }
+        }
+
+        // --- Wheel stop mixed ops ---
+        if (mapping.actKey === 'wheelStops' && act.inputs) {
+            const { newQty, resetQty, removeQty } = act.inputs;
+            const opTypes = [newQty > 0, resetQty > 0, removeQty > 0].filter(Boolean).length;
+            if (opTypes > 1 && isHigh) {
+                reasons.push(`Blended rate from ${opTypes} operation types (${newQty > 0 ? 'install' : ''}${resetQty > 0 ? ', reset' : ''}${removeQty > 0 ? ', remove' : ''}) affects the per-unit cost calculation.`.replace(', ,', ',').replace('(, ', '('));
+            }
+        }
+
+        // --- Signs with bollard mounts ---
+        if (mapping.actKey === 'signs' && act.inputs?.bollQty > 0 && isHigh) {
+            reasons.push(`Includes ${act.inputs.bollQty} bollard-mounted sign(s) at slower production rate (${act.rates.prodBoll}/day vs ${act.rates.prodPost}/day for post signs), plus bollard material cost.`);
+        }
+
+        // If no specific reasons found, provide a generic one
+        if (reasons.length === 0) {
+            if (isHigh) reasons.push('Unit cost is above the P75 benchmark. Review quantities and rates for this activity.');
+            if (isLow) reasons.push('Unit cost is below the P25 benchmark. Verify production rates are achievable for this scope.');
+        }
+
+        observations.push({
+            activity: check.name,
+            flag: check.status,
+            qty: check.qty,
+            unit: check.unit,
+            unitCost: check.unitCost,
+            benchmark: { p25: check.p25, med: check.med, p75: check.p75 },
+            reasons
+        });
+    });
+
+    // === Cross-activity observations ===
+    const flaggedHigh = snap.unitChecks.filter(c => c.status.includes('HIGH')).length;
+    const flaggedLow = snap.unitChecks.filter(c => c.status.includes('LOW')).length;
+    const totalChecks = snap.unitChecks.length;
+
+    if (activeCount > 1 && totalTravel > 0) {
+        observations.push({
+            activity: 'Cross-Activity', flag: 'INFO', reasons: [
+                `${activeCount} activities share this job. Travel is bid per-activity (${totalTravel.toFixed(1)} hrs total), but in practice crews may share travel, making actual per-unit costs lower than calculated.`
+            ]
+        });
+    }
+
+    if (snap.summary.directCost > 10000 || totalStdHrs > 40) {
+        observations.push({
+            activity: 'Job Scale', flag: 'INFO', reasons: [
+                `Large job scope (${fmt(snap.summary.directCost)} direct cost, ${totalStdHrs.toFixed(1)} std hours across ${activeCount} activities). Volume generally validates competitive unit pricing.`
+            ]
+        });
+    }
+
+    if (totalChecks > 2 && flaggedHigh > totalChecks * 0.5) {
+        observations.push({
+            activity: 'Pattern', flag: 'INFO', reasons: [
+                `${flaggedHigh} of ${totalChecks} benchmarked activities are flagged HIGH. This may indicate the job has unusual conditions (small scope, multiple phases, high travel) or pricing that needs review.`
+            ]
+        });
+    }
+    if (totalChecks > 2 && flaggedLow > totalChecks * 0.5) {
+        observations.push({
+            activity: 'Pattern', flag: 'INFO', reasons: [
+                `${flaggedLow} of ${totalChecks} benchmarked activities are flagged LOW. This suggests a high-volume job where economies of scale are working across the board.`
+            ]
+        });
+    }
+
+    if (observations.length === 0 && totalChecks > 0) {
+        observations.push({
+            activity: 'All Activities', flag: 'OK', reasons: [
+                'All calculated unit costs fall within the P25-P75 historical range. Pricing appears consistent with comparable jobs.'
+            ]
+        });
+    }
+
+    return observations;
+}
+
+// ===== RENDER ANALYSIS =====
+function renderAnalysis() {
+    const section = document.getElementById('analysisSection');
+    const body = document.getElementById('analysisBody');
+    if (!section || !body) return;
+
+    const snap = window.lastCalcSnapshot;
+    if (!snap || !snap.unitChecks || snap.unitChecks.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    const observations = generateAnalysis(snap);
+    if (observations.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    let html = '';
+
+    observations.forEach(obs => {
+        const flagLower = obs.flag.toLowerCase().replace(' ', '-');
+        const badgeClass = flagLower.includes('high') ? (flagLower === 'very-high' ? 'very-high' : 'high') :
+                           flagLower.includes('low') ? (flagLower === 'very-low' ? 'very-low' : 'low') :
+                           flagLower === 'info' ? 'info' : 'ok';
+
+        html += `<div class="analysis-card flag-${badgeClass}">`;
+        html += `<div class="analysis-header">`;
+        html += `<span class="activity-name">${obs.activity}</span>`;
+        html += `<span class="analysis-badge ${badgeClass}">${obs.flag}</span>`;
+        html += `</div>`;
+
+        if (obs.unitCost !== undefined && obs.benchmark) {
+            html += `<div class="analysis-benchmark">$${obs.unitCost.toFixed(2)}/${obs.unit} &nbsp;|&nbsp; Benchmark: $${obs.benchmark.p25.toFixed(2)} - $${obs.benchmark.med.toFixed(2)} - $${obs.benchmark.p75.toFixed(2)}</div>`;
+        }
+
+        html += `<ul class="analysis-reasons">`;
+        obs.reasons.forEach(r => { html += `<li>${r}</li>`; });
+        html += `</ul></div>`;
+    });
+
+    body.innerHTML = html;
+}
+
+// ===== COMPREHENSIVE EXPORT (Text) =====
+function exportComprehensiveText() {
+    const snap = window.lastCalcSnapshot;
+    if (!snap) { showToast('Calculate first'); return; }
+    const L = [];
+    const W = 80;
+
+    L.push('MAINTENANCE DIVISION ESTIMATE - FULL REPORT (v' + snap.meta.version + ')');
+    L.push('='.repeat(W));
+    L.push('Project: ' + snap.meta.projectName);
+    L.push('Generated: ' + new Date().toLocaleString());
+    L.push('Standard Shift: ' + snap.settings.stdShift + 'h | Max Shift: ' + snap.settings.maxShift + 'h');
+    L.push('Asphalt 9.5mm: $' + snap.settings.asphaltPrice + '/ton | 19mm Base: $' + snap.settings.baseAsphaltPrice + '/ton | DGA: $' + snap.settings.dgaPrice + '/ton');
+    L.push('Markup: ' + snap.settings.markupPercent + '%');
+    L.push('');
+
+    // Per-activity details
+    const actNames = {
+        crackFill: 'CRACK FILLING', sealcoat: 'SEALCOATING', striping: 'STRIPING',
+        asphaltRepair: 'ASPHALT REPAIRS', mastic: 'MASTIC CRACK FILL', wheelStops: 'WHEEL STOPS',
+        signs: 'SIGNS', bollards: 'BOLLARDS', speedBumps: 'RUBBER SPEED BUMPS',
+        speedHumps: 'SPEED HUMPS', inletRepair: 'INLET REPAIR', paintRemoval: 'PAINT REMOVAL'
+    };
+
+    Object.entries(snap.activities).forEach(([key, act]) => {
+        if (!act || !act.enabled) return;
+        const name = actNames[key] || key;
+        L.push('-'.repeat(W));
+        L.push(name);
+        L.push('-'.repeat(W));
+
+        // Inputs
+        const inp = act.inputs || {};
+        const inputParts = [];
+        if (inp.lf !== undefined) inputParts.push('Qty: ' + inp.lf.toLocaleString() + ' LF');
+        if (inp.sf !== undefined) inputParts.push('Qty: ' + inp.sf.toLocaleString() + ' SF');
+        if (inp.qty !== undefined) inputParts.push('Qty: ' + inp.qty.toLocaleString());
+        if (inp.newQty !== undefined) inputParts.push('New: ' + inp.newQty + ', Reset: ' + inp.resetQty + ', Remove: ' + inp.removeQty);
+        if (inp.postQty !== undefined) inputParts.push('Post: ' + inp.postQty + ', Bollard: ' + inp.bollQty);
+        if (inp.repairQty !== undefined) inputParts.push('Repair: ' + inp.repairQty + ', Reconstruct: ' + inp.reconQty + ', Castings: ' + inp.castingQty);
+        if (inp.phases) inputParts.push('Phases: ' + inp.phases);
+        if (inp.travel) inputParts.push('Travel: ' + inp.travel + 'h');
+        if (inp.depthConfig) inputParts.push('Depth: ' + inp.depthConfig);
+        if (inp.crackWidth) inputParts.push('Crack: ' + inp.crackWidth + '" x ' + inp.crackDepth + '"');
+        L.push('  ' + inputParts.join(' | '));
+
+        // Rates
+        if (act.rates) {
+            const rateParts = [];
+            if (act.rates.crewSize) rateParts.push('Crew: ' + act.rates.crewSize);
+            if (act.rates.crewRate) rateParts.push('Rate: $' + act.rates.crewRate.toFixed(2) + '/hr');
+            if (act.rates.prodPerDay) rateParts.push('Prod: ' + act.rates.prodPerDay.toLocaleString() + '/day');
+            L.push('  ' + rateParts.join(' | '));
+        }
+
+        // Tonnage (asphalt/speed humps)
+        if (act.tonnage) {
+            const t = act.tonnage;
+            if (t.surfTons !== undefined) {
+                L.push('  Tonnage: Surface ' + t.surfTons + 'T, Base ' + t.baseTons + 'T, DGA ' + t.dgaTons + 'T (Total Asphalt: ' + t.totalAsphaltTons + 'T)');
+            } else {
+                L.push('  Tonnage: ' + t.totalTons + 'T (' + t.tonsPerHump + 'T/hump)');
+            }
+        }
+
+        // Mastic box calc
+        if (act.boxCalc) {
+            L.push('  Box Calc: ' + act.boxCalc.lfPerBox.toFixed(1) + ' LF/box, ' + act.boxCalc.boxesNeeded + ' boxes needed');
+        }
+
+        // Striping line items
+        if (act.lineItems && act.lineItems.length > 0) {
+            L.push('  Line Items:');
+            act.lineItems.forEach(li => {
+                L.push('    ' + padR(li.id.replace('st_', ''), 12) + padR(li.qty.toLocaleString(), 10) + padR(li.hours.toFixed(1) + 'h', 8) + fmt(li.matCost) + ' mat  [' + li.group + ']');
+            });
+            L.push('  Concurrency: Machine ' + act.concurrency.machineHrs.toFixed(1) + 'h | Hand ' + act.concurrency.handHrs.toFixed(1) + 'h | Effective ' + act.concurrency.concurrentHrs.toFixed(1) + 'h');
+        }
+
+        // Three-tier hours
+        if (act.tiers) {
+            L.push('  Three-Tier:');
+            L.push('    Conservative: ' + act.tiers.cons.hours.toFixed(1) + 'h / ' + act.tiers.cons.days + ' days');
+            L.push('    Standard:     ' + act.tiers.std.hours.toFixed(1) + 'h / ' + act.tiers.std.days + ' days' + (act.tiers.std.hustle ? ' (hustle)' : ''));
+            L.push('    Aggressive:   ' + act.tiers.agg.hours.toFixed(1) + 'h / ' + act.tiers.agg.days + ' days');
+        }
+
+        // Cost breakdown
+        if (act.costs) {
+            L.push('  Costs:');
+            if (act.costs.laborShift !== undefined) L.push('    Labor (shift):  ' + fmt(act.costs.laborShift));
+            if (act.costs.laborTotal !== undefined) L.push('    Labor (total):  ' + fmt(act.costs.laborTotal));
+            if (act.costs.laborTravel > 0) L.push('    Labor (travel): ' + fmt(act.costs.laborTravel));
+            if (act.costs.material !== undefined) L.push('    Material:       ' + fmt(act.costs.material));
+            if (act.costs.machineRental) L.push('    Machine Rental: ' + fmt(act.costs.machineRental));
+            if (act.costs.rental) L.push('    Grinder Rental: ' + fmt(act.costs.rental));
+            L.push('    TOTAL:          ' + fmt(act.costs.total));
+        }
+        L.push('');
+    });
+
+    // Estimate summary table
+    if (snap.hbRows.length > 0) {
+        L.push('='.repeat(W));
+        L.push('ESTIMATE SUMMARY (THREE-TIER)');
+        L.push('='.repeat(W));
+        L.push(padR('Activity', 22) + padR('Crew', 6) + padR('Cons', 9) + padR('Std', 9) + padR('Agg', 9) + padR('Travel', 8));
+        L.push('-'.repeat(W));
+        let totC = 0, totS = 0, totA = 0, totT = 0;
+        snap.hbRows.forEach(r => {
+            const c = r.tier.cons.hours, s = r.tier.std.hours, a = r.tier.agg.hours, tv = r.travel || 0;
+            totC += c; totS += s; totA += a; totT += tv;
+            L.push(padR(r.name, 22) + padR(r.tier.std.crew, 6) + padR(c.toFixed(1) + 'h', 9) + padR(s.toFixed(1) + 'h', 9) + padR(a.toFixed(1) + 'h', 9) + padR(tv > 0 ? tv.toFixed(1) + 'h' : '-', 8));
+        });
+        L.push('-'.repeat(W));
+        L.push(padR('TOTAL', 22) + padR('-', 6) + padR(totC.toFixed(1) + 'h', 9) + padR(totS.toFixed(1) + 'h', 9) + padR(totA.toFixed(1) + 'h', 9) + padR(totT > 0 ? totT.toFixed(1) + 'h' : '-', 8));
+        L.push('');
+    }
+
+    // Unit cost checks
+    if (snap.unitChecks.length > 0) {
+        L.push('='.repeat(W));
+        L.push('UNIT COST REASONABLENESS CHECK');
+        L.push('='.repeat(W));
+        snap.unitChecks.forEach(c => {
+            L.push(padR(c.name, 22) + padR(c.qty.toLocaleString() + ' ' + c.unit, 12) + padR('$' + c.unitCost.toFixed(2) + '/' + c.unit, 14) + padR('P25-P75: $' + c.p25.toFixed(2) + '-$' + c.p75.toFixed(2), 24) + c.status);
+        });
+        L.push('');
+    }
+
+    // Analysis observations
+    const analysis = generateAnalysis(snap);
+    if (analysis.length > 0) {
+        L.push('='.repeat(W));
+        L.push('JOB ANALYSIS');
+        L.push('='.repeat(W));
+        analysis.forEach(obs => {
+            const header = obs.unitCost !== undefined ? `[${obs.flag}] ${obs.activity} - $${obs.unitCost.toFixed(2)}/${obs.unit}` : `[${obs.flag}] ${obs.activity}`;
+            L.push(header);
+            obs.reasons.forEach(r => { L.push('  - ' + r); });
+            L.push('');
+        });
+    }
+
+    // Cost summary
+    L.push('='.repeat(W));
+    L.push('COST SUMMARY (Standard Tier)');
+    L.push('='.repeat(W));
+    L.push('Labor & Equipment:  ' + fmt(snap.summary.totalLabor));
+    L.push('Materials:          ' + fmt(snap.summary.totalMat));
+    L.push('Direct Cost:        ' + fmt(snap.summary.directCost));
+    L.push('Markup (' + snap.summary.markupPercent + '%):       ' + fmt(snap.summary.markupAmount));
+    L.push('BID PRICE:          ' + fmt(snap.summary.bidPrice));
+
+    const text = L.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Full report copied to clipboard!');
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Full report copied to clipboard!');
+    });
+}
+
+// ===== JSON EXPORT =====
+function exportJSON() {
+    const snap = window.lastCalcSnapshot;
+    if (!snap) { showToast('Calculate first'); return; }
+    snap.analysis = generateAnalysis(snap);
+    const json = JSON.stringify(snap, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (snap.meta.projectName.replace(/[^a-zA-Z0-9]/g, '_') || 'estimate') + '_' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('JSON exported!');
+}
+
 // ===== INIT =====
-const CALC_VERSION = '3.2';
+const CALC_VERSION = '3.3';
 
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('maintCalcRates');
