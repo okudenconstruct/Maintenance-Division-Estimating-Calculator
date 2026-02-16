@@ -1126,29 +1126,58 @@ const SHIFT_INCREMENTS = [4, 6, 8, 10, 12];
 const HUSTLE_THRESHOLD = 0.5;
 
 // Historical benchmark ranges (P25/median/P75) from 347 jobs
+// Basis: ADJUSTED = tuned empirical, EMPIRICAL = raw dataset, DERIVED = calculated from crew/rates/material
 const BENCHMARKS = {
-    cf:  { name: 'Crack Fill',       unit: 'LF', p25: 0.60, med: 1.05, p75: 2.20 },
-    sc:  { name: 'Sealcoat',         unit: 'SF', p25: 0.07, med: 0.10, p75: 0.14 },
-    st4: { name: '4" Lines',         unit: 'LF', p25: 0.20, med: 0.32, p75: 0.55 },
-    ar:  { name: 'Asphalt Repair',   unit: 'SF', p25: 14.00, med: 22.00, p75: 35.00 },
-    ws:  { name: 'Wheel Stops (new)',unit: 'UN', p25: 75.00, med: 95.00, p75: 130.00 },
-    bo:  { name: 'Bollards',         unit: 'UN', p25: 400.00, med: 550.00, p75: 750.00 },
-    sb:  { name: 'Speed Bumps',      unit: 'UN', p25: 280.00, med: 350.00, p75: 500.00 },
-    in_r:{ name: 'Inlet Repair',     unit: 'UN', p25: 750.00, med: 967.00, p75: 1200.00 },
-    in_c:{ name: 'Inlet Reconstruct',unit: 'UN', p25: 800.00, med: 1053.00, p75: 1500.00 },
+    cf:   { name: 'Crack Fill',          unit: 'LF', p25: 0.60,   med: 1.05,   p75: 2.20   },  // ADJUSTED (n=52)
+    sc:   { name: 'Sealcoat',            unit: 'SF', p25: 0.07,   med: 0.10,   p75: 0.14   },  // ADJUSTED (n=40)
+    st4:  { name: '4" Lines',            unit: 'LF', p25: 0.20,   med: 0.32,   p75: 0.55   },  // ADJUSTED (n=63)
+    st6:  { name: '6" Lines',            unit: 'LF', p25: 0.40,   med: 0.65,   p75: 1.20   },  // DERIVED (interpolated)
+    st12: { name: '12" Lines',           unit: 'LF', p25: 1.68,   med: 1.93,   p75: 5.86   },  // EMPIRICAL (n=7)
+    st24: { name: '24" Lines',           unit: 'LF', p25: 1.75,   med: 4.05,   p75: 8.36   },  // EMPIRICAL (n=10)
+    stAr: { name: 'Arrows',             unit: 'EA', p25: 20.27,  med: 25.62,  p75: 34.94  },  // EMPIRICAL (n=30)
+    stHC: { name: 'HC Symbols',          unit: 'EA', p25: 25.28,  med: 45.66,  p75: 71.36  },  // EMPIRICAL (n=38)
+    stSt: { name: 'Stencils',           unit: 'EA', p25: 11.00,  med: 22.09,  p75: 43.02  },  // EMPIRICAL (n=20)
+    stCb: { name: 'Curb Paint',          unit: 'LF', p25: 0.43,   med: 0.91,   p75: 1.80   },  // EMPIRICAL (n=6)
+    ar:   { name: 'Asphalt Repair',      unit: 'SF', p25: 14.00,  med: 22.00,  p75: 35.00  },  // ADJUSTED
+    ma:   { name: 'Mastic Crack Fill',   unit: 'LF', p25: 5.50,   med: 6.50,   p75: 8.50   },  // DERIVED (crew + material + rental)
+    ws:   { name: 'Wheel Stops (new)',   unit: 'UN', p25: 75.00,  med: 95.00,  p75: 130.00 },  // ADJUSTED
+    ws_r: { name: 'Wheel Stops (reset)', unit: 'UN', p25: 25.00,  med: 45.00,  p75: 75.00  },  // DERIVED
+    ws_rm:{ name: 'Wheel Stops (remove)',unit: 'UN', p25: 30.00,  med: 50.00,  p75: 90.00  },  // DERIVED
+    sg_sm:{ name: 'Signs (small)',       unit: 'UN', p25: 120.00, med: 200.00, p75: 350.00 },  // DERIVED (heavy crew + material)
+    sg_lg:{ name: 'Signs (large)',       unit: 'UN', p25: 280.00, med: 425.00, p75: 650.00 },  // DERIVED (heavy crew + material)
+    bo:   { name: 'Bollards',            unit: 'UN', p25: 400.00, med: 550.00, p75: 750.00 },  // ADJUSTED
+    sb:   { name: 'Speed Bumps',         unit: 'UN', p25: 280.00, med: 350.00, p75: 500.00 },  // ADJUSTED
+    sh:   { name: 'Speed Humps',         unit: 'UN', p25: 750.00, med: 950.00, p75: 1400.00},  // DERIVED (crew + asphalt tonnage)
+    in_r: { name: 'Inlet Repair',        unit: 'UN', p25: 750.00, med: 967.00, p75: 1200.00},  // ADJUSTED
+    in_c: { name: 'Inlet Reconstruct',   unit: 'UN', p25: 800.00, med: 1053.00,p75: 1500.00},  // ADJUSTED
+    pr:   { name: 'Paint Removal',       unit: 'LF', p25: 0.55,   med: 0.85,   p75: 1.50   },  // DERIVED (crew + grinder rental)
 };
 
 // Typical quantity ranges from historical data (for analysis engine)
 const QTY_RANGES = {
-    cf:  { low: 500, high: 10000 },
-    sc:  { low: 15000, high: 300000 },
-    st4: { low: 1000, high: 25000 },
-    ar:  { low: 50, high: 2000 },
-    ws:  { low: 5, high: 100 },
-    bo:  { low: 2, high: 20 },
-    sb:  { low: 2, high: 10 },
-    in_r:{ low: 1, high: 8 },
-    in_c:{ low: 1, high: 4 },
+    cf:   { low: 500, high: 10000 },
+    sc:   { low: 15000, high: 300000 },
+    st4:  { low: 1000, high: 25000 },
+    st6:  { low: 500, high: 15000 },
+    st12: { low: 200, high: 5000 },
+    st24: { low: 100, high: 3000 },
+    stAr: { low: 5, high: 50 },
+    stHC: { low: 2, high: 30 },
+    stSt: { low: 5, high: 50 },
+    stCb: { low: 200, high: 5000 },
+    ar:   { low: 50, high: 2000 },
+    ma:   { low: 500, high: 5000 },
+    ws:   { low: 5, high: 100 },
+    ws_r: { low: 5, high: 100 },
+    ws_rm:{ low: 5, high: 50 },
+    sg_sm:{ low: 2, high: 20 },
+    sg_lg:{ low: 1, high: 10 },
+    bo:   { low: 2, high: 20 },
+    sb:   { low: 2, high: 10 },
+    sh:   { low: 1, high: 8 },
+    in_r: { low: 1, high: 8 },
+    in_c: { low: 1, high: 4 },
+    pr:   { low: 500, high: 5000 },
 };
 
 // Crew Clustering: activities that share equipment and crew deploy as one physical crew
@@ -2046,25 +2075,77 @@ function calculateAll() {
     if (gv('cf_lf') > 0) addCheck('cf', gv('cf_lf'), sumLabor.cf + sumMat.cf);
     // Sealcoat
     if (gv('sc_sf') > 0) addCheck('sc', gv('sc_sf'), sumLabor.sc + sumMat.sc);
-    // Striping - use 4" lines as primary benchmark
-    if (gv('st_4line') > 0) {
-        const st4Qty = gv('st_4line');
-        const totalStQty = gv('st_4line') + gv('st_6line') + gv('st_12line') + gv('st_24bar');
-        const st4Frac = totalStQty > 0 ? st4Qty / totalStQty : 1;
-        addCheck('st4', st4Qty, (sumLabor.st + sumMat.st) * st4Frac);
+
+    // Striping — benchmark each line item individually
+    // Labor apportioned by raw hours share: (itemHrs / totalRawHrs) × (shiftLabor + travel)
+    if (isOn('en_striping') && snapshot.activities.striping?.lineItems?.length > 0) {
+        const stSnap = snapshot.activities.striping;
+        const totalRawHrs = stSnap.lineItems.reduce((s, li) => s + li.hours, 0);
+        const totalLaborPlusTravel = sumLabor.st; // includes shift + travel
+
+        const stBenchMap = [
+            { qtyId: 'st_4line',   benchKey: 'st4'  },
+            { qtyId: 'st_6line',   benchKey: 'st6'  },
+            { qtyId: 'st_12line',  benchKey: 'st12' },
+            { qtyId: 'st_24bar',   benchKey: 'st24' },
+            { qtyId: 'st_hc',      benchKey: 'stHC' },
+            { qtyId: 'st_arrow',   benchKey: 'stAr' },
+            { qtyId: 'st_stencil', benchKey: 'stSt' },
+            { qtyId: 'st_curb',    benchKey: 'stCb' },
+        ];
+
+        stBenchMap.forEach(({ qtyId, benchKey }) => {
+            const li = stSnap.lineItems.find(i => i.id === qtyId);
+            if (li && li.qty > 0 && totalRawHrs > 0) {
+                const laborShare = (li.hours / totalRawHrs) * totalLaborPlusTravel;
+                addCheck(benchKey, li.qty, laborShare + li.matCost);
+            }
+        });
     }
+
     // Asphalt repair
     if (gv('ar_sf') > 0) addCheck('ar', gv('ar_sf'), sumLabor.ar + sumMat.ar);
-    // Wheel stops (new only)
-    if (gv('ws_new') > 0) addCheck('ws', gv('ws_new'), (sumLabor.ws + sumMat.ws) * (gv('ws_new') / (gv('ws_new') + gv('ws_reset') + gv('ws_remove'))));
+    // Mastic
+    if (gv('ma_lf') > 0) addCheck('ma', gv('ma_lf'), sumLabor.ma + sumMat.ma);
+
+    // Wheel stops — separate benchmarks for new, reset, remove
+    if (isOn('en_wheelstop')) {
+        const wsNew = gv('ws_new'), wsReset = gv('ws_reset'), wsRemove = gv('ws_remove');
+        const wsTotal = wsNew + wsReset + wsRemove;
+        if (wsTotal > 0) {
+            if (wsNew > 0)    addCheck('ws',    wsNew,    (sumLabor.ws + sumMat.ws) * (wsNew / wsTotal));
+            if (wsReset > 0)  addCheck('ws_r',  wsReset,  (sumLabor.ws + sumMat.ws) * (wsReset / wsTotal));
+            if (wsRemove > 0) addCheck('ws_rm', wsRemove, (sumLabor.ws + sumMat.ws) * (wsRemove / wsTotal));
+        }
+    }
+
+    // Signs — separate benchmarks for post (small) and bollard (large)
+    if (isOn('en_sign') && snapshot.activities.signs?.enabled) {
+        const sgSnap = snapshot.activities.signs;
+        const postQty = sgSnap.inputs.postQty;
+        const bollQty = sgSnap.inputs.bollQty;
+        const equivQty = sgSnap.inputs.equivQty;
+        if (equivQty > 0) {
+            // Apportion by equivalent production share
+            const postEquiv = postQty;
+            const bollEquiv = equivQty - postQty; // bollards weighted by prod ratio
+            if (postQty > 0) addCheck('sg_sm', postQty, (sumLabor.sg + sumMat.sg) * (postEquiv / equivQty));
+            if (bollQty > 0) addCheck('sg_lg', bollQty, (sumLabor.sg + sumMat.sg) * (bollEquiv / equivQty));
+        }
+    }
+
     // Bollards
     if (gv('bo_qty') > 0) addCheck('bo', gv('bo_qty'), sumLabor.bo + sumMat.bo);
     // Speed bumps
     if (gv('sb_qty') > 0) addCheck('sb', gv('sb_qty'), sumLabor.sb + sumMat.sb);
+    // Speed humps
+    if (gv('sh_qty') > 0) addCheck('sh', gv('sh_qty'), sumLabor.sh + sumMat.sh);
     // Inlet repair
     if (gv('in_repair') > 0) addCheck('in_r', gv('in_repair'), (sumLabor.in + sumMat.in) * (gv('in_repair') / (gv('in_repair') + gv('in_recon'))));
     // Inlet reconstruction
     if (gv('in_recon') > 0) addCheck('in_c', gv('in_recon'), (sumLabor.in + sumMat.in) * (gv('in_recon') / (gv('in_repair') + gv('in_recon'))));
+    // Paint removal
+    if (gv('pr_lf') > 0) addCheck('pr', gv('pr_lf'), sumLabor.pr + sumMat.pr);
 
     // Render unit check table
     const ucSection = document.getElementById('unitCheckSection');
@@ -2106,14 +2187,15 @@ function calculateAll() {
     if (clusterResults) {
         // Map benchmark keys → cluster activity keys
         const benchToCluster = {
-            cf: 'crackFill', sc: 'sealcoat', st4: 'striping', ar: 'asphaltRepair',
-            ws: 'wheelStops', bo: 'bollards', sb: 'speedBumps',
-            in_r: 'inletRepair', in_c: 'inletRepair'
-        };
-        // Map benchmark keys → material sum keys
-        const benchToMatKey = {
-            cf: 'cf', sc: 'sc', st4: 'st', ar: 'ar',
-            ws: 'ws', bo: 'bo', sb: 'sb', in_r: 'in', in_c: 'in'
+            cf: 'crackFill', sc: 'sealcoat',
+            st4: 'striping', st6: 'striping', st12: 'striping', st24: 'striping',
+            stAr: 'striping', stHC: 'striping', stSt: 'striping', stCb: 'striping',
+            ar: 'asphaltRepair', ma: 'mastic',
+            ws: 'wheelStops', ws_r: 'wheelStops', ws_rm: 'wheelStops',
+            sg_sm: 'signs', sg_lg: 'signs',
+            bo: 'bollards', sb: 'speedBumps', sh: 'speedHumps',
+            in_r: 'inletRepair', in_c: 'inletRepair',
+            pr: 'paintRemoval'
         };
 
         for (let i = 0; i < unitChecks.length; i++) {
@@ -2136,24 +2218,48 @@ function calculateAll() {
                 // Travel: shared once across cluster, proportional to this activity
                 const clusteredTravel = cluster.clusterTravel * clusterAct.crewRate * clusterAct.proportion;
 
-                // Get material cost for this activity
-                const matKey = benchToMatKey[benchKey];
-                let matCost = sumMat[matKey] || 0;
-                // For fractional benchmarks (ws new fraction, inlet repair/recon fraction)
-                if (benchKey === 'ws' && gv('ws_new') > 0) {
-                    matCost = sumMat.ws * (gv('ws_new') / (gv('ws_new') + gv('ws_reset') + gv('ws_remove')));
-                } else if (benchKey === 'in_r' && gv('in_repair') > 0) {
-                    matCost = sumMat.in * (gv('in_repair') / (gv('in_repair') + gv('in_recon')));
-                } else if (benchKey === 'in_c' && gv('in_recon') > 0) {
-                    matCost = sumMat.in * (gv('in_recon') / (gv('in_repair') + gv('in_recon')));
-                } else if (benchKey === 'st4' && gv('st_4line') > 0) {
-                    const totalStQty = gv('st_4line') + gv('st_6line') + gv('st_12line') + gv('st_24bar');
-                    matCost = (sumLabor.st + sumMat.st) * (gv('st_4line') / totalStQty) - clusteredLabor - clusteredTravel;
-                    // For striping, just use material fraction
-                    matCost = sumMat.st * (gv('st_4line') / totalStQty);
+                // Total clustered labor+travel for this activity
+                const clusteredActivityTotal = clusteredLabor + clusteredTravel;
+
+                // Determine this check's share of the activity's cost
+                // For sub-item benchmarks (striping items, ws types, sign types),
+                // use the same fraction the addCheck used for standalone
+                let matCost = 0;
+                let laborCost = clusteredActivityTotal;
+
+                if (benchKey.startsWith('st') && snapshot.activities.striping?.lineItems) {
+                    // Striping sub-items: apportion clustered labor by raw hours share
+                    const stSnap = snapshot.activities.striping;
+                    const totalRawHrs = stSnap.lineItems.reduce((s, li) => s + li.hours, 0);
+                    const qtyMap = { st4:'st_4line', st6:'st_6line', st12:'st_12line', st24:'st_24bar', stHC:'st_hc', stAr:'st_arrow', stSt:'st_stencil', stCb:'st_curb' };
+                    const li = stSnap.lineItems.find(item => item.id === qtyMap[benchKey]);
+                    if (li && totalRawHrs > 0) {
+                        laborCost = (li.hours / totalRawHrs) * clusteredActivityTotal;
+                        matCost = li.matCost;
+                    } else { continue; }
+                } else if ((benchKey === 'ws' || benchKey === 'ws_r' || benchKey === 'ws_rm') && snapshot.activities.wheelStops?.inputs) {
+                    const wsI = snapshot.activities.wheelStops.inputs;
+                    const wsT = wsI.totalQty;
+                    const frac = benchKey === 'ws' ? wsI.newQty/wsT : benchKey === 'ws_r' ? wsI.resetQty/wsT : wsI.removeQty/wsT;
+                    laborCost = frac * clusteredActivityTotal;
+                    matCost = frac * sumMat.ws;
+                } else if ((benchKey === 'sg_sm' || benchKey === 'sg_lg') && snapshot.activities.signs?.inputs) {
+                    const sgI = snapshot.activities.signs.inputs;
+                    const frac = benchKey === 'sg_sm' ? sgI.postQty / sgI.equivQty : (sgI.equivQty - sgI.postQty) / sgI.equivQty;
+                    laborCost = frac * clusteredActivityTotal;
+                    matCost = frac * sumMat.sg;
+                } else if (benchKey === 'in_r' || benchKey === 'in_c') {
+                    const repQ = gv('in_repair'), recQ = gv('in_recon');
+                    const frac = benchKey === 'in_r' ? repQ/(repQ+recQ) : recQ/(repQ+recQ);
+                    laborCost = frac * clusteredActivityTotal;
+                    matCost = frac * sumMat.in;
+                } else {
+                    // Full-activity benchmarks (cf, sc, ar, ma, bo, sb, sh, pr)
+                    const matKeyMap = { cf:'cf', sc:'sc', ar:'ar', ma:'ma', bo:'bo', sb:'sb', sh:'sh', pr:'pr' };
+                    matCost = sumMat[matKeyMap[benchKey]] || 0;
                 }
 
-                const clusteredTotalCost = clusteredLabor + clusteredTravel + matCost;
+                const clusteredTotalCost = laborCost + matCost;
                 const clusteredUnitCost = clusteredTotalCost / check.qty;
 
                 // Recalculate status
@@ -2531,15 +2637,29 @@ function generateAnalysis(snap) {
 
     // Map unit check names back to snapshot keys and QTY_RANGES keys
     const checkMap = {
-        'Crack Fill':       { actKey: 'crackFill',    qtyKey: 'cf',  getQty: () => acts.crackFill?.inputs?.lf },
-        'Sealcoat':         { actKey: 'sealcoat',     qtyKey: 'sc',  getQty: () => acts.sealcoat?.inputs?.sf },
-        '4" Lines':         { actKey: 'striping',     qtyKey: 'st4', getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_4line')?.qty },
-        'Asphalt Repair':   { actKey: 'asphaltRepair',qtyKey: 'ar',  getQty: () => acts.asphaltRepair?.inputs?.sf },
-        'Wheel Stops (new)':{ actKey: 'wheelStops',   qtyKey: 'ws',  getQty: () => acts.wheelStops?.inputs?.newQty },
-        'Bollards':         { actKey: 'bollards',     qtyKey: 'bo',  getQty: () => acts.bollards?.inputs?.qty },
-        'Speed Bumps':      { actKey: 'speedBumps',   qtyKey: 'sb',  getQty: () => acts.speedBumps?.inputs?.qty },
-        'Inlet Repair':     { actKey: 'inletRepair',  qtyKey: 'in_r',getQty: () => acts.inletRepair?.inputs?.repairQty },
-        'Inlet Reconstruct':{ actKey: 'inletRepair',  qtyKey: 'in_c',getQty: () => acts.inletRepair?.inputs?.reconQty },
+        'Crack Fill':           { actKey: 'crackFill',    qtyKey: 'cf',    getQty: () => acts.crackFill?.inputs?.lf },
+        'Sealcoat':             { actKey: 'sealcoat',     qtyKey: 'sc',    getQty: () => acts.sealcoat?.inputs?.sf },
+        '4" Lines':             { actKey: 'striping',     qtyKey: 'st4',   getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_4line')?.qty },
+        '6" Lines':             { actKey: 'striping',     qtyKey: 'st6',   getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_6line')?.qty },
+        '12" Lines':            { actKey: 'striping',     qtyKey: 'st12',  getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_12line')?.qty },
+        '24" Lines':            { actKey: 'striping',     qtyKey: 'st24',  getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_24bar')?.qty },
+        'Arrows':               { actKey: 'striping',     qtyKey: 'stAr',  getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_arrow')?.qty },
+        'HC Symbols':           { actKey: 'striping',     qtyKey: 'stHC',  getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_hc')?.qty },
+        'Stencils':             { actKey: 'striping',     qtyKey: 'stSt',  getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_stencil')?.qty },
+        'Curb Paint':           { actKey: 'striping',     qtyKey: 'stCb',  getQty: () => snap.activities.striping?.lineItems?.find(i => i.id === 'st_curb')?.qty },
+        'Asphalt Repair':       { actKey: 'asphaltRepair',qtyKey: 'ar',    getQty: () => acts.asphaltRepair?.inputs?.sf },
+        'Mastic Crack Fill':    { actKey: 'mastic',       qtyKey: 'ma',    getQty: () => acts.mastic?.inputs?.lf },
+        'Wheel Stops (new)':    { actKey: 'wheelStops',   qtyKey: 'ws',    getQty: () => acts.wheelStops?.inputs?.newQty },
+        'Wheel Stops (reset)':  { actKey: 'wheelStops',   qtyKey: 'ws_r',  getQty: () => acts.wheelStops?.inputs?.resetQty },
+        'Wheel Stops (remove)': { actKey: 'wheelStops',   qtyKey: 'ws_rm', getQty: () => acts.wheelStops?.inputs?.removeQty },
+        'Signs (small)':        { actKey: 'signs',        qtyKey: 'sg_sm', getQty: () => acts.signs?.inputs?.postQty },
+        'Signs (large)':        { actKey: 'signs',        qtyKey: 'sg_lg', getQty: () => acts.signs?.inputs?.bollQty },
+        'Bollards':             { actKey: 'bollards',     qtyKey: 'bo',    getQty: () => acts.bollards?.inputs?.qty },
+        'Speed Bumps':          { actKey: 'speedBumps',   qtyKey: 'sb',    getQty: () => acts.speedBumps?.inputs?.qty },
+        'Speed Humps':          { actKey: 'speedHumps',   qtyKey: 'sh',    getQty: () => acts.speedHumps?.inputs?.qty },
+        'Inlet Repair':         { actKey: 'inletRepair',  qtyKey: 'in_r',  getQty: () => acts.inletRepair?.inputs?.repairQty },
+        'Inlet Reconstruct':    { actKey: 'inletRepair',  qtyKey: 'in_c',  getQty: () => acts.inletRepair?.inputs?.reconQty },
+        'Paint Removal':        { actKey: 'paintRemoval', qtyKey: 'pr',    getQty: () => acts.paintRemoval?.inputs?.lf },
     };
 
     snap.unitChecks.forEach(check => {
@@ -2699,8 +2819,9 @@ function generateAnalysis(snap) {
                     reasons.push(`High concurrency: machine (${machineHrs.toFixed(1)}h) and hand work (${handHrs.toFixed(1)}h) run in parallel. Hand crew starts opposite end from machine, working toward each other — saves ${savedHrs.toFixed(1)} hrs vs sequential work. Duration = max(machine, hand), not sum.`);
                 }
             }
-            if (isHigh && check.name === '4" Lines' && handHrs > machineHrs) {
-                reasons.push(`Hand work (${handHrs.toFixed(1)}h) exceeds machine line work (${machineHrs.toFixed(1)}h), so the crew shift is driven by hand items. The 4" line share of crew cost includes time the machine crew is waiting on hand work.`);
+            const machineLineNames = ['4" Lines', '6" Lines', '12" Lines', '24" Lines'];
+            if (isHigh && machineLineNames.includes(check.name) && handHrs > machineHrs) {
+                reasons.push(`Hand work (${handHrs.toFixed(1)}h) exceeds machine line work (${machineHrs.toFixed(1)}h), so the crew shift is driven by hand items. The ${check.name} share of crew cost includes time the machine crew is waiting on hand work.`);
             }
             // Q17: Striping machine rates are the most reliable (±10%)
             if (rateConf) {
