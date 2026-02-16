@@ -2108,14 +2108,36 @@ function calculateAll() {
     // Mastic
     if (gv('ma_lf') > 0) addCheck('ma', gv('ma_lf'), sumLabor.ma + sumMat.ma);
 
-    // Wheel stops — separate benchmarks for new, reset, remove
-    if (isOn('en_wheelstop')) {
-        const wsNew = gv('ws_new'), wsReset = gv('ws_reset'), wsRemove = gv('ws_remove');
-        const wsTotal = wsNew + wsReset + wsRemove;
-        if (wsTotal > 0) {
-            if (wsNew > 0)    addCheck('ws',    wsNew,    (sumLabor.ws + sumMat.ws) * (wsNew / wsTotal));
-            if (wsReset > 0)  addCheck('ws_r',  wsReset,  (sumLabor.ws + sumMat.ws) * (wsReset / wsTotal));
-            if (wsRemove > 0) addCheck('ws_rm', wsRemove, (sumLabor.ws + sumMat.ws) * (wsRemove / wsTotal));
+    // Wheel stops — separate benchmarks using differentiated crew rates and material
+    if (isOn('en_wheelstop') && snapshot.activities.wheelStops?.enabled) {
+        const wsSnap = snapshot.activities.wheelStops;
+        const wsI = wsSnap.inputs;
+        const wsTier = wsSnap.tiers;
+        const wsTravel = wsI.travel;
+        if (wsI.totalQty > 0 && wsTier) {
+            const stdHrs = wsTier.std.hours;
+            // Each type gets its proportional share of shift hours × its own crew rate + its own material
+            if (wsI.newQty > 0) {
+                const frac = wsI.newQty / wsI.totalQty;
+                const labor = stdHrs * frac * gv('rateWsInstall');
+                const travelCost = wsTravel * gv('rateWsInstall') * frac;
+                const mat = wsI.newQty * gv('matWsNew');
+                addCheck('ws', wsI.newQty, labor + travelCost + mat);
+            }
+            if (wsI.resetQty > 0) {
+                const frac = wsI.resetQty / wsI.totalQty;
+                const labor = stdHrs * frac * gv('rateWsReset');
+                const travelCost = wsTravel * gv('rateWsReset') * frac;
+                const mat = wsI.resetQty * gv('matWsPin');
+                addCheck('ws_r', wsI.resetQty, labor + travelCost + mat);
+            }
+            if (wsI.removeQty > 0) {
+                const frac = wsI.removeQty / wsI.totalQty;
+                const labor = stdHrs * frac * gv('rateWsRemove');
+                const travelCost = wsTravel * gv('rateWsRemove') * frac;
+                const mat = wsI.removeQty * gv('matWsDispose');
+                addCheck('ws_rm', wsI.removeQty, labor + travelCost + mat);
+            }
         }
     }
 
@@ -2240,9 +2262,14 @@ function calculateAll() {
                 } else if ((benchKey === 'ws' || benchKey === 'ws_r' || benchKey === 'ws_rm') && snapshot.activities.wheelStops?.inputs) {
                     const wsI = snapshot.activities.wheelStops.inputs;
                     const wsT = wsI.totalQty;
-                    const frac = benchKey === 'ws' ? wsI.newQty/wsT : benchKey === 'ws_r' ? wsI.resetQty/wsT : wsI.removeQty/wsT;
-                    laborCost = frac * clusteredActivityTotal;
-                    matCost = frac * sumMat.ws;
+                    const typeQty = benchKey === 'ws' ? wsI.newQty : benchKey === 'ws_r' ? wsI.resetQty : wsI.removeQty;
+                    const frac = typeQty / wsT;
+                    // Use type-specific crew rate for differentiated cost
+                    const typeRate = benchKey === 'ws' ? gv('rateWsInstall') : benchKey === 'ws_r' ? gv('rateWsReset') : gv('rateWsRemove');
+                    const typeMatPerUnit = benchKey === 'ws' ? gv('matWsNew') : benchKey === 'ws_r' ? gv('matWsPin') : gv('matWsDispose');
+                    // Apportioned hours from cluster × type fraction × type-specific rate
+                    laborCost = clusterAct.apportionedHrs * frac * typeRate + cluster.clusterTravel * clusterAct.proportion * frac * typeRate;
+                    matCost = typeQty * typeMatPerUnit;
                 } else if ((benchKey === 'sg_sm' || benchKey === 'sg_lg') && snapshot.activities.signs?.inputs) {
                     const sgI = snapshot.activities.signs.inputs;
                     const frac = benchKey === 'sg_sm' ? sgI.postQty / sgI.equivQty : (sgI.equivQty - sgI.postQty) / sgI.equivQty;
@@ -2804,9 +2831,15 @@ function generateAnalysis(snap) {
             if (isHigh && act.inputs.crackWidth * act.inputs.crackDepth > 1.0) {
                 reasons.push(`Large crack cross-section (${act.inputs.crackWidth}" x ${act.inputs.crackDepth}") reduces coverage to ${act.boxCalc.lfPerBox.toFixed(1)} LF/box, increasing material cost per LF.`);
             }
+            if (isLow && act.inputs.crackWidth * act.inputs.crackDepth <= 0.5) {
+                reasons.push(`Small crack cross-section (${act.inputs.crackWidth}" x ${act.inputs.crackDepth}") yields ${act.boxCalc.lfPerBox.toFixed(1)} LF/box — high material efficiency keeps per-LF cost low. Benchmark P25-P75 range reflects typical 1-2" cracks; narrower cracks naturally fall below that range.`);
+            }
             // Q20: Wider cracks slow machine speed AND increase material consumption
             if (act.inputs?.crackWidth >= 2) {
                 reasons.push(`Wide cracks (${act.inputs.crackWidth}"+) require slower machine speed for proper fill depth and consume 2-3x material per LF vs standard cracks. Production may drop to 750-800 LF/day vs the 1,000 LF/day standard rate. Also increases resupply frequency.`);
+            }
+            if (rateConf) {
+                reasons.push(`Production rate confidence: ${rateConf.label} (${rateConf.reliability}).`);
             }
         }
 
