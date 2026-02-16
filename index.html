@@ -339,7 +339,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v3.4 | Field-Calibrated | Three-Tier Output | Field Operations Intelligence</span>
+            <span>v3.5 | Field-Calibrated | Three-Tier Output | Crew Clustering | Field Operations Intelligence</span>
         </div>
     </div>
     <div class="header-controls">
@@ -391,6 +391,13 @@
         <div class="setting-group">
             <label>Markup %</label>
             <input type="number" id="markupPercent" value="15" step="1" oninput="calculateAll()">
+        </div>
+        <div class="setting-group">
+            <label>Crew Clustering</label>
+            <select id="clusterMode" onchange="calculateAll()">
+                <option value="off">Off (standalone per activity)</option>
+                <option value="on" selected>On (shared mobilization)</option>
+            </select>
         </div>
     </div>
 </div>
@@ -448,7 +455,7 @@
             <div class="rate-section">
                 <h4>Production Rates (per day, standard crew)</h4>
                 <div class="rate-row"><label>Crack Fill (LF/day)</label><input type="number" id="prodCrackFill" value="4000"></div>
-                <div class="rate-row"><label>Sealcoat (SF/day)</label><input type="number" id="prodSealcoat" value="60000"></div>
+                <div class="rate-row"><label>Sealcoat (SF/day)</label><input type="number" id="prodSealcoat" value="52000"></div>
                 <div class="rate-row"><label>4" Lines (LF/day)</label><input type="number" id="prod4Line" value="5000"></div>
                 <div class="rate-row"><label>6" Lines (LF/day)</label><input type="number" id="prod6Line" value="5000"></div>
                 <div class="rate-row"><label>12" Lines (LF/day)</label><input type="number" id="prod12Line" value="5000"></div>
@@ -512,7 +519,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_crackfill')">
         <div class="toggle-left">
             <input type="checkbox" id="en_crackfill" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-orange"></span>Crack Filling</span>
+            <span><span class="tag tag-orange"></span>Crack Filling<span class="cluster-badge" style="font-size:0.65rem; color:#ab47bc; margin-left:6px;">&#x1F7E3; Crack Fill</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -531,7 +538,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_sealcoat')">
         <div class="toggle-left">
             <input type="checkbox" id="en_sealcoat" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-blue"></span>Seal Coating</span>
+            <span><span class="tag tag-blue"></span>Seal Coating<span class="cluster-badge" style="font-size:0.65rem; color:#66bb6a; margin-left:6px;">&#x1F7E2; Sealcoat</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -541,6 +548,7 @@
             <div class="input-group"><label>Phases</label><input type="number" id="sc_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
             <div class="input-group"><label>Travel (hrs)</label><input type="number" id="sc_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
+        <p class="note">4-man crew required for manual spray bar. Rate based on 50K SF/day 3-man baseline + 4th man support gain. Open lot: ~52K standard. Complex lot with islands/medians: ~42-45K. 2-coat application at 100 SF/gal, 125 gal/hr sustained.</p>
         <div class="output-section"><h5>Sealcoating Output</h5><div id="sc_output"></div></div>
     </div>
 </div>
@@ -550,7 +558,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_striping')">
         <div class="toggle-left">
             <input type="checkbox" id="en_striping" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-yellow"></span>Striping</span>
+            <span><span class="tag tag-yellow"></span>Striping<span class="cluster-badge" style="font-size:0.65rem; color:#42a5f5; margin-left:6px;">&#x1F537; Paint</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -592,7 +600,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_asphalt')">
         <div class="toggle-left">
             <input type="checkbox" id="en_asphalt" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-red"></span>Asphalt Repairs</span>
+            <span><span class="tag tag-red"></span>Asphalt Repairs<span class="cluster-badge" style="font-size:0.65rem; color:#e67e22; margin-left:6px;">&#x1F536; Heavy</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -630,7 +638,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_mastic')">
         <div class="toggle-left">
             <input type="checkbox" id="en_mastic" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-purple"></span>Mastic Crack Filling</span>
+            <span><span class="tag tag-purple"></span>Mastic Crack Filling<span class="cluster-badge" style="font-size:0.65rem; color:#ef5350; margin-left:6px;">&#x1F534; Mastic</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -653,7 +661,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_wheelstop')">
         <div class="toggle-left">
             <input type="checkbox" id="en_wheelstop" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-teal"></span>Wheel Stops</span>
+            <span><span class="tag tag-teal"></span>Wheel Stops<span class="cluster-badge" style="font-size:0.65rem; color:#e67e22; margin-left:6px;">&#x1F536; Heavy</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -674,7 +682,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_sign')">
         <div class="toggle-left">
             <input type="checkbox" id="en_sign" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-green"></span>Signs</span>
+            <span><span class="tag tag-green"></span>Signs<span class="cluster-badge" style="font-size:0.65rem; color:#e67e22; margin-left:6px;">&#x1F536; Heavy</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -695,7 +703,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_bollard')">
         <div class="toggle-left">
             <input type="checkbox" id="en_bollard" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-pink"></span>Bollard Replacement</span>
+            <span><span class="tag tag-pink"></span>Bollard Replacement<span class="cluster-badge" style="font-size:0.65rem; color:#e67e22; margin-left:6px;">&#x1F536; Heavy</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -714,7 +722,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_speedbump')">
         <div class="toggle-left">
             <input type="checkbox" id="en_speedbump" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-cyan"></span>Rubber Speed Bumps</span>
+            <span><span class="tag tag-cyan"></span>Rubber Speed Bumps<span class="cluster-badge" style="font-size:0.65rem; color:#42a5f5; margin-left:6px;">&#x1F537; Paint</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -733,7 +741,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_speedhump')">
         <div class="toggle-left">
             <input type="checkbox" id="en_speedhump" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-orange"></span>Asphalt Speed Humps</span>
+            <span><span class="tag tag-orange"></span>Asphalt Speed Humps<span class="cluster-badge" style="font-size:0.65rem; color:#e67e22; margin-left:6px;">&#x1F536; Heavy</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -757,7 +765,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_inlet')">
         <div class="toggle-left">
             <input type="checkbox" id="en_inlet" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-teal"></span>Inlet Repair / Reconstruction</span>
+            <span><span class="tag tag-teal"></span>Inlet Repair / Reconstruction<span class="cluster-badge" style="font-size:0.65rem; color:#e67e22; margin-left:6px;">&#x1F536; Heavy</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -779,7 +787,7 @@
     <button class="panel-toggle" onclick="toggleWorkType(this,'wt_paintremoval')">
         <div class="toggle-left">
             <input type="checkbox" id="en_paintremoval" onclick="event.stopPropagation(); calculateAll();" checked>
-            <span><span class="tag tag-pink"></span>Paint Striping Removal</span>
+            <span><span class="tag tag-pink"></span>Paint Striping Removal<span class="cluster-badge" style="font-size:0.65rem; color:#42a5f5; margin-left:6px;">&#x1F537; Paint</span></span>
         </div>
         <span class="arrow">▼</span>
     </button>
@@ -827,6 +835,15 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- CLUSTER DEPLOYMENT SUMMARY -->
+<div class="hb-summary" id="clusterSection" style="display:none; border-color: var(--accent-purple);">
+    <h2 style="color: var(--accent-purple);">&#x1F4E6; Cluster Deployment Summary</h2>
+    <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:1rem;">
+        Shared mobilization applied. Hours below reflect real crew-days when activities share equipment.
+    </p>
+    <div id="clusterBody"></div>
 </div>
 
 <!-- ============================================ -->
@@ -967,7 +984,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v3.4 | Field-Calibrated Production Rates | Field Operations Intelligence | Full Export<br>
+    Maintenance Division Estimating Calculator v3.5 | Field-Calibrated Production Rates | Crew Clustering | Field Operations Intelligence | Full Export<br>
     All rates subject to superintendent review.
 </div>
 
@@ -1028,6 +1045,72 @@ const QTY_RANGES = {
     sb:  { low: 2, high: 10 },
     in_r:{ low: 1, high: 8 },
     in_c:{ low: 1, high: 4 },
+};
+
+// Crew Clustering: activities that share equipment and crew deploy as one physical crew
+const CREW_CLUSTERS = {
+    heavy: {
+        id: 'heavy',
+        name: 'Heavy Crew',
+        icon: '\u{1F536}',  // orange diamond
+        activities: ['asphaltRepair', 'wheelStops', 'bollards', 'signs', 'inletRepair', 'speedHumps'],
+        description: 'Skid steer, hot box/triaxle, roller, dump truck, F550s'
+    },
+    paint: {
+        id: 'paint',
+        name: 'Paint Crew',
+        icon: '\u{1F537}',  // blue diamond
+        activities: ['striping', 'paintRemoval', 'speedBumps'],
+        description: 'Striping machine, core drill, hand tools, F550s'
+    },
+    sealcoat: {
+        id: 'sealcoat',
+        name: 'Sealcoat Crew',
+        icon: '\u{1F7E2}',  // green circle
+        activities: ['sealcoat'],
+        standalone: true,
+        description: 'Spray rig, edging tools, barricades'
+    },
+    crackFill: {
+        id: 'crackFill',
+        name: 'Crack Fill Crew',
+        icon: '\u{1F7E3}',  // purple circle
+        activities: ['crackFill'],
+        standalone: true,
+        description: 'Routing machine, pour pot, F550'
+    },
+    mastic: {
+        id: 'mastic',
+        name: 'Mastic Crew',
+        icon: '\u{1F534}',  // red circle
+        activities: ['mastic'],
+        standalone: true,
+        description: 'Mastic machine (rented), 5-man specialized'
+    }
+};
+
+// Reverse lookup: activity key -> cluster ID
+const ACTIVITY_CLUSTER = {};
+for (const [clusterId, cluster] of Object.entries(CREW_CLUSTERS)) {
+    for (const actKey of cluster.activities) {
+        ACTIVITY_CLUSTER[actKey] = clusterId;
+    }
+}
+
+// Maps cluster activity keys to calculator's internal identifiers
+const CLUSTER_ACTIVITY_MAP = {
+    asphaltRepair: { enableId: 'en_asphalt',       snapshotKey: 'asphaltRepair' },
+    wheelStops:    { enableId: 'en_wheelstop',     snapshotKey: 'wheelStops' },
+    bollards:      { enableId: 'en_bollard',       snapshotKey: 'bollards' },
+    signs:         { enableId: 'en_sign',          snapshotKey: 'signs' },
+    inletRepair:   { enableId: 'en_inlet',         snapshotKey: 'inletRepair' },
+    speedHumps:    { enableId: 'en_speedhump',     snapshotKey: 'speedHumps' },
+    striping:      { enableId: 'en_striping',      snapshotKey: 'striping' },
+    paintRemoval:  { enableId: 'en_paintremoval',  snapshotKey: 'paintRemoval' },
+    speedBumps:    { enableId: 'en_speedbump',     snapshotKey: 'speedBumps' },
+    sealcoat:      { enableId: 'en_sealcoat',      snapshotKey: 'sealcoat' },
+    crackFill:     { enableId: 'en_crackfill',     snapshotKey: 'crackFill' },
+    mastic:        { enableId: 'en_mastic',        snapshotKey: 'mastic' }
 };
 
 // Snap raw hours to next billing increment, with hustle detection at stdShift boundary
@@ -1194,6 +1277,121 @@ function checkAsphaltPrices() {
     }
 }
 
+// ===== CREW CLUSTERING ENGINE =====
+// Groups co-deployable activities and snaps once per physical crew
+// Returns an object with cluster results, or null if clustering is off
+function clusterize(snapshot, stdShift, maxShift) {
+    if (document.getElementById('clusterMode').value !== 'on') return null;
+
+    const activeClusters = {};
+
+    // Step 1: Identify which clusters have active activities
+    for (const [actKey, mapping] of Object.entries(CLUSTER_ACTIVITY_MAP)) {
+        const actData = snapshot.activities[mapping.snapshotKey];
+        if (!actData || !actData.enabled) continue;
+
+        const clusterId = ACTIVITY_CLUSTER[actKey];
+        if (!activeClusters[clusterId]) {
+            activeClusters[clusterId] = {
+                ...CREW_CLUSTERS[clusterId],
+                activeActivities: [],
+                totalRawProductionHrs: 0,
+                primaryActivity: null,
+                primaryHrs: 0
+            };
+        }
+
+        const rawProductionHrs = actData.rawProductionHrs || 0;
+        const travel = actData.inputs?.travel || 0;
+
+        // Get the crew rate for this activity (used for cost apportioning)
+        let crewRate = actData.rates?.crewRate || 0;
+        // Wheel stops use blendedRate
+        if (actKey === 'wheelStops' && actData.blendedRate) crewRate = actData.blendedRate;
+
+        activeClusters[clusterId].activeActivities.push({
+            actKey,
+            snapshotKey: mapping.snapshotKey,
+            name: actData.inputs?.lf !== undefined ? actKey.replace(/([A-Z])/g, ' $1').trim() : actKey.replace(/([A-Z])/g, ' $1').trim(),
+            rawProductionHrs,
+            travel,
+            standaloneTier: actData.tiers,
+            crewSize: actData.rates?.crewSize || actData.tiers?.std?.crew || 4,
+            crewRate
+        });
+        activeClusters[clusterId].totalRawProductionHrs += rawProductionHrs;
+
+        if (rawProductionHrs > activeClusters[clusterId].primaryHrs) {
+            activeClusters[clusterId].primaryHrs = rawProductionHrs;
+            activeClusters[clusterId].primaryActivity = actKey;
+        }
+    }
+
+    // Step 2: For each cluster with 2+ activities, run cluster-level optimization
+    for (const cluster of Object.values(activeClusters)) {
+        if (cluster.activeActivities.length <= 1) {
+            // Single activity: pass through unchanged, no clustering benefit
+            cluster.clusteringApplied = false;
+            if (cluster.activeActivities.length === 1) {
+                const act = cluster.activeActivities[0];
+                act.apportionedHrs = act.standaloneTier?.std?.hours || 0;
+                act.apportionedDays = act.standaloneTier?.std?.days || 0;
+                act.proportion = 1;
+            }
+            continue;
+        }
+
+        cluster.clusteringApplied = true;
+
+        // Maximum travel across activities in this cluster (they share one trip)
+        const maxTravel = Math.max(...cluster.activeActivities.map(a => a.travel));
+
+        // Snap the combined production hours to a shift increment
+        const combinedRaw = cluster.totalRawProductionHrs;
+        const snapped = optimizeShifts(combinedRaw, stdShift, maxShift, 1);
+
+        cluster.clusterSnapped = snapped;
+        cluster.clusterTravel = maxTravel;
+        cluster.clusterTotalHrs = snapped.hours;
+
+        // Calculate what standalone total would have been (for comparison)
+        cluster.standaloneTotal = cluster.activeActivities.reduce(
+            (sum, a) => sum + (a.standaloneTier?.std?.hours || 0), 0
+        );
+        cluster.hoursSaved = cluster.standaloneTotal - snapped.hours;
+
+        // Step 3: Apportion snapped hours back to activities proportionally
+        const totalRaw = cluster.totalRawProductionHrs;
+        for (const act of cluster.activeActivities) {
+            if (totalRaw > 0) {
+                const proportion = act.rawProductionHrs / totalRaw;
+                act.apportionedHrs = Math.round(proportion * snapped.hours * 10) / 10;
+                act.proportion = proportion;
+            } else {
+                act.apportionedHrs = 0;
+                act.proportion = 0;
+            }
+        }
+
+        // Reconcile rounding so apportioned hours sum exactly to cluster total
+        const apportionedSum = cluster.activeActivities.reduce((s, a) => s + a.apportionedHrs, 0);
+        const diff = snapped.hours - apportionedSum;
+        if (Math.abs(diff) > 0.05) {
+            const primary = cluster.activeActivities.find(a => a.actKey === cluster.primaryActivity);
+            if (primary) {
+                primary.apportionedHrs = Math.round((primary.apportionedHrs + diff) * 10) / 10;
+            }
+        }
+
+        // All activities in the cluster happen on the same day(s)
+        for (const act of cluster.activeActivities) {
+            act.apportionedDays = snapped.days;
+        }
+    }
+
+    return activeClusters;
+}
+
 // ===== MAIN CALCULATION =====
 function calculateAll() {
     let stdShift = gv('hoursPerDay');
@@ -1242,7 +1440,7 @@ function calculateAll() {
             sumLabor.cf = tier.std.hours * rate + travelCost;
             sumMat.cf = matCost;
             hbRows.push({ name: 'Crack Filling', tier, travel });
-            snapshot.activities.crackFill = { enabled: true, inputs: { lf, phases, travel }, rates: { crewRate: rate, prodPerDay: prod, crewSize: crew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.cf + sumMat.cf } };
+            snapshot.activities.crackFill = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate: rate, prodPerDay: prod, crewSize: crew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.cf + sumMat.cf } };
         }
     } else { renderTierTable('cf_output', null); }
 
@@ -1263,7 +1461,7 @@ function calculateAll() {
             sumLabor.sc = tier.std.hours * rate + travelCost;
             sumMat.sc = matCost;
             hbRows.push({ name: 'Sealcoating', tier, travel });
-            snapshot.activities.sealcoat = { enabled: true, inputs: { sf, phases, travel }, rates: { crewRate: rate, prodPerDay: prod, crewSize: crew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
+            snapshot.activities.sealcoat = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, phases, travel }, rates: { crewRate: rate, prodPerDay: prod, crewSize: crew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
         }
     } else { renderTierTable('sc_output', null); }
 
@@ -1337,7 +1535,7 @@ function calculateAll() {
             sumLabor.st = stdR.hours * rate + travelCost;
             sumMat.st = totalMat;
             hbRows.push({ name: 'Striping', tier, travel, note: `Mach: ${machineHrs.toFixed(1)}h / Hand: ${handHrs.toFixed(1)}h / Concurrent: ${concurrentHrs.toFixed(1)}h` });
-            snapshot.activities.striping = { enabled: true, inputs: { phases, travel }, lineItems: lineItemData, concurrency: { machineHrs, handHrs, concurrentHrs }, rates: { crewRate: rate, crewSize: crew }, tiers: tier, costs: { laborShift: stdR.hours * rate, laborTravel: travelCost, material: totalMat, total: sumLabor.st + sumMat.st } };
+            snapshot.activities.striping = { enabled: true, rawProductionHrs: concurrentHrs, inputs: { phases, travel }, lineItems: lineItemData, concurrency: { machineHrs, handHrs, concurrentHrs }, rates: { crewRate: rate, crewSize: crew }, tiers: tier, costs: { laborShift: stdR.hours * rate, laborTravel: travelCost, material: totalMat, total: sumLabor.st + sumMat.st } };
         } else {
             renderTierTable('st_output', null);
         }
@@ -1384,7 +1582,7 @@ function calculateAll() {
             sumLabor.ar = tier.std.hours * crewRate + travelCost;
             sumMat.ar = totalMat;
             hbRows.push({ name: 'Asphalt Repair', tier, travel });
-            snapshot.activities.asphaltRepair = { enabled: true, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
+            snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
         }
     } else {
         ['ar_surfTons','ar_baseTons','ar_dgaTons','ar_totalTons'].forEach(id => sv(id, '0'));
@@ -1442,7 +1640,7 @@ function calculateAll() {
             sumLabor.ma = tier.std.hours * crewRate + travelCost;
             sumMat.ma = material + machineRental;
             hbRows.push({ name: 'Mastic', tier, travel, note: `${boxesNeeded} boxes` });
-            snapshot.activities.mastic = { enabled: true, inputs: { lf, crackWidth, crackDepth, phases, travel }, boxCalc: { crossSection, lfPerBox, boxesNeeded }, rates: { crewRate, crewSize: crew, prodPerDay: prod, boxPrice, machinePerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, machineRental, material, total: sumLabor.ma + sumMat.ma } };
+            snapshot.activities.mastic = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, crackWidth, crackDepth, phases, travel }, boxCalc: { crossSection, lfPerBox, boxesNeeded }, rates: { crewRate, crewSize: crew, prodPerDay: prod, boxPrice, machinePerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, machineRental, material, total: sumLabor.ma + sumMat.ma } };
         } else {
             renderTierTable('ma_output', null);
         }
@@ -1483,7 +1681,7 @@ function calculateAll() {
             sumLabor.ws = totalLabor + travelCost;
             sumMat.ws = totalMatCost;
             hbRows.push({ name: 'Wheel Stops', tier, travel });
-            snapshot.activities.wheelStops = { enabled: true, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, prodPerDay }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
+            snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: (totalQty / Math.max(prodPerDay, 0.01)) * stdShift, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, prodPerDay }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
         } else {
             renderTierTable('ws_output', null);
         }
@@ -1510,7 +1708,7 @@ function calculateAll() {
             sumLabor.sg = tier.std.hours * crewRate + travelCost;
             sumMat.sg = matCost;
             hbRows.push({ name: 'Signs', tier, travel });
-            snapshot.activities.signs = { enabled: true, inputs: { postQty, bollQty, equivQty, phases, travel }, rates: { crewRate, crewSize: crew, prodPost, prodBoll }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sg + sumMat.sg } };
+            snapshot.activities.signs = { enabled: true, rawProductionHrs: (equivQty / Math.max(prodPost, 0.01)) * stdShift, inputs: { postQty, bollQty, equivQty, phases, travel }, rates: { crewRate, crewSize: crew, prodPost, prodBoll }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sg + sumMat.sg } };
         } else {
             renderTierTable('sg_output', null);
         }
@@ -1532,7 +1730,7 @@ function calculateAll() {
             sumLabor.bo = tier.std.hours * crewRate + travelCost;
             sumMat.bo = matCost;
             hbRows.push({ name: 'Bollards', tier, travel });
-            snapshot.activities.bollards = { enabled: true, inputs: { qty, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.bo + sumMat.bo } };
+            snapshot.activities.bollards = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.bo + sumMat.bo } };
         }
     } else { renderTierTable('bo_output', null); }
 
@@ -1552,7 +1750,7 @@ function calculateAll() {
             sumLabor.sb = tier.std.hours * crewRate + travelCost;
             sumMat.sb = matCost;
             hbRows.push({ name: 'Rubber Speed Bumps', tier, travel });
-            snapshot.activities.speedBumps = { enabled: true, inputs: { qty, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sb + sumMat.sb } };
+            snapshot.activities.speedBumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sb + sumMat.sb } };
         }
     } else { renderTierTable('sb_output', null); }
 
@@ -1575,7 +1773,7 @@ function calculateAll() {
             sumLabor.sh = tier.std.hours * crewRate + travelCost;
             sumMat.sh = matCost;
             hbRows.push({ name: 'Speed Humps', tier, travel });
-            snapshot.activities.speedHumps = { enabled: true, inputs: { qty, phases, travel }, tonnage: { tonsPerHump, totalTons: tons }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
+            snapshot.activities.speedHumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, tonnage: { tonsPerHump, totalTons: tons }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
         }
     } else {
         sv('sh_tons', '0');
@@ -1625,7 +1823,7 @@ function calculateAll() {
             sumLabor.in = stdR.hours * crewRate + travelCost;
             sumMat.in = totalMat;
             hbRows.push({ name: 'Inlet Repair', tier, travel });
-            snapshot.activities.inletRepair = { enabled: true, inputs: { repairQty, reconQty, castingQty, phases, travel }, rates: { crewRate, crewSize: crew, repairProd, hrsPerRecon }, combinedRawHrs: combinedHrs, tiers: tier, costs: { laborShift: stdR.hours * crewRate, laborTravel: travelCost, blockCost, castingCost, material: totalMat, total: sumLabor.in + sumMat.in } };
+            snapshot.activities.inletRepair = { enabled: true, rawProductionHrs: combinedHrs, inputs: { repairQty, reconQty, castingQty, phases, travel }, rates: { crewRate, crewSize: crew, repairProd, hrsPerRecon }, combinedRawHrs: combinedHrs, tiers: tier, costs: { laborShift: stdR.hours * crewRate, laborTravel: travelCost, blockCost, castingCost, material: totalMat, total: sumLabor.in + sumMat.in } };
         } else {
             renderTierTable('in_output', null);
         }
@@ -1650,7 +1848,7 @@ function calculateAll() {
             sumLabor.pr = tier.std.hours * crewRate + travelCost;
             sumMat.pr = rental;
             hbRows.push({ name: 'Paint Removal', tier, travel, note: 'Grinder rental' });
-            snapshot.activities.paintRemoval = { enabled: true, inputs: { lf, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod, rentalPerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, rental, total: sumLabor.pr + sumMat.pr } };
+            snapshot.activities.paintRemoval = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod, rentalPerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, rental, total: sumLabor.pr + sumMat.pr } };
         } else {
             renderTierTable('pr_output', null);
         }
@@ -1793,12 +1991,136 @@ function calculateAll() {
     snapshot.summary = { laborByType: { ...sumLabor }, materialByType: { ...sumMat }, totalLabor, totalMat, directCost, markupPercent: markup, markupAmount: markupAmt, bidPrice: directCost + markupAmt };
     snapshot.hbRows = hbRows;
     snapshot.unitChecks = unitChecks;
+    // === CREW CLUSTERING ===
+    const clusterResults = clusterize(snapshot, stdShift, maxShift);
+    snapshot.clustering = clusterResults;
     window.lastCalcSnapshot = snapshot;
+
+    // === RENDER CLUSTER DEPLOYMENT SUMMARY ===
+    renderClusterSummary(clusterResults);
 
     // === RENDER JOB ANALYSIS ===
     renderAnalysis();
 
     checkAsphaltPrices();
+}
+
+// ===== CLUSTER DEPLOYMENT SUMMARY =====
+function renderClusterSummary(clusterResults) {
+    const section = document.getElementById('clusterSection');
+    const body = document.getElementById('clusterBody');
+    if (!section || !body) return;
+
+    if (!clusterResults) {
+        section.style.display = 'none';
+        return;
+    }
+
+    const clusters = Object.values(clusterResults);
+    const hasActiveCluster = clusters.some(c => c.activeActivities && c.activeActivities.length > 0);
+    if (!hasActiveCluster) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+
+    // Activity display names
+    const actDisplayNames = {
+        asphaltRepair: 'Asphalt Repair', wheelStops: 'Wheel Stops', bollards: 'Bollards',
+        signs: 'Signs', inletRepair: 'Inlet Repair', speedHumps: 'Speed Humps',
+        striping: 'Striping', paintRemoval: 'Paint Removal', speedBumps: 'Speed Bumps',
+        sealcoat: 'Sealcoating', crackFill: 'Crack Filling', mastic: 'Mastic'
+    };
+
+    // Cluster colors
+    const clusterColors = {
+        heavy: '#e67e22', paint: '#42a5f5', sealcoat: '#66bb6a',
+        crackFill: '#ab47bc', mastic: '#ef5350'
+    };
+
+    let html = '';
+    let totalClusteredHrs = 0, totalStandaloneHrs = 0, physicalCrews = 0;
+
+    clusters.forEach(cluster => {
+        if (!cluster.activeActivities || cluster.activeActivities.length === 0) return;
+
+        physicalCrews++;
+        const color = clusterColors[cluster.id] || '#9ca8bc';
+        const maxCrew = Math.max(...cluster.activeActivities.map(a => a.crewSize));
+
+        html += `<div style="background:var(--bg-primary); border:1px solid var(--border-color); border-left:3px solid ${color}; border-radius:6px; padding:1rem; margin-bottom:0.75rem;">`;
+        html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">`;
+        html += `<span style="font-weight:700; font-size:0.85rem; color:${color};">${cluster.icon} ${cluster.name}</span>`;
+        html += `<span style="font-size:0.7rem; color:var(--text-muted);">${maxCrew}-man crew | ${cluster.description}</span>`;
+        html += `</div>`;
+
+        if (cluster.clusteringApplied) {
+            // Multi-activity cluster with shared mobilization
+            html += `<table style="width:100%; border-collapse:collapse; font-size:0.78rem;">`;
+            html += `<thead><tr style="border-bottom:1px solid var(--border-color);">`;
+            html += `<th style="text-align:left; padding:0.3rem 0.4rem; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase;">Activity</th>`;
+            html += `<th style="text-align:center; padding:0.3rem 0.4rem; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase;">Hours</th>`;
+            html += `<th style="text-align:center; padding:0.3rem 0.4rem; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase;">Share</th>`;
+            html += `</tr></thead><tbody>`;
+
+            cluster.activeActivities.forEach(act => {
+                const name = actDisplayNames[act.actKey] || act.actKey;
+                html += `<tr style="border-bottom:1px solid var(--border-color);">`;
+                html += `<td style="padding:0.3rem 0.4rem; font-weight:500;">${name}</td>`;
+                html += `<td style="text-align:center; padding:0.3rem 0.4rem; font-family:'JetBrains Mono',monospace;">${act.apportionedHrs.toFixed(1)}h</td>`;
+                html += `<td style="text-align:center; padding:0.3rem 0.4rem; font-family:'JetBrains Mono',monospace; color:var(--text-muted);">${(act.proportion * 100).toFixed(0)}%</td>`;
+                html += `</tr>`;
+            });
+
+            html += `<tr style="border-top:2px solid var(--border-highlight); font-weight:700;">`;
+            html += `<td style="padding:0.3rem 0.4rem; color:${color};">Cluster Total</td>`;
+            html += `<td style="text-align:center; padding:0.3rem 0.4rem; font-family:'JetBrains Mono',monospace; color:${color};">${cluster.clusterTotalHrs.toFixed(1)}h</td>`;
+            html += `<td style="text-align:center; padding:0.3rem 0.4rem; font-family:'JetBrains Mono',monospace;">${cluster.clusterSnapped.days}d</td>`;
+            html += `</tr>`;
+            html += `</tbody></table>`;
+
+            if (cluster.hoursSaved > 0) {
+                html += `<div style="margin-top:0.5rem; font-size:0.72rem; color:var(--accent-green); font-weight:600;">`;
+                html += `Saves ${cluster.hoursSaved.toFixed(1)}h vs standalone (${cluster.standaloneTotal.toFixed(1)}h -> ${cluster.clusterTotalHrs.toFixed(1)}h)`;
+                html += `</div>`;
+            }
+
+            if (cluster.clusterTravel > 0) {
+                html += `<div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.25rem;">Travel: ${cluster.clusterTravel.toFixed(1)}h (shared, max of cluster activities)</div>`;
+            }
+
+            totalClusteredHrs += cluster.clusterTotalHrs;
+            totalStandaloneHrs += cluster.standaloneTotal;
+        } else {
+            // Single activity cluster - passthrough
+            const act = cluster.activeActivities[0];
+            const name = actDisplayNames[act.actKey] || act.actKey;
+            html += `<div style="font-size:0.78rem; padding:0.3rem 0; font-family:'JetBrains Mono',monospace;">`;
+            html += `${name}: ${act.apportionedHrs.toFixed(1)}h / ${act.apportionedDays}d`;
+            html += `</div>`;
+
+            totalClusteredHrs += act.apportionedHrs;
+            totalStandaloneHrs += act.apportionedHrs;
+        }
+
+        html += `</div>`;
+    });
+
+    // Job totals
+    const hoursSaved = totalStandaloneHrs - totalClusteredHrs;
+    html += `<div style="background:var(--bg-tertiary); border:1px solid var(--border-highlight); border-radius:8px; padding:1rem; margin-top:0.75rem;">`;
+    html += `<div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">JOB TOTALS</div>`;
+    html += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:0.5rem; font-size:0.78rem;">`;
+    html += `<div><span style="color:var(--text-muted);">Physical crews:</span> <span style="font-family:'JetBrains Mono',monospace; font-weight:600;">${physicalCrews}</span></div>`;
+    html += `<div><span style="color:var(--text-muted);">Clustered hours:</span> <span style="font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--accent-cyan);">${totalClusteredHrs.toFixed(1)}h</span></div>`;
+    html += `<div><span style="color:var(--text-muted);">Standalone hours:</span> <span style="font-family:'JetBrains Mono',monospace; font-weight:600;">${totalStandaloneHrs.toFixed(1)}h</span></div>`;
+    if (hoursSaved > 0) {
+        html += `<div><span style="color:var(--text-muted);">Hours saved:</span> <span style="font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--accent-green);">${hoursSaved.toFixed(1)}h</span></div>`;
+    }
+    html += `</div></div>`;
+
+    body.innerHTML = html;
 }
 
 // ===== SAVE / LOAD / RESET =====
@@ -1818,7 +2140,8 @@ function saveRates() {
         'prodInletRepair','prodInletRecon','prodSpeedHump','prodPaintRemoval',
         'crewCrackFill','crewSealcoat','crewStriping','crewAsphaltSmall','crewAsphaltLarge',
         'crewWsInstall','crewSpeedBump','crewBollard','crewSign','crewMastic','crewInlet','crewSpeedHump',
-        'wasteCrackFill','wasteSealcoat','wasteStriping','wasteAsphalt','wasteMastic','wasteSpeedHump'
+        'wasteCrackFill','wasteSealcoat','wasteStriping','wasteAsphalt','wasteMastic','wasteSpeedHump',
+        'clusterMode'
     ];
     const data = { _version: CALC_VERSION };
     ids.forEach(id => {
@@ -1897,7 +2220,7 @@ function exportResults() {
     const markup = gv('markupPercent') || gv('markupPercent2');
 
     let lines = [];
-    lines.push('MAINTENANCE DIVISION ESTIMATE (v3.4)');
+    lines.push('MAINTENANCE DIVISION ESTIMATE (v3.5)');
     lines.push('='.repeat(70));
     lines.push('Project: ' + proj);
     lines.push('Generated: ' + new Date().toLocaleString());
@@ -2084,10 +2407,10 @@ function generateAnalysis(snap) {
             const sf = act.inputs?.sf || 0;
             const crew = act.rates?.crewSize;
             if (isHigh && crew >= 4 && sf < 35000) {
-                reasons.push(`Running a 4-person crew on ${sf.toLocaleString()} SF. Field threshold (Q3): below ~35,000 SF per phase, a 3-person crew can typically handle the spray application, edging, and barricade management without bottlenecking. The fourth person's value is primarily barricade setup/teardown and keeping the spray rig moving — less critical on smaller lots.`);
+                reasons.push(`Running a 4-person crew on ${sf.toLocaleString()} SF. The 4th crew member is required for manual spray bar operation, not volume. If equipment is upgraded to pneumatic spray bar, a 3-man crew is viable at equivalent production rates. Below ~35,000 SF per phase, the 4th person's support value (barricades, hose, staging) is less critical on smaller lots.`);
             }
-            if (isLow && sf >= 60000) {
-                reasons.push(`${sf.toLocaleString()} SF is in the efficient production zone for a ${crew}-person crew. Wide-open lots at this scale allow long, uninterrupted spray passes with minimal repositioning.`);
+            if (isLow && sf >= 52000) {
+                reasons.push(`${sf.toLocaleString()} SF is in the efficient production zone for a ${crew}-person crew. Wide-open lots at this scale allow long, uninterrupted spray passes with minimal repositioning. 3-man baseline: 45K normal, 50K strong, 55K elite.`);
             }
         }
 
@@ -2308,6 +2631,56 @@ function generateAnalysis(snap) {
         });
     }
 
+    // === Clustering observations ===
+    if (snap.clustering) {
+        const clusters = Object.values(snap.clustering);
+        const clusteredClusters = clusters.filter(c => c.clusteringApplied && c.hoursSaved > 0);
+
+        if (clusteredClusters.length > 0) {
+            clusteredClusters.forEach(cluster => {
+                const actNames = cluster.activeActivities.map(a => {
+                    const nameMap = { asphaltRepair:'Asphalt Repair', wheelStops:'Wheel Stops', bollards:'Bollards', signs:'Signs', inletRepair:'Inlet Repair', speedHumps:'Speed Humps', striping:'Striping', paintRemoval:'Paint Removal', speedBumps:'Speed Bumps' };
+                    return nameMap[a.actKey] || a.actKey;
+                });
+                const reasons = [
+                    `${cluster.name} shares mobilization across ${actNames.join(', ')}. Combined production: ${cluster.clusterTotalHrs.toFixed(1)}h vs ${cluster.standaloneTotal.toFixed(1)}h standalone (saves ${cluster.hoursSaved.toFixed(1)}h).`,
+                    `Travel charged once at ${cluster.clusterTravel.toFixed(1)}h (max across activities) instead of ${cluster.activeActivities.reduce((s,a) => s + a.travel, 0).toFixed(1)}h cumulative.`
+                ];
+                // Tack-on detection within cluster
+                cluster.activeActivities.forEach(act => {
+                    if (act.proportion < 0.25 && cluster.activeActivities.length > 1) {
+                        const name = actNames.find((_, i) => cluster.activeActivities[i].actKey === act.actKey) || act.actKey;
+                        reasons.push(`${name} is a tack-on (${(act.proportion * 100).toFixed(0)}% of cluster production). Benefits from shared mobilization rather than requiring its own crew-day.`);
+                    }
+                });
+                observations.push({ activity: `${cluster.icon} ${cluster.name} (Clustered)`, flag: 'INFO', reasons });
+            });
+        }
+    }
+
+    // Suggest clustering when off but would help
+    if (!snap.clustering && activeCount > 1) {
+        // Run a speculative cluster check
+        const specCluster = clusterize(snap, snap.settings.stdShift, snap.settings.maxShift);
+        // Restore the toggle check by temporarily forcing it - actually we can't override the DOM.
+        // Instead, check if multiple activities share a cluster
+        const clusterCounts = {};
+        Object.entries(acts).forEach(([key, a]) => {
+            if (!a || !a.enabled) return;
+            const cId = ACTIVITY_CLUSTER[key];
+            if (cId) clusterCounts[cId] = (clusterCounts[cId] || 0) + 1;
+        });
+        const multiActivityClusters = Object.entries(clusterCounts).filter(([_, count]) => count >= 2);
+        if (multiActivityClusters.length > 0) {
+            const clusterNames = multiActivityClusters.map(([cId]) => CREW_CLUSTERS[cId]?.name || cId);
+            observations.push({
+                activity: 'Crew Clustering Suggestion', flag: 'INFO', reasons: [
+                    `Crew clustering is OFF, but ${multiActivityClusters.length} cluster(s) have multiple active activities: ${clusterNames.join(', ')}. Enabling clustering would reduce estimated hours by sharing mobilization across co-deployed activities.`
+                ]
+            });
+        }
+    }
+
     if (observations.length === 0 && totalChecks > 0) {
         observations.push({
             activity: 'All Activities', flag: 'OK', reasons: [
@@ -2397,6 +2770,53 @@ function exportComprehensiveText() {
         L.push('Shift Settings: Standard ' + snap.settings.stdShift + 'h | Max ' + snap.settings.maxShift + 'h');
         L.push('Three-Tier: Conservative (80% prod) | Standard (100%) | Aggressive (120%)');
         L.push('');
+    }
+
+    // ── CREW DEPLOYMENT (Clustered) ──
+    if (snap.clustering) {
+        const clusters = Object.values(snap.clustering).filter(c => c.activeActivities && c.activeActivities.length > 0);
+        if (clusters.length > 0) {
+            const actDisplayNames = {
+                asphaltRepair: 'Asphalt Repair', wheelStops: 'Wheel Stops', bollards: 'Bollards',
+                signs: 'Signs', inletRepair: 'Inlet Repair', speedHumps: 'Speed Humps',
+                striping: 'Striping', paintRemoval: 'Paint Removal', speedBumps: 'Speed Bumps',
+                sealcoat: 'Sealcoating', crackFill: 'Crack Filling', mastic: 'Mastic'
+            };
+
+            L.push('='.repeat(W));
+            L.push('CREW DEPLOYMENT (Clustered)');
+            L.push('Shared mobilization - hours sum to real crew-days');
+            L.push('='.repeat(W));
+
+            let totalClusteredHrs = 0, totalStandaloneHrs = 0, physicalCrews = 0;
+
+            clusters.forEach(cluster => {
+                physicalCrews++;
+                L.push('');
+                const maxCrew = Math.max(...cluster.activeActivities.map(a => a.crewSize));
+                L.push(`${cluster.name} - ${maxCrew}-man crew`);
+                L.push('-'.repeat(50));
+
+                cluster.activeActivities.forEach(act => {
+                    const name = actDisplayNames[act.actKey] || act.actKey;
+                    L.push(`  ${padR(name, 20)} ${padR(act.apportionedHrs.toFixed(1) + 'h', 8)} (${(act.proportion * 100).toFixed(0)}%)`);
+                });
+
+                if (cluster.clusteringApplied) {
+                    L.push(`  Cluster shift: ${cluster.clusterTotalHrs.toFixed(1)}h | Travel: ${cluster.clusterTravel.toFixed(1)}h | Saved: ${cluster.hoursSaved.toFixed(1)}h vs standalone`);
+                    totalClusteredHrs += cluster.clusterTotalHrs;
+                    totalStandaloneHrs += cluster.standaloneTotal;
+                } else {
+                    const act = cluster.activeActivities[0];
+                    totalClusteredHrs += act.apportionedHrs;
+                    totalStandaloneHrs += act.apportionedHrs;
+                }
+            });
+
+            L.push('');
+            L.push(`Job: ${physicalCrews} crews, ${totalClusteredHrs.toFixed(1)}h clustered (${totalStandaloneHrs.toFixed(1)}h standalone)`);
+            L.push('');
+        }
     }
 
     // ── ACTIVITY DETAIL BLOCKS ──
@@ -2560,7 +2980,13 @@ function exportJSON() {
 }
 
 // ===== INIT =====
-const CALC_VERSION = '3.4';
+const CALC_VERSION = '3.5';
+// v3.5: Sealcoat production rate recalibrated from 60,000 to 52,000 SF/day based on superintendent
+//       field data (Darrell Bishop, Feb 2026). 3-man baseline: 45K normal, 50K strong, 55K elite.
+//       4th man required for manual spray bar. Added crew clustering engine: activities sharing
+//       equipment cluster (heavy, paint, sealcoat, crack fill, mastic) share one mobilization.
+//       Shift optimizer runs per cluster, not per activity. Hours apportioned back to activities
+//       for HeavyBid entry. Cluster deployment summary added to estimate output and exports.
 
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('maintCalcRates');
