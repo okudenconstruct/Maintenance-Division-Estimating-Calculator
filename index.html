@@ -328,6 +328,70 @@
             .settings-row { flex-direction: column; gap: 0.75rem; }
             .header { flex-direction: column; align-items: flex-start; }
         }
+
+        /* Reviewer Notes */
+        .notes-box {
+            width: 100%;
+            min-height: 60px;
+            padding: 0.6rem 0.75rem;
+            margin-top: 0.75rem;
+            border: 1px dashed var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.78rem;
+            line-height: 1.5;
+            resize: vertical;
+            transition: border-color 0.2s ease;
+        }
+        .notes-box:focus {
+            outline: none;
+            border-color: var(--accent-yellow);
+            border-style: solid;
+            box-shadow: 0 0 0 2px rgba(253, 216, 53, 0.12);
+            color: var(--text-primary);
+        }
+        .notes-box::placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Hover Tooltips */
+        .tip {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted var(--text-muted);
+        }
+        .tip::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-highlight);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.7rem;
+            font-weight: 400;
+            line-height: 1.5;
+            white-space: pre-line;
+            max-width: 320px;
+            min-width: 200px;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            text-transform: none;
+            letter-spacing: normal;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+        .tip:hover::after {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -361,7 +425,7 @@
 <div class="settings-panel">
     <div class="settings-row">
         <div class="setting-group">
-            <label>Standard Shift</label>
+            <label><span class="tip" data-tip="Base shift length for production hours. 8h is standard. Determines shift increment snapping.">Standard Shift</span></label>
             <select id="hoursPerDay" onchange="calculateAll()">
                 <option value="6">6 hours</option>
                 <option value="8" selected>8 hours</option>
@@ -369,7 +433,7 @@
             </select>
         </div>
         <div class="setting-group">
-            <label>Max Shift</label>
+            <label><span class="tip" data-tip="Maximum allowed shift length including overtime. Used when production exceeds standard shift.">Max Shift</span></label>
             <select id="maxShift" onchange="calculateAll()">
                 <option value="8">8 hours</option>
                 <option value="10" selected>10 hours</option>
@@ -389,11 +453,11 @@
             <input type="number" id="dgaPrice" placeholder="0.00" step="0.01" value="" oninput="calculateAll()">
         </div>
         <div class="setting-group">
-            <label>Markup %</label>
+            <label><span class="tip" data-tip="Applied to direct cost (labor + material) to calculate bid price.">Markup %</span></label>
             <input type="number" id="markupPercent" value="15" step="1" oninput="calculateAll()">
         </div>
         <div class="setting-group">
-            <label>Crew Clustering</label>
+            <label><span class="tip" data-tip="ON groups co-deployed activities sharing equipment into one mobilization. OFF calculates each activity standalone.">Crew Clustering</span></label>
             <select id="clusterMode" onchange="calculateAll()">
                 <option value="off">Off (standalone per activity)</option>
                 <option value="on" selected>On (shared mobilization)</option>
@@ -411,7 +475,7 @@
     <div class="panel-content" id="rateContent">
         <div class="rate-grid">
             <div class="rate-section">
-                <h4>Crew Hourly Rates (Equip + Labor)</h4>
+                <h4><span class="tip" data-tip="All-in hourly cost including labor, equipment, and vehicle. From HeavyBid crew setup.">Crew Hourly Rates (Equip + Labor)</span></h4>
                 <div class="rate-row"><label>Crack Fill Crew</label><input type="number" id="rateCrackFill" value="151.15" step="0.01"></div>
                 <div class="rate-row"><label>Sealcoat Crew</label><input type="number" id="rateSealcoat" value="203.80" step="0.01"></div>
                 <div class="rate-row"><label>Striping Crew</label><input type="number" id="rateStriping" value="136.55" step="0.01"></div>
@@ -453,7 +517,7 @@
                 <div class="rate-row"><label>Grinder Rental ($/DAY)</label><input type="number" id="matPaintRemoval" value="650.00" step="0.01"></div>
             </div>
             <div class="rate-section">
-                <h4>Production Rates (per day, standard crew)</h4>
+                <h4><span class="tip" data-tip="Units completed per standard shift day. Field-calibrated by Darrell Bishop.">Production Rates (per day, standard crew)</span></h4>
                 <div class="rate-row"><label>Crack Fill (LF/day)</label><input type="number" id="prodCrackFill" value="4000"></div>
                 <div class="rate-row"><label>Sealcoat (SF/day)</label><input type="number" id="prodSealcoat" value="52000"></div>
                 <div class="rate-row"><label>4" Lines (LF/day)</label><input type="number" id="prod4Line" value="5000"></div>
@@ -492,7 +556,7 @@
                 <div class="rate-row"><label>Speed Hump</label><input type="number" id="crewSpeedHump" value="4" min="2" max="5"></div>
             </div>
             <div class="rate-section">
-                <h4>Material Waste Factors (%)</h4>
+                <h4><span class="tip" data-tip="Extra material ordered beyond calculated qty. Accounts for spillage, overspray, and cut waste.">Material Waste Factors (%)</span></h4>
                 <p style="font-size:0.65rem; color:var(--text-muted); margin-bottom:0.5rem;">Applied to material quantities before costing. Discrete items (wheel stops, signs, etc.) do not need waste.</p>
                 <div class="rate-row"><label>Crack Fill</label><input type="number" id="wasteCrackFill" value="10" min="0" step="1"> %</div>
                 <div class="rate-row"><label>Sealcoat</label><input type="number" id="wasteSealcoat" value="5" min="0" step="1"> %</div>
@@ -526,10 +590,11 @@
     <div class="panel-content" id="wt_crackfill">
         <div class="wt-grid">
             <div class="input-group"><label>Linear Feet (LF)</label><input type="number" id="cf_lf" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="cf_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="cf_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="cf_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="cf_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section"><h5>Crack Filling Output</h5><div id="cf_output"></div></div>
+        <textarea id="note_cf" class="notes-box" placeholder="Reviewer notes for Crack Filling..."></textarea>
     </div>
 </div>
 
@@ -545,11 +610,12 @@
     <div class="panel-content" id="wt_sealcoat">
         <div class="wt-grid">
             <div class="input-group"><label>Square Feet (SF)</label><input type="number" id="sc_sf" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="sc_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="sc_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sc_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="sc_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">4-man crew required for manual spray bar. Rate based on 50K SF/day 3-man baseline + 4th man support gain. Open lot: ~52K standard. Complex lot with islands/medians: ~42-45K. 2-coat application at 100 SF/gal, 125 gal/hr sustained.</p>
         <div class="output-section"><h5>Sealcoating Output</h5><div id="sc_output"></div></div>
+        <textarea id="note_sc" class="notes-box" placeholder="Reviewer notes for Sealcoating..."></textarea>
     </div>
 </div>
 
@@ -564,10 +630,10 @@
     </button>
     <div class="panel-content" id="wt_striping">
         <div class="wt-grid" style="margin-bottom:0.5rem;">
-            <div class="input-group"><label>Phases</label><input type="number" id="st_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="st_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="st_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="st_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
-        <p style="font-size:0.65rem; color:var(--text-muted); margin-bottom:0.5rem;">
+        <p class="tip" data-tip="Machine and hand items run concurrently. Duration = max(machine, hand), not the sum." style="font-size:0.65rem; color:var(--text-muted); margin-bottom:0.5rem;">
             <span style="display:inline-block;width:10px;height:10px;background:var(--accent-blue);border-radius:2px;vertical-align:middle;margin-right:3px;"></span> Machine items
             <span style="display:inline-block;width:10px;height:10px;background:var(--accent-yellow);border-radius:2px;vertical-align:middle;margin-left:10px;margin-right:3px;"></span> Hand items (concurrent with machine)
         </p>
@@ -592,6 +658,7 @@
             <div class="output-divider"></div>
             <div id="st_output"></div>
         </div>
+        <textarea id="note_st" class="notes-box" placeholder="Reviewer notes for Striping..."></textarea>
     </div>
 </div>
 
@@ -607,7 +674,7 @@
     <div class="panel-content" id="wt_asphalt">
         <div class="wt-grid">
             <div class="input-group"><label>Total Repair Area (SF)</label><input type="number" id="ar_sf" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Depth Configuration</label>
+            <div class="input-group"><label><span class="tip" data-tip="Determines material layers and tonnage. Each layer adds cost. 2s=surface only, 4b=base course, d=DGA sub-base.">Depth Configuration</span></label>
                 <select id="ar_depth" onchange="calculateAll()">
                     <option value="2s">2" Surface Only (9.5mm)</option>
                     <option value="2s4b">2" Surface + 4" Base (19mm)</option>
@@ -617,8 +684,8 @@
                     <option value="2s6d">2" Surface + 6" DGA</option>
                 </select>
             </div>
-            <div class="input-group"><label>Phases</label><input type="number" id="ar_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="ar_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="ar_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="ar_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section">
             <h5>Asphalt Repair Output</h5>
@@ -630,6 +697,7 @@
             <div class="output-divider"></div>
             <div id="ar_output"></div>
         </div>
+        <textarea id="note_ar" class="notes-box" placeholder="Reviewer notes for Asphalt Repairs..."></textarea>
     </div>
 </div>
 
@@ -645,14 +713,15 @@
     <div class="panel-content" id="wt_mastic">
         <div class="wt-grid">
             <div class="input-group"><label>Total Linear Feet (LF)</label><input type="number" id="ma_lf" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Avg Crack Width (inches)</label><input type="number" id="ma_width" value="1.0" min="0.25" step="0.25" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Avg Crack Depth (inches)</label><input type="number" id="ma_depth" value="0.5" min="0.25" step="0.25" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="ma_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="ma_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Wider cracks consume more material per LF and slow machine speed.">Avg Crack Width (inches)</span></label><input type="number" id="ma_width" value="1.0" min="0.25" step="0.25" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Deeper cracks require more mastic fill. For voids over 1 inch, pre-fill with sand to 0.5 inches from surface.">Avg Crack Depth (inches)</span></label><input type="number" id="ma_depth" value="0.5" min="0.25" step="0.25" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="ma_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="ma_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">5-man crew: 2 dumping buckets, 2 on hot irons, 1 driving/traffic/logistics. Fifth crew member absorbs machine pickup and dropoff within production hours. Machine rental charged per production day.</p>
         <p class="note">Material: 30 lb box yields ~57.5 cu. in. of fill. Coverage per box = 57.5 / (width x depth). For deep voids, fill with sand to 1/2" from surface before mastic.</p>
         <div class="output-section"><h5>Mastic Output</h5><div id="ma_output"></div></div>
+        <textarea id="note_ma" class="notes-box" placeholder="Reviewer notes for Mastic..."></textarea>
     </div>
 </div>
 
@@ -670,10 +739,11 @@
             <div class="input-group"><label>New Installs (qty)</label><input type="number" id="ws_new" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label>Reset / Re-pin (qty)</label><input type="number" id="ws_reset" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label>Remove & Dispose (qty)</label><input type="number" id="ws_remove" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="ws_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="ws_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="ws_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="ws_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section"><h5>Wheel Stop Output</h5><div id="ws_output"></div></div>
+        <textarea id="note_ws" class="notes-box" placeholder="Reviewer notes for Wheel Stops..."></textarea>
     </div>
 </div>
 
@@ -690,11 +760,12 @@
         <div class="wt-grid">
             <div class="input-group"><label>Signs on Post (qty)</label><input type="number" id="sg_post" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label>Signs in Bollard (qty)</label><input type="number" id="sg_bollard" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="sg_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="sg_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sg_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="sg_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">Post signs include small and large at blended rate of 32/day. Bollard signs include sign + bollard material costs.</p>
         <div class="output-section"><h5>Sign Output</h5><div id="sg_output"></div></div>
+        <textarea id="note_sg" class="notes-box" placeholder="Reviewer notes for Signs..."></textarea>
     </div>
 </div>
 
@@ -710,10 +781,11 @@
     <div class="panel-content" id="wt_bollard">
         <div class="wt-grid">
             <div class="input-group"><label>Bollards (qty)</label><input type="number" id="bo_qty" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="bo_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="bo_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="bo_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="bo_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section"><h5>Bollard Output</h5><div id="bo_output"></div></div>
+        <textarea id="note_bo" class="notes-box" placeholder="Reviewer notes for Bollards..."></textarea>
     </div>
 </div>
 
@@ -729,10 +801,11 @@
     <div class="panel-content" id="wt_speedbump">
         <div class="wt-grid">
             <div class="input-group"><label>Speed Bumps (qty)</label><input type="number" id="sb_qty" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="sb_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="sb_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sb_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="sb_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section"><h5>Rubber Speed Bump Output</h5><div id="sb_output"></div></div>
+        <textarea id="note_sb" class="notes-box" placeholder="Reviewer notes for Speed Bumps..."></textarea>
     </div>
 </div>
 
@@ -748,8 +821,8 @@
     <div class="panel-content" id="wt_speedhump">
         <div class="wt-grid">
             <div class="input-group"><label>Speed Humps (qty)</label><input type="number" id="sh_qty" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="sh_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="sh_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sh_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="sh_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">2.13 tons of 9.5mm asphalt per hump (sinusoidal profile, 16'x13'x2.64").</p>
         <div class="output-section"><h5>Speed Hump Output</h5>
@@ -757,6 +830,7 @@
             <div class="output-divider"></div>
             <div id="sh_output"></div>
         </div>
+        <textarea id="note_sh" class="notes-box" placeholder="Reviewer notes for Speed Humps..."></textarea>
     </div>
 </div>
 
@@ -774,11 +848,12 @@
             <div class="input-group"><label>Repairs (parge & asphalt, qty)</label><input type="number" id="in_repair" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label>Reconstructions (qty)</label><input type="number" id="in_recon" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label>Castings Required (qty)</label><input type="number" id="in_casting" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="in_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="in_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="in_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="in_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">Repair = 6 units/day (4-man crew). Reconstruction hours depend on scope.</p>
         <div class="output-section"><h5>Inlet Output</h5><div id="in_output"></div></div>
+        <textarea id="note_in" class="notes-box" placeholder="Reviewer notes for Inlet Repair..."></textarea>
     </div>
 </div>
 
@@ -794,11 +869,12 @@
     <div class="panel-content" id="wt_paintremoval">
         <div class="wt-grid">
             <div class="input-group"><label>Linear Feet (LF)</label><input type="number" id="pr_lf" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Phases</label><input type="number" id="pr_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label>Travel (hrs)</label><input type="number" id="pr_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="pr_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
+            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="pr_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">Uses striping crew + grinder rental per day. Grinder runs concurrent with hand painting when both are on the same job.</p>
         <div class="output-section"><h5>Paint Removal Output</h5><div id="pr_output"></div></div>
+        <textarea id="note_pr" class="notes-box" placeholder="Reviewer notes for Paint Removal..."></textarea>
     </div>
 </div>
 
@@ -816,9 +892,9 @@
                 <tr>
                     <th>Activity</th>
                     <th>Crew</th>
-                    <th colspan="2" style="text-align:center; color:var(--accent-orange);">Conservative</th>
-                    <th colspan="2" style="text-align:center; color:var(--accent-cyan);">Standard</th>
-                    <th colspan="2" style="text-align:center; color:var(--accent-green);">Aggressive</th>
+                    <th colspan="2" style="text-align:center; color:var(--accent-orange);"><span class="tip" data-tip="80% of standard production rate. Use for complex sites, tight access, or first-time crews.">Conservative</span></th>
+                    <th colspan="2" style="text-align:center; color:var(--accent-cyan);"><span class="tip" data-tip="100% production rate. Darrell's field-calibrated baseline for experienced crews.">Standard</span></th>
+                    <th colspan="2" style="text-align:center; color:var(--accent-green);"><span class="tip" data-tip="120% of standard production rate. Use for wide-open sites with experienced crews.">Aggressive</span></th>
                     <th>Travel</th>
                 </tr>
                 <tr>
@@ -835,6 +911,7 @@
             </tbody>
         </table>
     </div>
+    <textarea id="note_estimateSummary" class="notes-box" placeholder="Reviewer notes for Estimate Summary..."></textarea>
 </div>
 
 <!-- CLUSTER DEPLOYMENT SUMMARY -->
@@ -844,6 +921,7 @@
         Shared mobilization applied. Hours below reflect real crew-days when activities share equipment.
     </p>
     <div id="clusterBody"></div>
+    <textarea id="note_clusterSummary" class="notes-box" placeholder="Reviewer notes for Cluster Deployment..."></textarea>
 </div>
 
 <!-- ============================================ -->
@@ -862,15 +940,16 @@
                     <th>Qty</th>
                     <th>Unit</th>
                     <th>Calc $/Unit</th>
-                    <th>P25</th>
-                    <th>Median</th>
-                    <th>P75</th>
+                    <th><span class="tip" data-tip="25th percentile - 75% of historical jobs cost more than this.">P25</span></th>
+                    <th><span class="tip" data-tip="50th percentile - typical cost from 347 historical jobs.">Median</span></th>
+                    <th><span class="tip" data-tip="75th percentile - 75% of historical jobs cost less than this.">P75</span></th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody id="unitCheckBody"></tbody>
         </table>
     </div>
+    <textarea id="note_unitCheck" class="notes-box" placeholder="Reviewer notes for Unit Cost Check..."></textarea>
 </div>
 
 <!-- ============================================ -->
@@ -882,6 +961,7 @@
         Deterministic analysis of unit cost flags based on quantities, phases, travel, and production parameters relative to 347 historical jobs.
     </p>
     <div id="analysisBody"></div>
+    <textarea id="note_analysis" class="notes-box" placeholder="Reviewer notes for Job Analysis..."></textarea>
 </div>
 
 <!-- ============================================ -->
@@ -939,6 +1019,7 @@
             <span class="val" id="bidPrice">$0</span>
         </div>
     </div>
+    <textarea id="note_costSummary" class="notes-box" placeholder="Reviewer notes for Cost Summary..."></textarea>
 </div>
 
 <!-- HISTORICAL BENCHMARKING REFERENCE -->
@@ -997,6 +1078,29 @@ function sv(id, val) { const el = document.getElementById(id); if (el) el.textCo
 function fmt(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function fmt2(n) { return n > 0 ? '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '$0'; }
 function isOn(id) { return document.getElementById(id)?.checked; }
+
+const NOTE_IDS = {
+    cf: 'note_cf', sc: 'note_sc', st: 'note_st', ar: 'note_ar',
+    ma: 'note_ma', ws: 'note_ws', sg: 'note_sg', bo: 'note_bo',
+    sb: 'note_sb', sh: 'note_sh', 'in': 'note_in', pr: 'note_pr',
+    estimateSummary: 'note_estimateSummary', clusterSummary: 'note_clusterSummary',
+    unitCheck: 'note_unitCheck', analysis: 'note_analysis', costSummary: 'note_costSummary'
+};
+const NOTE_LABELS = {
+    cf: 'Crack Filling', sc: 'Sealcoating', st: 'Striping', ar: 'Asphalt Repairs',
+    ma: 'Mastic', ws: 'Wheel Stops', sg: 'Signs', bo: 'Bollards',
+    sb: 'Speed Bumps', sh: 'Speed Humps', 'in': 'Inlet Repair', pr: 'Paint Removal',
+    estimateSummary: 'Estimate Summary', clusterSummary: 'Cluster Deployment',
+    unitCheck: 'Unit Cost Check', analysis: 'Job Analysis', costSummary: 'Cost Summary'
+};
+function collectNotes() {
+    const notes = {};
+    for (const [key, id] of Object.entries(NOTE_IDS)) {
+        const el = document.getElementById(id);
+        if (el && el.value.trim()) notes[key] = el.value.trim();
+    }
+    return notes;
+}
 
 function togglePanel(btn, contentId) {
     btn.classList.toggle('open');
@@ -1994,6 +2098,7 @@ function calculateAll() {
     // === CREW CLUSTERING ===
     const clusterResults = clusterize(snapshot, stdShift, maxShift);
     snapshot.clustering = clusterResults;
+    snapshot.notes = collectNotes();
     window.lastCalcSnapshot = snapshot;
 
     // === RENDER CLUSTER DEPLOYMENT SUMMARY ===
@@ -2208,6 +2313,11 @@ function resetForm() {
     document.getElementById('ar_depth').selectedIndex = 0;
     document.getElementById('ma_width').value = '1.0';
     document.getElementById('ma_depth').value = '0.5';
+    // Clear all reviewer notes
+    for (const id of Object.values(NOTE_IDS)) {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    }
     calculateAll();
     showToast('Form reset');
 }
@@ -2259,6 +2369,20 @@ function exportResults() {
     lines.push('Direct Cost: ' + document.getElementById('directCostTotal').textContent);
     lines.push('Markup (' + markup + '%): ' + document.getElementById('markupAmount').textContent);
     lines.push('BID PRICE: ' + document.getElementById('bidPrice').textContent);
+
+    // === REVIEWER NOTES ===
+    const qNotes = collectNotes();
+    if (Object.keys(qNotes).length > 0) {
+        lines.push('');
+        lines.push('='.repeat(70));
+        lines.push('REVIEWER NOTES');
+        lines.push('='.repeat(70));
+        for (const [key, text] of Object.entries(qNotes)) {
+            lines.push('[' + (NOTE_LABELS[key] || key) + ']');
+            lines.push(text);
+            lines.push('');
+        }
+    }
 
     const text = lines.join('\n');
     navigator.clipboard.writeText(text).then(() => {
@@ -2948,6 +3072,20 @@ function exportComprehensiveText() {
     L.push('Calculator Total:   ' + fmt(snap.summary.bidPrice));
     L.push('');
     L.push('Material Pricing: Asphalt 9.5mm $' + snap.settings.asphaltPrice + '/ton | 19mm Base $' + snap.settings.baseAsphaltPrice + '/ton | DGA $' + snap.settings.dgaPrice + '/ton');
+
+    // === REVIEWER NOTES ===
+    const fNotes = snap.notes || collectNotes();
+    if (Object.keys(fNotes).length > 0) {
+        L.push('');
+        L.push('='.repeat(W));
+        L.push('REVIEWER NOTES');
+        L.push('='.repeat(W));
+        for (const [key, noteText] of Object.entries(fNotes)) {
+            L.push('[' + (NOTE_LABELS[key] || key) + ']');
+            L.push(noteText);
+            L.push('');
+        }
+    }
 
     const text = L.join('\n');
     navigator.clipboard.writeText(text).then(() => {
