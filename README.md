@@ -2,13 +2,13 @@
 
 **Version 4.0** | February 2026
 
-A browser-based estimating tool that converts project scope inputs into crew sizes and activity durations for HeavyBid line-item entry. Built for pavement maintenance estimating with field-calibrated production rates, three-tier scheduling, and deterministic job analysis.
+A browser-based estimating tool that converts project scope inputs into crew sizes and activity durations. Built for pavement maintenance estimating with field-calibrated production rates, three-tier scheduling, and deterministic job analysis.
 
 ---
 
 ## What It Does
 
-The calculator sits upstream of HeavyBid. You enter quantities, phases, and travel time. It returns crew sizes and durations across three production tiers (conservative, standard, aggressive). Cost summaries exist as sanity checks against 347-job historical benchmarks — HeavyBid owns all final cost buildup, overhead, and bid pricing.
+You enter quantities, phases, and travel time. It returns crew sizes and durations across three production tiers (conservative, standard, aggressive). Cost summaries exist as sanity checks against 347-job historical benchmarks — the calculator focuses on crew sizing and duration, not final bid pricing.
 
 **12 work types supported:** Crack Filling, Sealcoating, Striping, Asphalt Repairs, Mastic Crack Fill, Wheel Stops, Signs, Bollards, Rubber Speed Bumps, Speed Humps, Inlet Repair, Paint Removal.
 
@@ -49,7 +49,7 @@ No server, no install, no dependencies beyond Google Fonts.
 
 ### Export & Output
 - **Quick Export** — Clipboard summary with three-tier hours and cost totals
-- **Full Export** — Comprehensive plain-text report structured for HeavyBid workflow: crew/duration first, then analysis, then costs (labeled as reference)
+- **Full Export** — Comprehensive plain-text report: crew/duration first, then analysis, then costs (labeled as reference)
 - **JSON Export** — Complete calculation snapshot for data analysis
 - **Print/PDF** — Clean white-background document in a new window with all sections (crew summary, calendar, confidence scores with explanations, unit costs, analysis, scope assumptions). Triggers browser print dialog for PDF save.
 - **Per-Activity Unit Costs** — Third column in Cost Summary showing $/unit with color-coded status badges
@@ -121,7 +121,7 @@ Rates persist in browser LocalStorage. Save/Load/Reset controls in the Rate Conf
 
 **Deterministic analysis, not ML.** Every observation traces to specific inputs and explicit rules from field experience. Same inputs always produce the same analysis. Auditable and predictable.
 
-**Costs are secondary.** HeavyBid owns cost buildup. Calculator costs exist to sanity-check crew sizing and duration, not to produce bid pricing. Exports label them accordingly.
+**Costs are secondary.** The calculator's primary output is crew sizes and durations. Cost summaries exist to sanity-check whether the sizing seems reasonable, not to produce bid pricing. Exports label them accordingly.
 
 **Confidence with explanations.** Bare confidence scores are useless without knowing why. Each component shows its definition and lists every driver sorted by cost impact with severity tags.
 
