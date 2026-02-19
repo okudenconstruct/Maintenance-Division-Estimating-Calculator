@@ -632,7 +632,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v3.5 | Field-Calibrated | Three-Tier Output | Crew Clustering | Field Operations Intelligence</span>
+            <span>v4.0 | Field-Calibrated | Three-Tier Output | Crew Clustering | Estimate Confidence | Calendar Duration</span>
         </div>
     </div>
     <div class="header-controls">
@@ -1345,7 +1345,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v3.5 | Field-Calibrated Production Rates | Crew Clustering | Field Operations Intelligence | Full Export<br>
+    Maintenance Division Estimating Calculator v4.0 | Field-Calibrated Production Rates | Crew Clustering | Estimate Confidence | Calendar Duration | Full Export<br>
     All rates subject to superintendent review.
 </div>
 
@@ -3379,7 +3379,7 @@ function exportResults() {
     const markup = gv('markupPercent') || gv('markupPercent2');
 
     let lines = [];
-    lines.push('MAINTENANCE DIVISION ESTIMATE (v3.5)');
+    lines.push('MAINTENANCE DIVISION ESTIMATE (v4.0)');
     lines.push('='.repeat(70));
     lines.push('Project: ' + proj);
     lines.push('Generated: ' + new Date().toLocaleString());
@@ -4557,7 +4557,22 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
 }
 
 // ===== INIT =====
-const CALC_VERSION = '3.5';
+const CALC_VERSION = '4.0';
+// v4.0: Six feature additions aligned with AACE/ASPE/AIA estimating best practices:
+//       1. Differentiated wheel stop production rates (install 80, reset 155, removal 220/day)
+//          per field-calibrated Q21 data. Analysis engine compares user rates vs field benchmarks.
+//       2. Scope Exclusions & Assumptions checklist (12 items, Incl/Excl/N/A radios + notes).
+//          Persists in localStorage. Exported in all 3 formats. Per ASPE Standard Estimating Practice.
+//       3. Risk-Weighted Estimate Confidence score (4 sub-scores: Production Reliability 35%,
+//          Benchmark Alignment 30%, Scope Definition 20%, Data Quality 15%). Each component
+//          includes explanatory drivers showing exactly why the score is what it is.
+//       4. Per-activity unit cost column in Cost Summary with status badges.
+//       5. Calendar Duration Estimate with work sequencing, cure windows between dependent
+//          activities, and weather contingency input. Scans all prior clusters for cure dependencies.
+//       6. Print/PDF export — opens clean white-background document in new window with all sections.
+//       Also: BENCHMARKS now include sample sizes (n=), RATE_CONFIDENCE moved to module scope,
+//       unitChecks carry benchKey and totalCost for confidence scoring.
+//
 // v3.5: Sealcoat production rate recalibrated from 60,000 to 52,000 SF/day based on superintendent
 //       field data (Darrell Bishop, Feb 2026). 3-man baseline: 45K normal, 50K strong, 55K elite.
 //       4th man required for manual spray bar. Added crew clustering engine: activities sharing
