@@ -392,6 +392,206 @@
         .tip:hover::after {
             opacity: 1;
         }
+        /* === Scope Exclusions & Assumptions === */
+        .scope-section-header {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0.75rem 0 0.4rem 0;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .scope-section-header.incl { color: var(--accent-green); }
+        .scope-section-header.excl { color: var(--accent-orange); }
+        .scope-item {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.78rem;
+        }
+        .scope-item-name {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .scope-radio-group {
+            display: flex;
+            gap: 0.15rem;
+        }
+        .scope-radio-group label {
+            font-size: 0.68rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid var(--border-primary);
+            color: var(--text-muted);
+            transition: all 0.15s ease;
+        }
+        .scope-radio-group input { display: none; }
+        .scope-radio-group input:checked + label.lbl-incl {
+            background: rgba(0,204,102,0.15);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+        .scope-radio-group input:checked + label.lbl-excl {
+            background: rgba(255,136,0,0.15);
+            border-color: var(--accent-orange);
+            color: var(--accent-orange);
+            font-weight: 600;
+        }
+        .scope-radio-group input:checked + label.lbl-na {
+            background: rgba(255,255,255,0.06);
+            border-color: var(--text-muted);
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .scope-item-note {
+            grid-column: 1 / -1;
+            margin-top: -0.15rem;
+        }
+        .scope-item-note input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 4px;
+            color: var(--text-primary);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.72rem;
+            font-family: inherit;
+        }
+        .scope-item-note input::placeholder { color: var(--text-muted); opacity: 0.6; }
+        /* === Calendar Duration === */
+        .timeline-row {
+            display: grid;
+            grid-template-columns: 70px 1fr 60px 60px;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.35rem 0.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.78rem;
+        }
+        .timeline-row.header-row {
+            font-weight: 700;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .timeline-row.cure-row {
+            background: rgba(255,170,0,0.06);
+            border-left: 3px solid #ffaa00;
+            font-style: italic;
+            color: var(--text-muted);
+        }
+        .timeline-row .day-range {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+        .timeline-row .activity-name { color: var(--text-primary); }
+        .timeline-row .crew-col { text-align: center; color: var(--text-secondary); }
+        .timeline-row .hours-col {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+        }
+        .timeline-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.75rem;
+            margin-top: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border-highlight);
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+        /* === Unit Cost Column === */
+        .unit-cost-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.2rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.78rem;
+        }
+        .unit-cost-row .lbl { color: var(--text-secondary); flex: 1; }
+        .unit-cost-row .val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            margin-right: 0.4rem;
+        }
+        .unit-cost-badge {
+            font-size: 0.62rem;
+            font-weight: 700;
+            padding: 0.1rem 0.35rem;
+            border-radius: 3px;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .unit-cost-badge.in-range  { background: rgba(0,204,102,0.15); color: #00cc66; }
+        .unit-cost-badge.high      { background: rgba(255,170,0,0.15); color: #ffaa00; }
+        .unit-cost-badge.low       { background: rgba(255,170,0,0.15); color: #ffaa00; }
+        .unit-cost-badge.very-high { background: rgba(255,68,68,0.15); color: #ff4444; }
+        .unit-cost-badge.very-low  { background: rgba(255,68,68,0.15); color: #ff4444; }
+        /* === Confidence Score === */
+        .confidence-section { margin-bottom: 0.75rem; }
+        .confidence-bar-row {
+            display: grid;
+            grid-template-columns: 160px 1fr 50px;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.4rem;
+            font-size: 0.78rem;
+        }
+        .confidence-bar-row .label { color: var(--text-secondary); font-weight: 500; }
+        .confidence-bar-track {
+            height: 14px;
+            background: var(--bg-tertiary);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+        }
+        .confidence-bar-fill {
+            height: 100%;
+            border-radius: 7px;
+            transition: width 0.4s ease;
+        }
+        .confidence-bar-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-align: right;
+        }
+        .confidence-composite {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border-highlight);
+        }
+        .confidence-composite .score {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+        .confidence-composite .descriptor {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .confidence-composite .detail {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
     </style>
 </head>
 <body>
@@ -411,6 +611,7 @@
         <button class="btn btn-secondary" onclick="exportResults()"><span>📋</span> Quick Export</button>
         <button class="btn btn-secondary" onclick="exportComprehensiveText()"><span>📄</span> Full Export</button>
         <button class="btn btn-secondary" onclick="exportJSON()"><span>💾</span> JSON</button>
+        <button class="btn btn-secondary" onclick="printEstimate()"><span>🖨️</span> Print</button>
         <button class="btn btn-danger" onclick="resetForm()"><span>↺</span> Reset</button>
     </div>
 </header>
@@ -454,7 +655,7 @@
         </div>
         <div class="setting-group">
             <label><span class="tip" data-tip="Applied to direct cost (labor + material) to calculate bid price.">Markup %</span></label>
-            <input type="number" id="markupPercent" value="15" step="1" oninput="calculateAll()">
+            <input type="number" id="markupPercent" value="60" step="1" oninput="calculateAll()">
         </div>
         <div class="setting-group">
             <label><span class="tip" data-tip="ON groups co-deployed activities sharing equipment into one mobilization. OFF calculates each activity standalone.">Crew Clustering</span></label>
@@ -476,20 +677,20 @@
         <div class="rate-grid">
             <div class="rate-section">
                 <h4><span class="tip" data-tip="All-in hourly cost including labor, equipment, and vehicle. From HeavyBid crew setup.">Crew Hourly Rates (Equip + Labor)</span></h4>
-                <div class="rate-row"><label>Crack Fill Crew</label><input type="number" id="rateCrackFill" value="151.15" step="0.01"></div>
-                <div class="rate-row"><label>Sealcoat Crew</label><input type="number" id="rateSealcoat" value="203.80" step="0.01"></div>
-                <div class="rate-row"><label>Striping Crew</label><input type="number" id="rateStriping" value="136.55" step="0.01"></div>
-                <div class="rate-row"><label>Asphalt Repair (≤4T)</label><input type="number" id="rateAsphaltSmall" value="297.28" step="0.01"></div>
-                <div class="rate-row"><label>Asphalt Repair (>4T)</label><input type="number" id="rateAsphaltLarge" value="336.48" step="0.01"></div>
-                <div class="rate-row"><label>Wheel Stop Install</label><input type="number" id="rateWsInstall" value="192.54" step="0.01"></div>
+                <div class="rate-row"><label>Crack Fill Crew</label><input type="number" id="rateCrackFill" value="219.34" step="0.01"></div>
+                <div class="rate-row"><label>Sealcoat Crew</label><input type="number" id="rateSealcoat" value="245.79" step="0.01"></div>
+                <div class="rate-row"><label>Striping Crew</label><input type="number" id="rateStriping" value="245.75" step="0.01"></div>
+                <div class="rate-row"><label>Asphalt Repair (≤4T)</label><input type="number" id="rateAsphaltSmall" value="351.35" step="0.01"></div>
+                <div class="rate-row"><label>Asphalt Repair (>4T)</label><input type="number" id="rateAsphaltLarge" value="555.10" step="0.01"></div>
+                <div class="rate-row"><label>Wheel Stop Install</label><input type="number" id="rateWsInstall" value="261.99" step="0.01"></div>
                 <div class="rate-row"><label>Wheel Stop Reset</label><input type="number" id="rateWsReset" value="133.40" step="0.01"></div>
                 <div class="rate-row"><label>Wheel Stop Removal</label><input type="number" id="rateWsRemove" value="179.94" step="0.01"></div>
-                <div class="rate-row"><label>Rubber Speed Bump</label><input type="number" id="rateSpeedBump" value="199.90" step="0.01"></div>
-                <div class="rate-row"><label>Bollard Crew</label><input type="number" id="rateBollard" value="293.23" step="0.01"></div>
-                <div class="rate-row"><label>Sign Crew</label><input type="number" id="rateSign" value="293.23" step="0.01"></div>
-                <div class="rate-row"><label>Mastic Crew (excl machine)</label><input type="number" id="rateMastic" value="288.63" step="0.01"></div>
-                <div class="rate-row"><label>Inlet Crew</label><input type="number" id="rateInlet" value="213.55" step="0.01"></div>
-                <div class="rate-row"><label>Speed Hump Crew</label><input type="number" id="rateSpeedHump" value="336.48" step="0.01"></div>
+                <div class="rate-row"><label>Rubber Speed Bump</label><input type="number" id="rateSpeedBump" value="269.27" step="0.01"></div>
+                <div class="rate-row"><label>Bollard Crew</label><input type="number" id="rateBollard" value="360.73" step="0.01"></div>
+                <div class="rate-row"><label>Sign Crew</label><input type="number" id="rateSign" value="360.73" step="0.01"></div>
+                <div class="rate-row"><label>Mastic Crew (excl machine)</label><input type="number" id="rateMastic" value="310.02" step="0.01"></div>
+                <div class="rate-row"><label>Inlet Crew</label><input type="number" id="rateInlet" value="297.07" step="0.01"></div>
+                <div class="rate-row"><label>Speed Hump Crew</label><input type="number" id="rateSpeedHump" value="514.02" step="0.01"></div>
             </div>
             <div class="rate-section">
                 <h4>Material Unit Costs</h4>
@@ -506,13 +707,13 @@
                 <div class="rate-row"><label>Wheel Stop w/ Pins ($/UN)</label><input type="number" id="matWsNew" value="55.00" step="0.01"></div>
                 <div class="rate-row"><label>WS Reset Pins ($/UN)</label><input type="number" id="matWsPin" value="4.00" step="0.01"></div>
                 <div class="rate-row"><label>WS Disposal ($/UN)</label><input type="number" id="matWsDispose" value="16.67" step="0.01"></div>
-                <div class="rate-row"><label>Rubber Speed Bump ($/UN)</label><input type="number" id="matSpeedBump" value="190.00" step="0.01"></div>
+                <div class="rate-row"><label>Rubber Speed Bump ($/UN)</label><input type="number" id="matSpeedBump" value="560.00" step="0.01"></div>
                 <div class="rate-row"><label>Bollard ($/UN)</label><input type="number" id="matBollard" value="260.00" step="0.01"></div>
-                <div class="rate-row"><label>Small Sign ($/UN)</label><input type="number" id="matSignSmall" value="30.00" step="0.01"></div>
+                <div class="rate-row"><label>Small Sign ($/UN)</label><input type="number" id="matSignSmall" value="110.00" step="0.01"></div>
                 <div class="rate-row"><label>Large Sign ($/UN)</label><input type="number" id="matSignLarge" value="170.00" step="0.01"></div>
                 <div class="rate-row"><label>Mastic Box 30lb ($/box incl tax)</label><input type="number" id="matMasticBox" value="31.99" step="0.01"></div>
                 <div class="rate-row"><label>Mastic Machine ($/DAY incl tax)</label><input type="number" id="matMasticMachine" value="586.44" step="0.01"></div>
-                <div class="rate-row"><label>Block & Mortar ($/UN)</label><input type="number" id="matBlock" value="25.00" step="0.01"></div>
+                <div class="rate-row"><label>Block & Mortar ($/UN)</label><input type="number" id="matBlock" value="150.00" step="0.01"></div>
                 <div class="rate-row"><label>Casting ($/EA)</label><input type="number" id="matCasting" value="300.00" step="0.01"></div>
                 <div class="rate-row"><label>Grinder Rental ($/DAY)</label><input type="number" id="matPaintRemoval" value="650.00" step="0.01"></div>
             </div>
@@ -529,7 +730,9 @@
                 <div class="rate-row"><label>Stencils/Lettering (EA/day)</label><input type="number" id="prodStencil" value="200"></div>
                 <div class="rate-row"><label>Curbing (LF/day)</label><input type="number" id="prodCurb" value="5000"></div>
                 <div class="rate-row"><label>Asphalt Repair (SF/day)</label><input type="number" id="prodAsphaltRepair" value="600"></div>
-                <div class="rate-row"><label>Wheel Stops (UN/day)</label><input type="number" id="prodWheelStop" value="80"></div>
+                <div class="rate-row"><label><span class="tip" data-tip="New install: drill, set, pin. Field-calibrated Q21.">WS Install (UN/day)</span></label><input type="number" id="prodWsInstall" value="80"></div>
+                <div class="rate-row"><label><span class="tip" data-tip="Re-pin existing stop. ~2x faster than install (no drilling). Field Q21.">WS Reset (UN/day)</span></label><input type="number" id="prodWsReset" value="155"></div>
+                <div class="rate-row"><label><span class="tip" data-tip="Remove & dispose. ~2.5-3x faster than install. Field Q21.">WS Removal (UN/day)</span></label><input type="number" id="prodWsRemoval" value="220"></div>
                 <div class="rate-row"><label>Rubber Speed Bumps (UN/day)</label><input type="number" id="prodSpeedBump" value="16"></div>
                 <div class="rate-row"><label>Bollards (UN/day)</label><input type="number" id="prodBollard" value="8"></div>
                 <div class="rate-row"><label>Signs - Post (UN/day)</label><input type="number" id="prodSignPost" value="32"></div>
@@ -543,15 +746,15 @@
             <div class="rate-section">
                 <h4>Default Crew Sizes</h4>
                 <div class="rate-row"><label>Crack Fill</label><input type="number" id="crewCrackFill" value="3" min="2" max="5"></div>
-                <div class="rate-row"><label>Sealcoat</label><input type="number" id="crewSealcoat" value="4" min="2" max="5"></div>
-                <div class="rate-row"><label>Striping</label><input type="number" id="crewStriping" value="3" min="2" max="5"></div>
+                <div class="rate-row"><label>Sealcoat</label><input type="number" id="crewSealcoat" value="3" min="2" max="5"></div>
+                <div class="rate-row"><label>Striping</label><input type="number" id="crewStriping" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Asphalt Repair (≤4T)</label><input type="number" id="crewAsphaltSmall" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Asphalt Repair (>4T)</label><input type="number" id="crewAsphaltLarge" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Wheel Stop Install</label><input type="number" id="crewWsInstall" value="3" min="2" max="5"></div>
                 <div class="rate-row"><label>Rubber Speed Bump</label><input type="number" id="crewSpeedBump" value="3" min="2" max="5"></div>
                 <div class="rate-row"><label>Bollard</label><input type="number" id="crewBollard" value="4" min="2" max="5"></div>
-                <div class="rate-row"><label>Sign</label><input type="number" id="crewSign" value="3" min="2" max="5"></div>
-                <div class="rate-row"><label>Mastic</label><input type="number" id="crewMastic" value="5" min="2" max="6"></div>
+                <div class="rate-row"><label>Sign</label><input type="number" id="crewSign" value="4" min="2" max="5"></div>
+                <div class="rate-row"><label>Mastic</label><input type="number" id="crewMastic" value="4" min="2" max="6"></div>
                 <div class="rate-row"><label>Inlet</label><input type="number" id="crewInlet" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Speed Hump</label><input type="number" id="crewSpeedHump" value="4" min="2" max="5"></div>
             </div>
@@ -879,6 +1082,24 @@
 </div>
 
 <!-- ============================================ -->
+<!-- SCOPE EXCLUSIONS & ASSUMPTIONS -->
+<!-- ============================================ -->
+<div class="panel-wrapper">
+    <button class="panel-toggle" onclick="togglePanel(this, 'scopeContent')">
+        <div class="toggle-left">
+            <span><span class="tag" style="background:var(--accent-orange);"></span>Scope Exclusions & Assumptions</span>
+        </div>
+        <span class="arrow">▼</span>
+    </button>
+    <div class="panel-content" id="scopeContent">
+        <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:0.5rem; font-style:italic;">
+            Clarify what is included, excluded, or not applicable. These assumptions export with the estimate. Per ASPE Standard Estimating Practice — every estimate should document its basis and exclusions.
+        </p>
+        <div id="scopeChecklist"></div>
+    </div>
+</div>
+
+<!-- ============================================ -->
 <!-- ESTIMATE SUMMARY -->
 <!-- ============================================ -->
 <div class="hb-summary">
@@ -922,6 +1143,32 @@
     </p>
     <div id="clusterBody"></div>
     <textarea id="note_clusterSummary" class="notes-box" placeholder="Reviewer notes for Cluster Deployment..."></textarea>
+</div>
+
+<!-- ============================================ -->
+<!-- ESTIMATE CONFIDENCE -->
+<!-- ============================================ -->
+<div class="hb-summary" id="confidenceSection" style="display:none; border-color: var(--accent-cyan);">
+    <h2 style="color: var(--accent-cyan);">🛡️ Estimate Confidence</h2>
+    <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:1rem;">
+        Composite score based on production reliability, benchmark alignment, scope definition, and data quality. Per AACE RP 42R-08.
+    </p>
+    <div id="confidenceBody"></div>
+</div>
+
+<!-- ============================================ -->
+<!-- CALENDAR DURATION -->
+<!-- ============================================ -->
+<div class="hb-summary" id="calendarSection" style="display:none; border-color: var(--accent-green);">
+    <h2 style="color: var(--accent-green);">📅 Calendar Duration Estimate</h2>
+    <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:0.75rem;">
+        Working days including cure windows and weather contingency. One block per crew cluster (standard tier).
+    </p>
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+        <label style="font-size:0.75rem; color:var(--text-muted);">Weather Contingency Days:</label>
+        <input type="number" id="weatherDays" value="0" min="0" step="1" style="width:60px;" oninput="calculateAll()">
+    </div>
+    <div id="calendarBody"></div>
 </div>
 
 <!-- ============================================ -->
@@ -1002,6 +1249,10 @@
             <div class="cost-line" id="summ_pr_row"><span class="lbl">Grinder Rental</span><span class="val" id="summ_pr">$0</span></div>
             <div class="cost-line subtotal"><span class="lbl">Materials Subtotal</span><span class="val" id="sum_matTotal">$0</span></div>
         </div>
+        <div class="cost-category" id="unitCostColumn" style="display:none;">
+            <h4>Unit Cost Check</h4>
+            <div id="unitCostColumnBody"></div>
+        </div>
     </div>
     <div class="cost-totals">
         <div class="cost-total-row">
@@ -1010,7 +1261,7 @@
         </div>
         <div class="markup-row">
             <label>Markup %</label>
-            <input type="number" id="markupPercent2" value="15" step="1" oninput="syncMarkup(this); calculateAll();">
+            <input type="number" id="markupPercent2" value="60" step="1" oninput="syncMarkup(this); calculateAll();">
             <span style="color:var(--text-muted)">%</span>
             <span class="val" style="margin-left:auto;" id="markupAmount">$0</span>
         </div>
@@ -1047,17 +1298,17 @@
                 </tr>
             </thead>
             <tbody>
-                <tr><td>Crack Fill</td><td>LF</td><td>$1.05</td><td>$0.60 - $2.20</td><td>500 - 10,000</td></tr>
-                <tr><td>Sealcoat</td><td>SF</td><td>$0.10</td><td>$0.07 - $0.14</td><td>15,000 - 300,000</td></tr>
-                <tr><td>4" Lines</td><td>LF</td><td>$0.32</td><td>$0.20 - $0.55</td><td>1,000 - 25,000</td></tr>
-                <tr><td>Arrows</td><td>EA</td><td>$30.00</td><td>$18.00 - $50.00</td><td>10 - 100</td></tr>
-                <tr><td>HC Symbols</td><td>EA</td><td>$45.00</td><td>$25.00 - $75.00</td><td>2 - 20</td></tr>
-                <tr><td>Asphalt Repair</td><td>SF</td><td>$22.00</td><td>$14.00 - $35.00</td><td>50 - 2,000</td></tr>
-                <tr><td>Wheel Stops (new)</td><td>UN</td><td>$95.00</td><td>$75.00 - $130.00</td><td>5 - 100</td></tr>
-                <tr><td>Bollards</td><td>UN</td><td>$550.00</td><td>$400.00 - $750.00</td><td>2 - 20</td></tr>
-                <tr><td>Speed Bumps (rubber)</td><td>UN</td><td>$350.00</td><td>$280.00 - $500.00</td><td>2 - 10</td></tr>
-                <tr><td>Inlet Repair</td><td>UN</td><td>$967.00</td><td>$750.00 - $1,200.00</td><td>1 - 8</td></tr>
-                <tr><td>Inlet Reconstruction</td><td>UN</td><td>$1,053.00</td><td>$800.00 - $1,500.00</td><td>1 - 4</td></tr>
+                <tr><td>Crack Fill</td><td>LF</td><td>$0.84</td><td>$0.66 - $1.14</td><td>500 - 10,000</td></tr>
+                <tr><td>Sealcoat</td><td>SF</td><td>$0.11</td><td>$0.10 - $0.14</td><td>15,000 - 300,000</td></tr>
+                <tr><td>4" Lines</td><td>LF</td><td>$0.53</td><td>$0.30 - $1.18</td><td>1,000 - 25,000</td></tr>
+                <tr><td>Arrows</td><td>EA</td><td>$25.62</td><td>$19.87 - $36.01</td><td>5 - 50</td></tr>
+                <tr><td>HC Symbols</td><td>EA</td><td>$45.66</td><td>$25.16 - $73.75</td><td>2 - 30</td></tr>
+                <tr><td>Asphalt Repair</td><td>SF</td><td>$7.57</td><td>$5.10 - $14.77</td><td>50 - 2,000</td></tr>
+                <tr><td>Wheel Stops (new)</td><td>UN</td><td>$88.22</td><td>$36.77 - $103.75</td><td>5 - 100</td></tr>
+                <tr><td>Bollards</td><td>UN</td><td>$351.26</td><td>$173.67 - $528.84</td><td>2 - 20</td></tr>
+                <tr><td>Speed Bumps (rubber)</td><td>UN</td><td>$554.62</td><td>$493.34 - $615.90</td><td>2 - 10</td></tr>
+                <tr><td>Inlet Repair</td><td>UN</td><td>$969.46</td><td>$863.29 - $1,222.09</td><td>1 - 8</td></tr>
+                <tr><td>Inlet Reconstruction</td><td>UN</td><td>$966.74</td><td>$835.31 - $1,459.28</td><td>1 - 4</td></tr>
             </tbody>
         </table>
         </div>
@@ -1128,29 +1379,29 @@ const HUSTLE_THRESHOLD = 0.5;
 // Historical benchmark ranges (P25/median/P75) from 347 jobs
 // Basis: ADJUSTED = tuned empirical, EMPIRICAL = raw dataset, DERIVED = calculated from crew/rates/material
 const BENCHMARKS = {
-    cf:   { name: 'Crack Fill',          unit: 'LF', p25: 0.60,   med: 1.05,   p75: 2.20   },  // ADJUSTED (n=52)
-    sc:   { name: 'Sealcoat',            unit: 'SF', p25: 0.07,   med: 0.10,   p75: 0.14   },  // ADJUSTED (n=40)
-    st4:  { name: '4" Lines',            unit: 'LF', p25: 0.20,   med: 0.32,   p75: 0.55   },  // ADJUSTED (n=63)
-    st6:  { name: '6" Lines',            unit: 'LF', p25: 0.40,   med: 0.65,   p75: 1.20   },  // DERIVED (interpolated)
-    st12: { name: '12" Lines',           unit: 'LF', p25: 1.68,   med: 1.93,   p75: 5.86   },  // EMPIRICAL (n=7)
-    st24: { name: '24" Lines',           unit: 'LF', p25: 1.75,   med: 4.05,   p75: 8.36   },  // EMPIRICAL (n=10)
-    stAr: { name: 'Arrows',             unit: 'EA', p25: 20.27,  med: 25.62,  p75: 34.94  },  // EMPIRICAL (n=30)
-    stHC: { name: 'HC Symbols',          unit: 'EA', p25: 25.28,  med: 45.66,  p75: 71.36  },  // EMPIRICAL (n=38)
-    stSt: { name: 'Stencils',           unit: 'EA', p25: 11.00,  med: 22.09,  p75: 43.02  },  // EMPIRICAL (n=20)
-    stCb: { name: 'Curb Paint',          unit: 'LF', p25: 0.43,   med: 0.91,   p75: 1.80   },  // EMPIRICAL (n=6)
-    ar:   { name: 'Asphalt Repair',      unit: 'SF', p25: 14.00,  med: 22.00,  p75: 35.00  },  // ADJUSTED
-    ma:   { name: 'Mastic Crack Fill',   unit: 'LF', p25: 5.50,   med: 6.50,   p75: 8.50   },  // DERIVED (crew + material + rental)
-    ws:   { name: 'Wheel Stops (new)',   unit: 'UN', p25: 75.00,  med: 95.00,  p75: 130.00 },  // ADJUSTED
-    ws_r: { name: 'Wheel Stops (reset)', unit: 'UN', p25: 25.00,  med: 45.00,  p75: 75.00  },  // DERIVED
-    ws_rm:{ name: 'Wheel Stops (remove)',unit: 'UN', p25: 30.00,  med: 50.00,  p75: 90.00  },  // DERIVED
-    sg_sm:{ name: 'Signs (small)',       unit: 'UN', p25: 120.00, med: 200.00, p75: 350.00 },  // DERIVED (heavy crew + material)
-    sg_lg:{ name: 'Signs (large)',       unit: 'UN', p25: 280.00, med: 425.00, p75: 650.00 },  // DERIVED (heavy crew + material)
-    bo:   { name: 'Bollards',            unit: 'UN', p25: 400.00, med: 550.00, p75: 750.00 },  // ADJUSTED
-    sb:   { name: 'Speed Bumps',         unit: 'UN', p25: 280.00, med: 350.00, p75: 500.00 },  // ADJUSTED
-    sh:   { name: 'Speed Humps',         unit: 'UN', p25: 750.00, med: 950.00, p75: 1400.00},  // DERIVED (crew + asphalt tonnage)
-    in_r: { name: 'Inlet Repair',        unit: 'UN', p25: 750.00, med: 967.00, p75: 1200.00},  // ADJUSTED
-    in_c: { name: 'Inlet Reconstruct',   unit: 'UN', p25: 800.00, med: 1053.00,p75: 1500.00},  // ADJUSTED
-    pr:   { name: 'Paint Removal',       unit: 'LF', p25: 0.55,   med: 0.85,   p75: 1.50   },  // DERIVED (crew + grinder rental)
+    cf:   { name: 'Crack Fill',          unit: 'LF', p25: 0.66,   med: 0.84,   p75: 1.14,   n: 52  },  // EMPIRICAL
+    sc:   { name: 'Sealcoat',            unit: 'SF', p25: 0.098,  med: 0.113,  p75: 0.14,   n: 40  },  // EMPIRICAL (1yr)
+    st4:  { name: '4" Lines',            unit: 'LF', p25: 0.30,   med: 0.53,   p75: 1.18,   n: 63  },  // EMPIRICAL
+    st6:  { name: '6" Lines',            unit: 'LF', p25: 0.50,   med: 0.85,   p75: 1.80,   n: 0   },  // DERIVED
+    st12: { name: '12" Lines',           unit: 'LF', p25: 1.67,   med: 1.93,   p75: 6.36,   n: 7   },  // EMPIRICAL
+    st24: { name: '24" Lines',           unit: 'LF', p25: 1.43,   med: 4.05,   p75: 9.28,   n: 10  },  // EMPIRICAL
+    stAr: { name: 'Arrows',             unit: 'EA', p25: 19.87,  med: 25.62,  p75: 36.01,  n: 30  },  // EMPIRICAL
+    stHC: { name: 'HC Symbols',          unit: 'EA', p25: 25.16,  med: 45.66,  p75: 73.75,  n: 38  },  // EMPIRICAL
+    stSt: { name: 'Stencils',           unit: 'EA', p25: 11.00,  med: 22.09,  p75: 46.86,  n: 20  },  // EMPIRICAL
+    stCb: { name: 'Curb Paint',          unit: 'LF', p25: 0.37,   med: 0.91,   p75: 1.36,   n: 6   },  // EMPIRICAL
+    ar:   { name: 'Asphalt Repair',      unit: 'SF', p25: 5.10,   med: 7.57,   p75: 14.77,  n: 36  },  // EMPIRICAL
+    ma:   { name: 'Mastic Crack Fill',   unit: 'LF', p25: 5.50,   med: 6.50,   p75: 8.50,   n: 0   },  // DERIVED
+    ws:   { name: 'Wheel Stops (new)',   unit: 'UN', p25: 36.77,  med: 88.22,  p75: 103.75, n: 8   },  // EMPIRICAL
+    ws_r: { name: 'Wheel Stops (reset)', unit: 'UN', p25: 25.00,  med: 45.00,  p75: 75.00,  n: 0   },  // DERIVED
+    ws_rm:{ name: 'Wheel Stops (remove)',unit: 'UN', p25: 30.00,  med: 50.00,  p75: 90.00,  n: 0   },  // DERIVED
+    sg_sm:{ name: 'Signs (small)',       unit: 'UN', p25: 24.34,  med: 53.67,  p75: 113.84, n: 3   },  // EMPIRICAL
+    sg_lg:{ name: 'Signs (large)',       unit: 'UN', p25: 217.50, med: 277.90, p75: 386.09, n: 4   },  // EMPIRICAL
+    bo:   { name: 'Bollards',            unit: 'UN', p25: 173.67, med: 351.26, p75: 528.84, n: 2   },  // EMPIRICAL
+    sb:   { name: 'Speed Bumps',         unit: 'UN', p25: 493.34, med: 554.62, p75: 615.90, n: 2   },  // EMPIRICAL
+    sh:   { name: 'Speed Humps',         unit: 'UN', p25: 750.00, med: 950.00, p75: 1400.00,n: 0   },  // DERIVED
+    in_r: { name: 'Inlet Repair',        unit: 'UN', p25: 863.29, med: 969.46, p75: 1222.09,n: 20  },  // EMPIRICAL
+    in_c: { name: 'Inlet Reconstruct',   unit: 'UN', p25: 835.31, med: 966.74, p75: 1459.28,n: 18  },  // EMPIRICAL
+    pr:   { name: 'Paint Removal',       unit: 'LF', p25: 0.55,   med: 0.85,   p75: 1.50,   n: 0   },  // DERIVED
 };
 
 // Typical quantity ranges from historical data (for analysis engine)
@@ -1179,6 +1430,38 @@ const QTY_RANGES = {
     in_c: { low: 1, high: 4 },
     pr:   { low: 500, high: 5000 },
 };
+
+// Production rate confidence bands (from Field Ops Q17: which rates swing most)
+const RATE_CONFIDENCE = {
+    crackFill:     { band: 20, label: '±20%',  reliability: 'Moderate — crack density and access vary' },
+    sealcoat:      { band: 15, label: '±15%',  reliability: 'Moderate-High — spray rig is consistent, lot complexity is the variable' },
+    striping:      { band: 10, label: '±10%',  reliability: 'High — machine speed is very consistent' },
+    asphaltRepair: { band: 35, label: '±35%',  reliability: 'Low — every patch is different (depth, sub-base condition, delamination)' },
+    mastic:        { band: 20, label: '±20%',  reliability: 'Moderate — machine rate is fixed but crack width variance changes material consumption' },
+    wheelStops:    { band: 15, label: '±15%',  reliability: 'Moderate-High' },
+    bollards:      { band: 25, label: '±25%',  reliability: 'Moderate — removal of existing bollards is unpredictable (unknown foundation depth)' },
+    speedBumps:    { band: 15, label: '±15%',  reliability: 'Moderate-High' },
+    speedHumps:    { band: 20, label: '±20%',  reliability: 'Moderate' },
+    inletRepair:   { band: 40, label: '±40%',  reliability: 'Low — deterioration is invisible until opened; 20-30% of repairs escalate to reconstruction' },
+    paintRemoval:  { band: 15, label: '±15%',  reliability: 'Moderate-High — thermoplastic vs standard paint is the main variable' },
+    signs:         { band: 15, label: '±15%',  reliability: 'Moderate-High' },
+};
+
+// Band → confidence sub-score mapping for Feature 5
+const BAND_SCORE = { 10: 0.90, 15: 0.85, 20: 0.80, 25: 0.75, 35: 0.65, 40: 0.60 };
+
+// Calendar Duration: cure windows between dependent activities (days)
+const CURE_WINDOWS = {
+    crackFill_before_sealcoat: 1,
+    sealcoat_before_striping: 1,
+    asphaltRepair_before_striping: 1
+};
+
+// Work sequence for calendar ordering
+const WORK_SEQUENCE = [
+    'asphaltRepair','inletRepair','crackFill','mastic','sealcoat',
+    'striping','paintRemoval','wheelStops','bollards','signs','speedBumps','speedHumps'
+];
 
 // Crew Clustering: activities that share equipment and crew deploy as one physical crew
 const CREW_CLUSTERS = {
@@ -1245,6 +1528,72 @@ const CLUSTER_ACTIVITY_MAP = {
     crackFill:     { enableId: 'en_crackfill',     snapshotKey: 'crackFill' },
     mastic:        { enableId: 'en_mastic',        snapshotKey: 'mastic' }
 };
+
+// === SCOPE EXCLUSIONS & ASSUMPTIONS ===
+const SCOPE_ITEMS = [
+    // Default INCLUDED
+    { id: 'saw_cutting',      name: 'Saw Cutting',                    default: 'included', group: 'included' },
+    { id: 'barricading',      name: 'Barricading / Coning',           default: 'included', group: 'included' },
+    { id: 'material_hauling', name: 'Material Hauling & Delivery',    default: 'included', group: 'included' },
+    // Default EXCLUDED
+    { id: 'traffic_control',  name: 'Traffic Control (flagging/MOT)', default: 'excluded', group: 'excluded' },
+    { id: 'permits',          name: 'Permits & Fees',                 default: 'excluded', group: 'excluded' },
+    { id: 'survey_layout',    name: 'Survey / Layout / Staking',      default: 'excluded', group: 'excluded' },
+    { id: 'quality_testing',  name: 'Quality Testing / Inspection',   default: 'excluded', group: 'excluded' },
+    { id: 'disposal',         name: 'Off-site Disposal',              default: 'excluded', group: 'excluded' },
+    { id: 'night_premium',    name: 'Night / Weekend Premium',        default: 'excluded', group: 'excluded' },
+    { id: 'temp_markings',    name: 'Temporary Pavement Markings',    default: 'excluded', group: 'excluded' },
+    { id: 'concrete_work',    name: 'Concrete Work (curb/sidewalk)',   default: 'excluded', group: 'excluded' },
+    { id: 'landscape',        name: 'Landscaping Restoration',        default: 'excluded', group: 'excluded' }
+];
+
+function renderScopeChecklist() {
+    const container = document.getElementById('scopeChecklist');
+    if (!container) return;
+    let html = '';
+    const groups = { included: [], excluded: [] };
+    SCOPE_ITEMS.forEach(item => groups[item.group].push(item));
+
+    html += '<div class="scope-section-header incl">Default Included</div>';
+    groups.included.forEach(item => { html += scopeItemHtml(item); });
+    html += '<div class="scope-section-header excl" style="margin-top:1rem;">Default Excluded</div>';
+    groups.excluded.forEach(item => { html += scopeItemHtml(item); });
+
+    container.innerHTML = html;
+}
+
+function scopeItemHtml(item) {
+    const id = item.id;
+    return `<div class="scope-item">
+        <span class="scope-item-name">${item.name}</span>
+        <div class="scope-radio-group">
+            <input type="radio" name="scope_${id}" id="scope_${id}_incl" value="included" ${item.default === 'included' ? 'checked' : ''}>
+            <label for="scope_${id}_incl" class="lbl-incl">Incl</label>
+            <input type="radio" name="scope_${id}" id="scope_${id}_excl" value="excluded" ${item.default === 'excluded' ? 'checked' : ''}>
+            <label for="scope_${id}_excl" class="lbl-excl">Excl</label>
+            <input type="radio" name="scope_${id}" id="scope_${id}_na" value="na">
+            <label for="scope_${id}_na" class="lbl-na">N/A</label>
+        </div>
+        <div class="scope-item-note">
+            <input type="text" id="scope_note_${id}" placeholder="Note (optional)...">
+        </div>
+    </div>`;
+}
+
+function collectAssumptions() {
+    const result = { included: [], excluded: [], na: [] };
+    SCOPE_ITEMS.forEach(item => {
+        const radio = document.querySelector(`input[name="scope_${item.id}"]:checked`);
+        const noteEl = document.getElementById(`scope_note_${item.id}`);
+        const state = radio ? radio.value : item.default;
+        const note = noteEl ? noteEl.value.trim() : '';
+        const entry = { id: item.id, name: item.name, note };
+        if (state === 'included') result.included.push(entry);
+        else if (state === 'excluded') result.excluded.push(entry);
+        else result.na.push(entry);
+    });
+    return result;
+}
 
 // Snap raw hours to next billing increment, with hustle detection at stdShift boundary
 function snapWithHustle(hrs, stdShift) {
@@ -1779,27 +2128,49 @@ function calculateAll() {
         }
     } else { renderTierTable('ma_output', null); }
 
-    // === WHEEL STOPS ===
+    // === WHEEL STOPS (differentiated production rates) ===
     if (isOn('en_wheelstop')) {
         const newQty = gv('ws_new');
         const resetQty = gv('ws_reset');
         const removeQty = gv('ws_remove');
-        const prodPerDay = gv('prodWheelStop');
+        const prodInstall = Math.max(gv('prodWsInstall'), 0.01);
+        const prodReset = Math.max(gv('prodWsReset'), 0.01);
+        const prodRemoval = Math.max(gv('prodWsRemoval'), 0.01);
         const phases = Math.max(gv('ws_phases'), 1);
         const crew = gv('crewWsInstall');
         const travel = gv('ws_travel');
         const totalQty = newQty + resetQty + removeQty;
 
         if (totalQty > 0) {
-            const tier = calcThreeTier(totalQty, prodPerDay, stdShift, maxShift, phases, crew);
+            // Calculate raw production hours per operation type
+            const installHrs = newQty > 0 ? (newQty / prodInstall) * stdShift : 0;
+            const resetHrs = resetQty > 0 ? (resetQty / prodReset) * stdShift : 0;
+            const removalHrs = removeQty > 0 ? (removeQty / prodRemoval) * stdShift : 0;
+            const combinedRawHrs = installHrs + resetHrs + removalHrs;
 
-            const newFrac = newQty / totalQty;
-            const resetFrac = resetQty / totalQty;
-            const removeFrac = removeQty / totalQty;
+            // Optimize shifts for each tier
+            function wsTier(factor) {
+                const adjHrs = combinedRawHrs / factor;
+                return optimizeShifts(adjHrs, stdShift, maxShift, phases);
+            }
+            const stdR = wsTier(1.0);
+            const consR = wsTier(0.80);
+            const aggR = wsTier(1.20);
 
-            const newLabor = tier.std.hours * newFrac * gv('rateWsInstall');
+            const tier = {
+                cons: { crew, hours: consR.hours, days: consR.days, hustle: consR.hustle },
+                std:  { crew, hours: stdR.hours, days: stdR.days, hustle: stdR.hustle },
+                agg:  { crew, hours: aggR.hours, days: aggR.days, hustle: aggR.hustle }
+            };
+
+            // Labor fractions based on hours share (not qty share)
+            const installFrac = combinedRawHrs > 0 ? installHrs / combinedRawHrs : 0;
+            const resetFrac = combinedRawHrs > 0 ? resetHrs / combinedRawHrs : 0;
+            const removalFrac = combinedRawHrs > 0 ? removalHrs / combinedRawHrs : 0;
+
+            const newLabor = tier.std.hours * installFrac * gv('rateWsInstall');
             const resetLabor = tier.std.hours * resetFrac * gv('rateWsReset');
-            const removeLabor = tier.std.hours * removeFrac * gv('rateWsRemove');
+            const removeLabor = tier.std.hours * removalFrac * gv('rateWsRemove');
             const totalLabor = newLabor + resetLabor + removeLabor;
 
             const newMat = newQty * gv('matWsNew');
@@ -1814,7 +2185,7 @@ function calculateAll() {
             sumLabor.ws = totalLabor + travelCost;
             sumMat.ws = totalMatCost;
             hbRows.push({ name: 'Wheel Stops', tier, travel });
-            snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: (totalQty / Math.max(prodPerDay, 0.01)) * stdShift, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, prodPerDay }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
+            snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: combinedRawHrs, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, prodInstall, prodReset, prodRemoval, prodPerDay: totalQty > 0 ? totalQty / (combinedRawHrs / stdShift) : 0 }, perTypeHrs: { installHrs, resetHrs, removalHrs, combinedRawHrs }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
         } else {
             renderTierTable('ws_output', null);
         }
@@ -2067,7 +2438,7 @@ function calculateAll() {
                 status = unitCost > b.p75 * 2 ? 'VERY HIGH' : 'HIGH';
                 color = unitCost > b.p75 * 2 ? '#ff4444' : '#ffaa00';
             }
-            unitChecks.push({ name: b.name, qty, unit: b.unit, unitCost, p25: b.p25, med: b.med, p75: b.p75, status, color });
+            unitChecks.push({ name: b.name, benchKey, qty, unit: b.unit, unitCost, totalCost, p25: b.p25, med: b.med, p75: b.p75, status, color });
         }
     }
 
@@ -2331,16 +2702,319 @@ function calculateAll() {
         snapshot.unitChecks = unitChecks;
     }
 
+    // === UNIT COST COLUMN IN COST SUMMARY ===
+    renderUnitCostColumn(unitChecks);
+
     snapshot.notes = collectNotes();
+    snapshot.scopeAssumptions = collectAssumptions();
     window.lastCalcSnapshot = snapshot;
 
     // === RENDER CLUSTER DEPLOYMENT SUMMARY ===
     renderClusterSummary(clusterResults);
 
+    // === ESTIMATE CONFIDENCE ===
+    const confidence = calculateConfidence(snapshot);
+    snapshot.confidence = confidence;
+    renderConfidence(confidence);
+
+    // === CALENDAR DURATION ===
+    const calendar = calculateCalendarDuration(snapshot);
+    snapshot.calendar = calendar;
+    renderCalendar(calendar);
+
     // === RENDER JOB ANALYSIS ===
     renderAnalysis();
 
     checkAsphaltPrices();
+}
+
+// ===== UNIT COST COLUMN IN COST SUMMARY =====
+function renderUnitCostColumn(unitChecks) {
+    const col = document.getElementById('unitCostColumn');
+    const body = document.getElementById('unitCostColumnBody');
+    if (!col || !body) return;
+    if (!unitChecks || unitChecks.length === 0) {
+        col.style.display = 'none';
+        return;
+    }
+    col.style.display = '';
+    let html = '';
+    unitChecks.forEach(c => {
+        const badgeClass = c.status.replace(/\s+/g, '-').toLowerCase();
+        html += `<div class="unit-cost-row">
+            <span class="lbl">${c.name}${c.clustered ? ' ⚡' : ''}</span>
+            <span class="val">$${c.unitCost.toFixed(2)}/${c.unit}</span>
+            <span class="unit-cost-badge ${badgeClass}">${c.status}</span>
+        </div>`;
+    });
+    body.innerHTML = html;
+}
+
+// ===== ESTIMATE CONFIDENCE =====
+function calculateConfidence(snap) {
+    const acts = snap.activities || {};
+    const checks = snap.unitChecks || [];
+    const activeActs = Object.entries(acts).filter(([, a]) => a && a.enabled);
+    if (activeActs.length === 0) return null;
+
+    // 1. Production Reliability (35%) — weighted avg of BAND_SCORE by direct cost share
+    let totalDirectCost = 0;
+    let weightedBandScore = 0;
+    activeActs.forEach(([key, act]) => {
+        const cost = act.costs?.total || 0;
+        totalDirectCost += cost;
+        const conf = RATE_CONFIDENCE[key];
+        const bandScore = conf ? (BAND_SCORE[conf.band] || 0.70) : 0.70;
+        weightedBandScore += bandScore * cost;
+    });
+    const prodReliability = totalDirectCost > 0 ? weightedBandScore / totalDirectCost : 0.70;
+
+    // 2. Benchmark Alignment (30%) — % of unit checks IN RANGE
+    const totalChecks = checks.length;
+    const inRange = checks.filter(c => c.status === 'IN RANGE').length;
+    const benchAlignment = totalChecks > 0 ? inRange / totalChecks : 0.50;
+
+    // 3. Scope Definition (20%) — % of active activities with qty in QTY_RANGES normal band
+    // Map snapshot activity keys to benchmark keys for QTY_RANGES lookup
+    const actToBenchKeys = {
+        crackFill: ['cf'], sealcoat: ['sc'], striping: ['st4','st6','st12','st24','stAr','stHC','stSt','stCb'],
+        asphaltRepair: ['ar'], mastic: ['ma'], wheelStops: ['ws','ws_r','ws_rm'],
+        signs: ['sg_sm','sg_lg'], bollards: ['bo'], speedBumps: ['sb'], speedHumps: ['sh'],
+        inletRepair: ['in_r','in_c'], paintRemoval: ['pr']
+    };
+    let scopeChecked = 0, scopeInRange = 0;
+    activeActs.forEach(([key]) => {
+        const bKeys = actToBenchKeys[key] || [];
+        bKeys.forEach(bk => {
+            const qr = QTY_RANGES[bk];
+            const check = checks.find(c => c.benchKey === bk);
+            if (qr && check) {
+                scopeChecked++;
+                if (check.qty >= qr.low && check.qty <= qr.high) scopeInRange++;
+            }
+        });
+    });
+    const scopeDefinition = scopeChecked > 0 ? scopeInRange / scopeChecked : 0.50;
+
+    // 4. Data Quality (15%) — weighted avg of sample-size scores
+    let dqWeightedScore = 0, dqTotalCost = 0;
+    checks.forEach(c => {
+        const b = BENCHMARKS[c.benchKey];
+        if (!b) return;
+        const n = b.n || 0;
+        let nScore;
+        if (n >= 30) nScore = 1.0;
+        else if (n >= 15) nScore = 0.80;
+        else if (n >= 5) nScore = 0.60;
+        else if (n > 0) nScore = 0.40;
+        else nScore = 0.20;
+        const cost = c.totalCost || (c.unitCost * c.qty) || 0;
+        dqWeightedScore += nScore * cost;
+        dqTotalCost += cost;
+    });
+    const dataQuality = dqTotalCost > 0 ? dqWeightedScore / dqTotalCost : 0.20;
+
+    // Composite
+    const composite = prodReliability * 0.35 + benchAlignment * 0.30 + scopeDefinition * 0.20 + dataQuality * 0.15;
+    let descriptor, color;
+    if (composite >= 0.80) { descriptor = 'HIGH'; color = 'var(--accent-green)'; }
+    else if (composite >= 0.65) { descriptor = 'MODERATE-HIGH'; color = 'var(--accent-cyan)'; }
+    else if (composite >= 0.50) { descriptor = 'MODERATE'; color = '#ffaa00'; }
+    else { descriptor = 'LOW'; color = '#ff4444'; }
+
+    return {
+        prodReliability, benchAlignment, scopeDefinition, dataQuality,
+        composite, descriptor, color,
+        details: { totalChecks, inRange, scopeChecked, scopeInRange, activeCount: activeActs.length }
+    };
+}
+
+function renderConfidence(result) {
+    const section = document.getElementById('confidenceSection');
+    const body = document.getElementById('confidenceBody');
+    if (!section || !body) { if (section) section.style.display = 'none'; return; }
+    if (!result) { section.style.display = 'none'; return; }
+    section.style.display = '';
+
+    function barColor(val) {
+        if (val >= 0.80) return 'var(--accent-green)';
+        if (val >= 0.65) return 'var(--accent-cyan)';
+        if (val >= 0.50) return '#ffaa00';
+        return '#ff4444';
+    }
+
+    function barRow(label, value) {
+        const pct = (value * 100).toFixed(0);
+        return `<div class="confidence-bar-row">
+            <span class="label">${label}</span>
+            <div class="confidence-bar-track">
+                <div class="confidence-bar-fill" style="width:${pct}%; background:${barColor(value)};"></div>
+            </div>
+            <span class="confidence-bar-value" style="color:${barColor(value)};">${pct}%</span>
+        </div>`;
+    }
+
+    let html = '<div class="confidence-section">';
+    html += barRow('Production Reliability (35%)', result.prodReliability);
+    html += barRow('Benchmark Alignment (30%)', result.benchAlignment);
+    html += barRow('Scope Definition (20%)', result.scopeDefinition);
+    html += barRow('Data Quality (15%)', result.dataQuality);
+    html += '</div>';
+
+    const pct = (result.composite * 100).toFixed(0);
+    html += `<div class="confidence-composite">
+        <span class="score" style="color:${result.color};">${pct}%</span>
+        <div>
+            <div class="descriptor" style="color:${result.color};">${result.descriptor} CONFIDENCE</div>
+            <div class="detail">${result.details.inRange}/${result.details.totalChecks} activities in benchmark range · ${result.details.activeCount} work types active</div>
+        </div>
+    </div>`;
+
+    body.innerHTML = html;
+}
+
+// ===== CALENDAR DURATION =====
+function calculateCalendarDuration(snap) {
+    const acts = snap.activities || {};
+    const clustering = snap.clustering;
+    const activeKeys = Object.keys(acts).filter(k => acts[k] && acts[k].enabled);
+    if (activeKeys.length === 0) return null;
+
+    // Build timeline entries from clusters
+    const timeline = [];
+    const actDisplayNames = {
+        asphaltRepair: 'Asphalt Repair', wheelStops: 'Wheel Stops', bollards: 'Bollards',
+        signs: 'Signs', inletRepair: 'Inlet Repair', speedHumps: 'Speed Humps',
+        striping: 'Striping', paintRemoval: 'Paint Removal', speedBumps: 'Speed Bumps',
+        sealcoat: 'Sealcoating', crackFill: 'Crack Filling', mastic: 'Mastic'
+    };
+
+    // Group active activities by cluster
+    const clusterEntries = [];
+    if (clustering) {
+        Object.values(clustering).forEach(cluster => {
+            if (!cluster.activeActivities || cluster.activeActivities.length === 0) return;
+            // Find earliest work sequence position for this cluster
+            const earliestPos = Math.min(...cluster.activeActivities.map(a =>
+                WORK_SEQUENCE.indexOf(a.actKey) >= 0 ? WORK_SEQUENCE.indexOf(a.actKey) : 999
+            ));
+            const names = cluster.activeActivities.map(a => actDisplayNames[a.actKey] || a.actKey).join(' + ');
+            const maxCrew = Math.max(...cluster.activeActivities.map(a => a.crewSize));
+            const days = cluster.clusteringApplied ? Math.ceil(cluster.clusterTotalHrs / snap.settings.stdShift) : (acts[cluster.activeActivities[0].actKey]?.tiers?.std?.days || 1);
+            const hours = cluster.clusteringApplied ? cluster.clusterTotalHrs : (acts[cluster.activeActivities[0].actKey]?.tiers?.std?.hours || snap.settings.stdShift);
+            const actKeys = cluster.activeActivities.map(a => a.actKey);
+            clusterEntries.push({ name: cluster.name + ': ' + names, days, hours, crew: maxCrew, position: earliestPos, actKeys, icon: cluster.icon });
+        });
+    } else {
+        // No clustering — each activity is standalone
+        activeKeys.forEach(key => {
+            const act = acts[key];
+            if (!act.tiers) return;
+            const pos = WORK_SEQUENCE.indexOf(key) >= 0 ? WORK_SEQUENCE.indexOf(key) : 999;
+            clusterEntries.push({
+                name: actDisplayNames[key] || key,
+                days: act.tiers.std.days,
+                hours: act.tiers.std.hours,
+                crew: act.rates?.crewSize || 1,
+                position: pos,
+                actKeys: [key],
+                icon: ''
+            });
+        });
+    }
+
+    // Sort by work sequence position
+    clusterEntries.sort((a, b) => a.position - b.position);
+
+    // Build timeline with cure windows
+    let currentDay = 1;
+    for (let i = 0; i < clusterEntries.length; i++) {
+        const entry = clusterEntries[i];
+
+        // Check if a cure window is needed before this entry
+        if (i > 0) {
+            const prevKeys = clusterEntries[i - 1].actKeys;
+            const curKeys = entry.actKeys;
+            let maxCure = 0;
+            for (const [cureKey, cureDays] of Object.entries(CURE_WINDOWS)) {
+                const [before, , after] = cureKey.split('_');
+                if (prevKeys.includes(before) && curKeys.includes(after)) {
+                    maxCure = Math.max(maxCure, cureDays);
+                }
+            }
+            if (maxCure > 0) {
+                timeline.push({ type: 'cure', startDay: currentDay, endDay: currentDay + maxCure - 1, days: maxCure, name: 'Cure Window' });
+                currentDay += maxCure;
+            }
+        }
+
+        timeline.push({
+            type: 'work',
+            startDay: currentDay,
+            endDay: currentDay + entry.days - 1,
+            days: entry.days,
+            name: entry.name,
+            crew: entry.crew,
+            hours: entry.hours,
+            icon: entry.icon
+        });
+        currentDay += entry.days;
+    }
+
+    // Weather contingency
+    const weatherDays = Math.max(parseInt(document.getElementById('weatherDays')?.value) || 0, 0);
+    if (weatherDays > 0) {
+        timeline.push({ type: 'weather', startDay: currentDay, endDay: currentDay + weatherDays - 1, days: weatherDays, name: 'Weather Contingency' });
+        currentDay += weatherDays;
+    }
+
+    const totalDays = currentDay - 1;
+    const workDays = timeline.filter(t => t.type === 'work').reduce((s, t) => s + t.days, 0);
+    const cureDays = timeline.filter(t => t.type === 'cure').reduce((s, t) => s + t.days, 0);
+
+    return { timeline, totalDays, workDays, cureDays, weatherDays };
+}
+
+function renderCalendar(result) {
+    const section = document.getElementById('calendarSection');
+    const body = document.getElementById('calendarBody');
+    if (!section || !body) { if (section) section.style.display = 'none'; return; }
+    if (!result || result.timeline.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = '';
+
+    let html = '<div class="timeline-row header-row"><span>Days</span><span>Activity</span><span class="crew-col">Crew</span><span class="hours-col">Hours</span></div>';
+
+    result.timeline.forEach(entry => {
+        const dayLabel = entry.days === 1 ? `Day ${entry.startDay}` : `Day ${entry.startDay}-${entry.endDay}`;
+        if (entry.type === 'cure') {
+            html += `<div class="timeline-row cure-row">
+                <span class="day-range">${dayLabel}</span>
+                <span class="activity-name">⏳ ${entry.name}</span>
+                <span class="crew-col">-</span>
+                <span class="hours-col">-</span>
+            </div>`;
+        } else if (entry.type === 'weather') {
+            html += `<div class="timeline-row cure-row">
+                <span class="day-range">${dayLabel}</span>
+                <span class="activity-name">🌧️ ${entry.name}</span>
+                <span class="crew-col">-</span>
+                <span class="hours-col">-</span>
+            </div>`;
+        } else {
+            html += `<div class="timeline-row">
+                <span class="day-range">${dayLabel}</span>
+                <span class="activity-name">${entry.icon ? entry.icon + ' ' : ''}${entry.name}</span>
+                <span class="crew-col">${entry.crew}-man</span>
+                <span class="hours-col">${entry.hours.toFixed(1)}h</span>
+            </div>`;
+        }
+    });
+
+    html += `<div class="timeline-total">
+        <span>Total: ${result.totalDays} calendar days (${result.workDays} work + ${result.cureDays} cure + ${result.weatherDays} weather)</span>
+    </div>`;
+
+    body.innerHTML = html;
 }
 
 // ===== CLUSTER DEPLOYMENT SUMMARY =====
@@ -2473,18 +3147,25 @@ function saveRates() {
         'matSpeedBump','matBollard','matSignSmall','matSignLarge','matMasticBox','matMasticMachine',
         'matBlock','matCasting','matPaintRemoval',
         'prodCrackFill','prodSealcoat','prod4Line','prod6Line','prod12Line','prod24Bar',
-        'prodHC','prodArrow','prodStencil','prodCurb','prodAsphaltRepair','prodWheelStop',
+        'prodHC','prodArrow','prodStencil','prodCurb','prodAsphaltRepair','prodWsInstall','prodWsReset','prodWsRemoval',
         'prodSpeedBump','prodBollard','prodSignPost','prodSignBollard','prodMastic',
         'prodInletRepair','prodInletRecon','prodSpeedHump','prodPaintRemoval',
         'crewCrackFill','crewSealcoat','crewStriping','crewAsphaltSmall','crewAsphaltLarge',
         'crewWsInstall','crewSpeedBump','crewBollard','crewSign','crewMastic','crewInlet','crewSpeedHump',
         'wasteCrackFill','wasteSealcoat','wasteStriping','wasteAsphalt','wasteMastic','wasteSpeedHump',
-        'clusterMode'
+        'clusterMode','weatherDays'
     ];
     const data = { _version: CALC_VERSION };
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) data[id] = el.value;
+    });
+    // Persist scope checklist states and notes
+    SCOPE_ITEMS.forEach(item => {
+        const radio = document.querySelector(`input[name="scope_${item.id}"]:checked`);
+        if (radio) data['scope_' + item.id] = radio.value;
+        const noteEl = document.getElementById('scope_note_' + item.id);
+        if (noteEl && noteEl.value.trim()) data['scope_note_' + item.id] = noteEl.value.trim();
     });
     localStorage.setItem('maintCalcRates', JSON.stringify(data));
     showToast('Rates saved locally!');
@@ -2496,6 +3177,18 @@ function loadRates() {
         const data = JSON.parse(saved);
         Object.keys(data).forEach(key => {
             if (key === '_version') return;
+            // Scope radio states
+            if (key.startsWith('scope_') && !key.startsWith('scope_note_')) {
+                const radio = document.getElementById(key + '_' + data[key]);
+                if (radio) radio.checked = true;
+                return;
+            }
+            // Scope notes
+            if (key.startsWith('scope_note_')) {
+                const el = document.getElementById(key);
+                if (el) el.value = data[key];
+                return;
+            }
             const el = document.getElementById(key);
             if (el) el.value = data[key];
         });
@@ -2551,6 +3244,16 @@ function resetForm() {
         const el = document.getElementById(id);
         if (el) el.value = '';
     }
+    // Reset weather days
+    const weatherEl = document.getElementById('weatherDays');
+    if (weatherEl) weatherEl.value = '0';
+    // Reset scope checklist to defaults
+    SCOPE_ITEMS.forEach(item => {
+        const defRadio = document.getElementById(`scope_${item.id}_${item.default}`);
+        if (defRadio) defRadio.checked = true;
+        const noteEl = document.getElementById('scope_note_' + item.id);
+        if (noteEl) noteEl.value = '';
+    });
     calculateAll();
     showToast('Form reset');
 }
@@ -2603,6 +3306,35 @@ function exportResults() {
     lines.push('Markup (' + markup + '%): ' + document.getElementById('markupAmount').textContent);
     lines.push('BID PRICE: ' + document.getElementById('bidPrice').textContent);
 
+    // === ESTIMATE CONFIDENCE ===
+    const qSnap = window.lastCalcSnapshot;
+    if (qSnap && qSnap.confidence) {
+        const conf = qSnap.confidence;
+        lines.push('');
+        lines.push('Estimate Confidence: ' + (conf.composite * 100).toFixed(0) + '% — ' + conf.descriptor);
+    }
+
+    // === SCOPE EXCLUSIONS & ASSUMPTIONS ===
+    const qScope = collectAssumptions();
+    if (qScope.included.length > 0 || qScope.excluded.length > 0) {
+        lines.push('');
+        lines.push('='.repeat(70));
+        lines.push('SCOPE EXCLUSIONS & ASSUMPTIONS');
+        lines.push('='.repeat(70));
+        if (qScope.included.length > 0) {
+            lines.push('INCLUDED:');
+            qScope.included.forEach(s => { lines.push('  ✓ ' + s.name + (s.note ? ' — ' + s.note : '')); });
+        }
+        if (qScope.excluded.length > 0) {
+            lines.push('EXCLUDED:');
+            qScope.excluded.forEach(s => { lines.push('  ✗ ' + s.name + (s.note ? ' — ' + s.note : '')); });
+        }
+        if (qScope.na.length > 0) {
+            lines.push('N/A:');
+            qScope.na.forEach(s => { lines.push('  - ' + s.name + (s.note ? ' — ' + s.note : '')); });
+        }
+    }
+
     // === REVIEWER NOTES ===
     const qNotes = collectNotes();
     if (Object.keys(qNotes).length > 0) {
@@ -2643,21 +3375,7 @@ function generateAnalysis(snap) {
     const totalStdHrs = snap.hbRows.reduce((s, r) => s + r.tier.std.hours, 0);
     const totalTravel = snap.hbRows.reduce((s, r) => s + (r.travel || 0), 0);
 
-    // Production rate confidence bands (from Field Ops Q17: which rates swing most)
-    const RATE_CONFIDENCE = {
-        crackFill:     { band: 20, label: '±20%',  reliability: 'Moderate — crack density and access vary' },
-        sealcoat:      { band: 15, label: '±15%',  reliability: 'Moderate-High — spray rig is consistent, lot complexity is the variable' },
-        striping:      { band: 10, label: '±10%',  reliability: 'High — machine speed is very consistent' },
-        asphaltRepair: { band: 35, label: '±35%',  reliability: 'Low — every patch is different (depth, sub-base condition, delamination)' },
-        mastic:        { band: 20, label: '±20%',  reliability: 'Moderate — machine rate is fixed but crack width variance changes material consumption' },
-        wheelStops:    { band: 15, label: '±15%',  reliability: 'Moderate-High' },
-        bollards:      { band: 25, label: '±25%',  reliability: 'Moderate — removal of existing bollards is unpredictable (unknown foundation depth)' },
-        speedBumps:    { band: 15, label: '±15%',  reliability: 'Moderate-High' },
-        speedHumps:    { band: 20, label: '±20%',  reliability: 'Moderate' },
-        inletRepair:   { band: 40, label: '±40%',  reliability: 'Low — deterioration is invisible until opened; 20-30% of repairs escalate to reconstruction' },
-        paintRemoval:  { band: 15, label: '±15%',  reliability: 'Moderate-High — thermoplastic vs standard paint is the main variable' },
-        signs:         { band: 15, label: '±15%',  reliability: 'Moderate-High' },
-    };
+    // RATE_CONFIDENCE moved to module scope
 
     // Field ops wheel stop production rates (Q21) vs calculator's single 80/day rate
     const WS_FIELD_RATES = { install: 80, reset: 155, removal: 220 };
@@ -2870,14 +3588,17 @@ function generateAnalysis(snap) {
             if (opTypes > 1 && isHigh) {
                 reasons.push(`Blended rate from ${opTypes} operation types (${newQty > 0 ? 'install' : ''}${resetQty > 0 ? ', reset' : ''}${removeQty > 0 ? ', remove' : ''}) affects the per-unit cost calculation.`.replace(', ,', ',').replace('(, ', '('));
             }
-            // Q21: Calculator uses 80/day for all ops, but field rates differ significantly
-            if (act.rates?.prodPerDay) {
-                const calcRate = act.rates.prodPerDay;
-                if ((resetQty || 0) > 0 && calcRate <= 80) {
-                    reasons.push(`Calculator uses ${calcRate}/day production rate for all wheel stop operations. Field experience (Q21): resets run ~${WS_FIELD_RATES.reset}/day (2x faster than new installs) because the drilling step is eliminated — just pull pins, reposition, reset. Actual hours for the ${resetQty} resets may be less than calculated.`);
+            // Q21: Compare user's differentiated rates against field benchmarks
+            if (act.rates) {
+                const { prodInstall, prodReset, prodRemoval } = act.rates;
+                if ((newQty || 0) > 0 && prodInstall && Math.abs(prodInstall - WS_FIELD_RATES.install) / WS_FIELD_RATES.install > 0.15) {
+                    reasons.push(`Install rate (${prodInstall}/day) differs >15% from field benchmark (${WS_FIELD_RATES.install}/day, Q21). ${prodInstall < WS_FIELD_RATES.install ? 'Lower rate adds conservatism.' : 'Higher rate assumes favorable conditions.'}`);
                 }
-                if ((removeQty || 0) > 0 && calcRate <= 80) {
-                    reasons.push(`Removals run ~${WS_FIELD_RATES.removal}/day in the field (Q21) — 2.5-3x faster than new installs. No alignment or anchoring needed. The ${removeQty} removals may take significantly less time than the ${calcRate}/day rate implies.`);
+                if ((resetQty || 0) > 0 && prodReset && Math.abs(prodReset - WS_FIELD_RATES.reset) / WS_FIELD_RATES.reset > 0.15) {
+                    reasons.push(`Reset rate (${prodReset}/day) differs >15% from field benchmark (${WS_FIELD_RATES.reset}/day, Q21). Resets are ~2x faster than installs — no drilling, just pull pins, reposition, reset.`);
+                }
+                if ((removeQty || 0) > 0 && prodRemoval && Math.abs(prodRemoval - WS_FIELD_RATES.removal) / WS_FIELD_RATES.removal > 0.15) {
+                    reasons.push(`Removal rate (${prodRemoval}/day) differs >15% from field benchmark (${WS_FIELD_RATES.removal}/day, Q21). Removals are 2.5-3x faster than installs — no alignment or anchoring needed.`);
                 }
             }
         }
@@ -3197,6 +3918,40 @@ function exportComprehensiveText() {
         }
     }
 
+    // ── ESTIMATE CONFIDENCE ──
+    if (snap.confidence) {
+        const conf = snap.confidence;
+        L.push('='.repeat(W));
+        L.push('ESTIMATE CONFIDENCE (AACE RP 42R-08)');
+        L.push('='.repeat(W));
+        L.push('  Production Reliability (35%): ' + (conf.prodReliability * 100).toFixed(0) + '%');
+        L.push('  Benchmark Alignment (30%):    ' + (conf.benchAlignment * 100).toFixed(0) + '%');
+        L.push('  Scope Definition (20%):       ' + (conf.scopeDefinition * 100).toFixed(0) + '%');
+        L.push('  Data Quality (15%):           ' + (conf.dataQuality * 100).toFixed(0) + '%');
+        L.push('  COMPOSITE:                    ' + (conf.composite * 100).toFixed(0) + '% — ' + conf.descriptor);
+        L.push('');
+    }
+
+    // ── CALENDAR DURATION ──
+    if (snap.calendar && snap.calendar.timeline.length > 0) {
+        L.push('='.repeat(W));
+        L.push('CALENDAR DURATION ESTIMATE');
+        L.push('='.repeat(W));
+        snap.calendar.timeline.forEach(entry => {
+            const dayLabel = entry.days === 1 ? `Day ${entry.startDay}` : `Day ${entry.startDay}-${entry.endDay}`;
+            if (entry.type === 'cure') {
+                L.push(padR(dayLabel, 14) + '⏳ ' + entry.name);
+            } else if (entry.type === 'weather') {
+                L.push(padR(dayLabel, 14) + '🌧️ ' + entry.name);
+            } else {
+                L.push(padR(dayLabel, 14) + padR(entry.name, 40) + padR(entry.crew + '-man', 8) + entry.hours.toFixed(1) + 'h');
+            }
+        });
+        L.push('-'.repeat(W));
+        L.push(`Total: ${snap.calendar.totalDays} calendar days (${snap.calendar.workDays} work + ${snap.calendar.cureDays} cure + ${snap.calendar.weatherDays} weather)`);
+        L.push('');
+    }
+
     // ── ACTIVITY DETAIL BLOCKS ──
     L.push('='.repeat(W));
     L.push('ACTIVITY DETAILS');
@@ -3335,6 +4090,29 @@ function exportComprehensiveText() {
     L.push('');
     L.push('Material Pricing: Asphalt 9.5mm $' + snap.settings.asphaltPrice + '/ton | 19mm Base $' + snap.settings.baseAsphaltPrice + '/ton | DGA $' + snap.settings.dgaPrice + '/ton');
 
+    // === SCOPE EXCLUSIONS & ASSUMPTIONS ===
+    const fScope = snap.scopeAssumptions || collectAssumptions();
+    if (fScope.included.length > 0 || fScope.excluded.length > 0) {
+        L.push('');
+        L.push('='.repeat(W));
+        L.push('SCOPE EXCLUSIONS & ASSUMPTIONS');
+        L.push('Per ASPE Standard Estimating Practice — document all basis and exclusions');
+        L.push('='.repeat(W));
+        if (fScope.included.length > 0) {
+            L.push('INCLUDED:');
+            fScope.included.forEach(s => { L.push('  ✓ ' + s.name + (s.note ? ' — ' + s.note : '')); });
+        }
+        if (fScope.excluded.length > 0) {
+            L.push('EXCLUDED:');
+            fScope.excluded.forEach(s => { L.push('  ✗ ' + s.name + (s.note ? ' — ' + s.note : '')); });
+        }
+        if (fScope.na.length > 0) {
+            L.push('N/A:');
+            fScope.na.forEach(s => { L.push('  - ' + s.name + (s.note ? ' — ' + s.note : '')); });
+        }
+        L.push('');
+    }
+
     // === REVIEWER NOTES ===
     const fNotes = collectNotes();
     if (Object.keys(fNotes).length > 0) {
@@ -3379,6 +4157,210 @@ function exportJSON() {
     showToast('JSON exported!');
 }
 
+// ===== PRINT / PDF =====
+function printEstimate() {
+    const snap = window.lastCalcSnapshot;
+    if (!snap) { showToast('Calculate first'); return; }
+
+    const analysis = generateAnalysis(snap);
+    const proj = snap.meta.projectName || 'Unnamed Project';
+    const W = 80;
+
+    // Build clean HTML document
+    let h = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${proj} — Estimate</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:#1a1a1a;line-height:1.5;padding:20px 30px;max-width:900px;margin:0 auto}
+h1{font-size:16px;margin-bottom:2px}
+h2{font-size:13px;margin:18px 0 6px;padding-bottom:3px;border-bottom:2px solid #1a1a1a}
+h3{font-size:11px;margin:12px 0 4px;color:#555}
+table{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:10px}
+th,td{padding:3px 6px;text-align:left;border-bottom:1px solid #ddd}
+th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:0.3px}
+.mono{font-family:'JetBrains Mono',monospace}
+.right{text-align:right}
+.center{text-align:center}
+.muted{color:#777}
+.badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:8px;font-weight:700;letter-spacing:0.3px}
+.badge.in-range{background:#e6f9ee;color:#0a8f3e}
+.badge.high,.badge.low{background:#fff3e0;color:#e65100}
+.badge.very-high,.badge.very-low{background:#ffeaea;color:#c62828}
+.section{margin-bottom:14px}
+.cost-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:6px 0}
+.cost-grid>div{border:1px solid #ddd;border-radius:4px;padding:8px}
+.cost-line{display:flex;justify-content:space-between;padding:1px 0;font-size:10px}
+.cost-line.subtotal{border-top:1px solid #999;font-weight:700;margin-top:4px;padding-top:4px}
+.totals{background:#f5f5f5;border:1px solid #ccc;border-radius:4px;padding:10px;margin:8px 0}
+.totals .row{display:flex;justify-content:space-between;padding:2px 0;font-size:11px}
+.totals .grand{font-size:14px;font-weight:800;border-top:2px solid #1a1a1a;margin-top:4px;padding-top:6px}
+.conf-bar{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:10px}
+.conf-bar .track{flex:1;height:10px;background:#eee;border-radius:5px;overflow:hidden}
+.conf-bar .fill{height:100%;border-radius:5px}
+.timeline-row{display:grid;grid-template-columns:70px 1fr 60px 60px;gap:4px;padding:3px 4px;font-size:10px;border-bottom:1px solid #eee}
+.timeline-row.cure{background:#fff8e1;font-style:italic;color:#888}
+.scope-section{margin:4px 0}
+.scope-section .item{display:flex;gap:6px;font-size:10px;padding:1px 0}
+.scope-section .tag{font-weight:700;width:40px}
+.scope-section .tag.incl{color:#0a8f3e}
+.scope-section .tag.excl{color:#e65100}
+.scope-section .tag.na{color:#888}
+.footer{margin-top:20px;padding-top:8px;border-top:1px solid #ccc;font-size:9px;color:#888;text-align:center}
+.obs{margin-bottom:8px;padding:4px 6px;border-left:3px solid #ddd;font-size:10px}
+.obs.high{border-color:#e65100}
+.obs.low{border-color:#0a8f3e}
+.notes-block{background:#f9f9f9;border:1px solid #ddd;border-radius:4px;padding:6px 8px;font-size:10px;margin:4px 0}
+@media print{body{padding:10px 15px}h2{page-break-after:avoid}table{page-break-inside:avoid}}
+</style></head><body>`;
+
+    // Header
+    h += `<h1>${proj}</h1>`;
+    h += `<div class="muted" style="margin-bottom:12px;">Generated: ${new Date().toLocaleString()} | Maintenance Division Estimating Calculator v${snap.meta.version}</div>`;
+
+    // Crew & Duration Summary
+    if (snap.hbRows.length > 0) {
+        h += '<h2>Crew & Duration Summary</h2>';
+        h += '<table><thead><tr><th>Activity</th><th class="center">Crew</th><th class="right">Cons Hrs</th><th class="right">Cons Days</th><th class="right">Std Hrs</th><th class="right">Std Days</th><th class="right">Agg Hrs</th><th class="right">Agg Days</th><th class="right">Travel</th></tr></thead><tbody>';
+        snap.hbRows.forEach(r => {
+            h += `<tr><td>${r.name}</td><td class="center">${r.tier.std.crew}</td><td class="right mono">${r.tier.cons.hours.toFixed(1)}</td><td class="right">${r.tier.cons.days}</td><td class="right mono">${r.tier.std.hours.toFixed(1)}</td><td class="right">${r.tier.std.days}</td><td class="right mono">${r.tier.agg.hours.toFixed(1)}</td><td class="right">${r.tier.agg.days}</td><td class="right mono">${r.travel ? r.travel.toFixed(1) + 'h' : '-'}</td></tr>`;
+        });
+        h += '</tbody></table>';
+    }
+
+    // Calendar Duration
+    if (snap.calendar && snap.calendar.timeline.length > 0) {
+        h += '<h2>Calendar Duration</h2>';
+        snap.calendar.timeline.forEach(entry => {
+            const dayLabel = entry.days === 1 ? 'Day ' + entry.startDay : 'Day ' + entry.startDay + '-' + entry.endDay;
+            if (entry.type === 'work') {
+                h += '<div class="timeline-row"><span class="mono">' + dayLabel + '</span><span>' + entry.name + '</span><span class="center">' + entry.crew + '-man</span><span class="right mono">' + entry.hours.toFixed(1) + 'h</span></div>';
+            } else {
+                h += '<div class="timeline-row cure"><span class="mono">' + dayLabel + '</span><span>' + (entry.type === 'cure' ? '⏳ ' : '🌧️ ') + entry.name + '</span><span>-</span><span>-</span></div>';
+            }
+        });
+        h += '<div style="font-weight:700;margin-top:6px;font-size:11px;">Total: ' + snap.calendar.totalDays + ' calendar days (' + snap.calendar.workDays + ' work + ' + snap.calendar.cureDays + ' cure + ' + snap.calendar.weatherDays + ' weather)</div>';
+    }
+
+    // Confidence
+    if (snap.confidence) {
+        const conf = snap.confidence;
+        h += '<h2>Estimate Confidence</h2>';
+        function confBar(label, val) {
+            const pct = (val * 100).toFixed(0);
+            const col = val >= 0.80 ? '#0a8f3e' : val >= 0.65 ? '#0288d1' : val >= 0.50 ? '#f57c00' : '#c62828';
+            return '<div class="conf-bar"><span style="width:160px;">' + label + '</span><div class="track"><div class="fill" style="width:' + pct + '%;background:' + col + ';"></div></div><span class="mono" style="width:40px;text-align:right;">' + pct + '%</span></div>';
+        }
+        h += confBar('Production Reliability (35%)', conf.prodReliability);
+        h += confBar('Benchmark Alignment (30%)', conf.benchAlignment);
+        h += confBar('Scope Definition (20%)', conf.scopeDefinition);
+        h += confBar('Data Quality (15%)', conf.dataQuality);
+        h += '<div style="font-weight:700;font-size:12px;margin-top:6px;">Composite: ' + (conf.composite * 100).toFixed(0) + '% — ' + conf.descriptor + '</div>';
+    }
+
+    // Unit Cost Check
+    if (snap.unitChecks.length > 0) {
+        h += '<h2>Unit Cost Reasonableness Check</h2>';
+        h += '<table><thead><tr><th>Activity</th><th class="right">Qty</th><th>Unit</th><th class="right">Calc $/Unit</th><th class="right">P25</th><th class="right">Med</th><th class="right">P75</th><th>Status</th></tr></thead><tbody>';
+        snap.unitChecks.forEach(c => {
+            const badgeClass = c.status.replace(/\s+/g, '-').toLowerCase();
+            h += '<tr><td>' + c.name + (c.clustered ? ' ⚡' : '') + '</td><td class="right">' + c.qty.toLocaleString() + '</td><td>' + c.unit + '</td><td class="right mono">$' + c.unitCost.toFixed(2) + '</td><td class="right mono">$' + c.p25.toFixed(2) + '</td><td class="right mono">$' + c.med.toFixed(2) + '</td><td class="right mono">$' + c.p75.toFixed(2) + '</td><td><span class="badge ' + badgeClass + '">' + c.status + '</span></td></tr>';
+        });
+        h += '</tbody></table>';
+    }
+
+    // Cost Summary
+    h += '<h2>Cost Summary (Standard Tier)</h2>';
+    h += '<div class="cost-grid">';
+    // Labor column
+    h += '<div><h3>Labor & Equipment</h3>';
+    const laborKeys = ['cf','sc','st','ar','ma','ws','sg','bo','sb','sh','in','pr'];
+    const laborNames = { cf:'Crack Filling', sc:'Seal Coating', st:'Striping', ar:'Asphalt Repairs', ma:'Mastic', ws:'Wheel Stops', sg:'Signs', bo:'Bollards', sb:'Speed Bumps', sh:'Speed Humps', 'in':'Inlet Repair', pr:'Paint Removal' };
+    laborKeys.forEach(k => {
+        const v = snap.summary.laborByType[k] || 0;
+        if (v > 0) h += '<div class="cost-line"><span>' + laborNames[k] + '</span><span class="mono">$' + v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+    });
+    h += '<div class="cost-line subtotal"><span>Subtotal</span><span class="mono">$' + snap.summary.totalLabor.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div></div>';
+    // Material column
+    h += '<div><h3>Materials</h3>';
+    laborKeys.forEach(k => {
+        const v = snap.summary.materialByType[k] || 0;
+        if (v > 0) h += '<div class="cost-line"><span>' + laborNames[k] + '</span><span class="mono">$' + v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+    });
+    h += '<div class="cost-line subtotal"><span>Subtotal</span><span class="mono">$' + snap.summary.totalMat.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div></div>';
+    // Unit Cost column
+    if (snap.unitChecks.length > 0) {
+        h += '<div><h3>Unit Costs</h3>';
+        snap.unitChecks.forEach(c => {
+            const badgeClass = c.status.replace(/\s+/g, '-').toLowerCase();
+            h += '<div class="cost-line"><span>' + c.name + '</span><span class="mono">$' + c.unitCost.toFixed(2) + '/' + c.unit + ' <span class="badge ' + badgeClass + '">' + c.status + '</span></span></div>';
+        });
+        h += '</div>';
+    }
+    h += '</div>';
+    // Totals
+    h += '<div class="totals">';
+    h += '<div class="row"><span>Direct Cost</span><span class="mono">$' + snap.summary.directCost.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+    h += '<div class="row"><span>Markup (' + snap.summary.markupPercent + '%)</span><span class="mono">$' + snap.summary.markupAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+    h += '<div class="row grand"><span>BID PRICE</span><span class="mono">$' + snap.summary.bidPrice.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+    h += '</div>';
+
+    // Job Analysis
+    if (analysis.length > 0) {
+        h += '<h2>Job Analysis</h2>';
+        analysis.forEach(obs => {
+            const cls = obs.flag === '🔴' || obs.flag === '⚠' ? 'high' : 'low';
+            h += '<div class="obs ' + cls + '"><strong>' + obs.flag + ' ' + obs.activity;
+            if (obs.unitCost !== undefined) h += ' — $' + obs.unitCost.toFixed(2) + '/' + obs.unit;
+            h += '</strong>';
+            obs.reasons.forEach(r => { h += '<br>• ' + r; });
+            h += '</div>';
+        });
+    }
+
+    // Scope Assumptions
+    if (snap.scopeAssumptions) {
+        const sa = snap.scopeAssumptions;
+        if (sa.included.length > 0 || sa.excluded.length > 0) {
+            h += '<h2>Scope Exclusions & Assumptions</h2>';
+            if (sa.included.length > 0) {
+                h += '<div class="scope-section"><h3>Included</h3>';
+                sa.included.forEach(s => { h += '<div class="item"><span class="tag incl">INCL</span><span>' + s.name + (s.note ? ' — ' + s.note : '') + '</span></div>'; });
+                h += '</div>';
+            }
+            if (sa.excluded.length > 0) {
+                h += '<div class="scope-section"><h3>Excluded</h3>';
+                sa.excluded.forEach(s => { h += '<div class="item"><span class="tag excl">EXCL</span><span>' + s.name + (s.note ? ' — ' + s.note : '') + '</span></div>'; });
+                h += '</div>';
+            }
+            if (sa.na.length > 0) {
+                h += '<div class="scope-section"><h3>N/A</h3>';
+                sa.na.forEach(s => { h += '<div class="item"><span class="tag na">N/A</span><span>' + s.name + (s.note ? ' — ' + s.note : '') + '</span></div>'; });
+                h += '</div>';
+            }
+        }
+    }
+
+    // Reviewer Notes
+    if (snap.notes && Object.keys(snap.notes).length > 0) {
+        h += '<h2>Reviewer Notes</h2>';
+        for (const [key, text] of Object.entries(snap.notes)) {
+            h += '<div class="notes-block"><strong>' + (NOTE_LABELS[key] || key) + '</strong><br>' + text.replace(/\n/g, '<br>') + '</div>';
+        }
+    }
+
+    // Footer
+    h += '<div class="footer">Generated by Maintenance Division Estimating Calculator v' + snap.meta.version + ' | ' + new Date().toLocaleString() + '</div>';
+    h += '</body></html>';
+
+    // Open new window and trigger print
+    const printWin = window.open('', '_blank');
+    if (!printWin) { showToast('Pop-up blocked — allow pop-ups for this page'); return; }
+    printWin.document.write(h);
+    printWin.document.close();
+    setTimeout(() => { printWin.print(); }, 500);
+    showToast('Print window opened!');
+}
+
 // ===== INIT =====
 const CALC_VERSION = '3.5';
 // v3.5: Sealcoat production rate recalibrated from 60,000 to 52,000 SF/day based on superintendent
@@ -3389,6 +4371,7 @@ const CALC_VERSION = '3.5';
 //       for HeavyBid entry. Cluster deployment summary added to estimate output and exports.
 
 document.addEventListener('DOMContentLoaded', function() {
+    renderScopeChecklist();
     const saved = localStorage.getItem('maintCalcRates');
     if (saved) {
         const data = JSON.parse(saved);
@@ -3398,6 +4381,18 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             Object.keys(data).forEach(key => {
                 if (key === '_version') return;
+                // Scope radio states
+                if (key.startsWith('scope_') && !key.startsWith('scope_note_')) {
+                    const radio = document.getElementById(key + '_' + data[key]);
+                    if (radio) radio.checked = true;
+                    return;
+                }
+                // Scope notes
+                if (key.startsWith('scope_note_')) {
+                    const el = document.getElementById(key);
+                    if (el) el.value = data[key];
+                    return;
+                }
                 const el = document.getElementById(key);
                 if (el) el.value = data[key];
             });
