@@ -592,6 +592,35 @@
             font-size: 0.7rem;
             color: var(--text-muted);
         }
+        .confidence-explain {
+            grid-column: 1 / -1;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+            padding: 0.2rem 0 0.5rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .confidence-explain .driver {
+            display: flex;
+            gap: 0.4rem;
+            padding: 0.1rem 0;
+        }
+        .confidence-explain .driver-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .confidence-explain .driver-tag.good { color: var(--accent-green); }
+        .confidence-explain .driver-tag.mid  { color: var(--accent-cyan); }
+        .confidence-explain .driver-tag.warn { color: #ffaa00; }
+        .confidence-explain .driver-tag.low  { color: #ff4444; }
+        .confidence-explain .definition {
+            font-style: italic;
+            color: var(--text-muted);
+            opacity: 0.85;
+            margin-bottom: 0.3rem;
+        }
     </style>
 </head>
 <body>
@@ -2757,25 +2786,38 @@ function calculateConfidence(snap) {
     const activeActs = Object.entries(acts).filter(([, a]) => a && a.enabled);
     if (activeActs.length === 0) return null;
 
+    const actNames = {
+        crackFill: 'Crack Fill', sealcoat: 'Sealcoat', striping: 'Striping',
+        asphaltRepair: 'Asphalt Repair', mastic: 'Mastic', wheelStops: 'Wheel Stops',
+        signs: 'Signs', bollards: 'Bollards', speedBumps: 'Speed Bumps',
+        speedHumps: 'Speed Humps', inletRepair: 'Inlet Repair', paintRemoval: 'Paint Removal'
+    };
+
     // 1. Production Reliability (35%) — weighted avg of BAND_SCORE by direct cost share
     let totalDirectCost = 0;
     let weightedBandScore = 0;
+    const prodDrivers = [];
     activeActs.forEach(([key, act]) => {
         const cost = act.costs?.total || 0;
         totalDirectCost += cost;
         const conf = RATE_CONFIDENCE[key];
         const bandScore = conf ? (BAND_SCORE[conf.band] || 0.70) : 0.70;
         weightedBandScore += bandScore * cost;
+        prodDrivers.push({ name: actNames[key] || key, band: conf?.label || '?', bandScore, cost, reliability: conf?.reliability || '' });
     });
     const prodReliability = totalDirectCost > 0 ? weightedBandScore / totalDirectCost : 0.70;
+    // Sort drivers by cost share descending so the biggest cost-impact items show first
+    prodDrivers.sort((a, b) => b.cost - a.cost);
 
     // 2. Benchmark Alignment (30%) — % of unit checks IN RANGE
     const totalChecks = checks.length;
     const inRange = checks.filter(c => c.status === 'IN RANGE').length;
     const benchAlignment = totalChecks > 0 ? inRange / totalChecks : 0.50;
+    const benchOutliers = checks.filter(c => c.status !== 'IN RANGE').map(c => ({
+        name: c.name, status: c.status, unitCost: c.unitCost, unit: c.unit, p25: c.p25, p75: c.p75
+    }));
 
     // 3. Scope Definition (20%) — % of active activities with qty in QTY_RANGES normal band
-    // Map snapshot activity keys to benchmark keys for QTY_RANGES lookup
     const actToBenchKeys = {
         crackFill: ['cf'], sealcoat: ['sc'], striping: ['st4','st6','st12','st24','stAr','stHC','stSt','stCb'],
         asphaltRepair: ['ar'], mastic: ['ma'], wheelStops: ['ws','ws_r','ws_rm'],
@@ -2783,6 +2825,7 @@ function calculateConfidence(snap) {
         inletRepair: ['in_r','in_c'], paintRemoval: ['pr']
     };
     let scopeChecked = 0, scopeInRange = 0;
+    const scopeDrivers = [];
     activeActs.forEach(([key]) => {
         const bKeys = actToBenchKeys[key] || [];
         bKeys.forEach(bk => {
@@ -2790,7 +2833,12 @@ function calculateConfidence(snap) {
             const check = checks.find(c => c.benchKey === bk);
             if (qr && check) {
                 scopeChecked++;
-                if (check.qty >= qr.low && check.qty <= qr.high) scopeInRange++;
+                const inBand = check.qty >= qr.low && check.qty <= qr.high;
+                if (inBand) scopeInRange++;
+                if (!inBand) {
+                    const dir = check.qty < qr.low ? 'below' : 'above';
+                    scopeDrivers.push({ name: check.name, qty: check.qty, unit: check.unit, low: qr.low, high: qr.high, dir });
+                }
             }
         });
     });
@@ -2798,21 +2846,25 @@ function calculateConfidence(snap) {
 
     // 4. Data Quality (15%) — weighted avg of sample-size scores
     let dqWeightedScore = 0, dqTotalCost = 0;
+    const dqDrivers = [];
     checks.forEach(c => {
         const b = BENCHMARKS[c.benchKey];
         if (!b) return;
         const n = b.n || 0;
-        let nScore;
-        if (n >= 30) nScore = 1.0;
-        else if (n >= 15) nScore = 0.80;
-        else if (n >= 5) nScore = 0.60;
-        else if (n > 0) nScore = 0.40;
-        else nScore = 0.20;
+        let nScore, tier;
+        if (n >= 30) { nScore = 1.0; tier = 'strong'; }
+        else if (n >= 15) { nScore = 0.80; tier = 'good'; }
+        else if (n >= 5) { nScore = 0.60; tier = 'limited'; }
+        else if (n > 0) { nScore = 0.40; tier = 'sparse'; }
+        else { nScore = 0.20; tier = 'derived'; }
         const cost = c.totalCost || (c.unitCost * c.qty) || 0;
         dqWeightedScore += nScore * cost;
         dqTotalCost += cost;
+        dqDrivers.push({ name: c.name, n, tier, nScore, cost });
     });
     const dataQuality = dqTotalCost > 0 ? dqWeightedScore / dqTotalCost : 0.20;
+    // Sort by cost descending
+    dqDrivers.sort((a, b) => b.cost - a.cost);
 
     // Composite
     const composite = prodReliability * 0.35 + benchAlignment * 0.30 + scopeDefinition * 0.20 + dataQuality * 0.15;
@@ -2825,7 +2877,8 @@ function calculateConfidence(snap) {
     return {
         prodReliability, benchAlignment, scopeDefinition, dataQuality,
         composite, descriptor, color,
-        details: { totalChecks, inRange, scopeChecked, scopeInRange, activeCount: activeActs.length }
+        details: { totalChecks, inRange, scopeChecked, scopeInRange, activeCount: activeActs.length },
+        explain: { prodDrivers, benchOutliers, scopeDrivers, dqDrivers, totalDirectCost }
     };
 }
 
@@ -2842,7 +2895,12 @@ function renderConfidence(result) {
         if (val >= 0.50) return '#ffaa00';
         return '#ff4444';
     }
-
+    function driverTag(score) {
+        if (score >= 0.85) return 'good';
+        if (score >= 0.70) return 'mid';
+        if (score >= 0.50) return 'warn';
+        return 'low';
+    }
     function barRow(label, value) {
         const pct = (value * 100).toFixed(0);
         return `<div class="confidence-bar-row">
@@ -2854,11 +2912,61 @@ function renderConfidence(result) {
         </div>`;
     }
 
+    const ex = result.explain;
     let html = '<div class="confidence-section">';
+
+    // --- Production Reliability ---
     html += barRow('Production Reliability (35%)', result.prodReliability);
+    html += '<div class="confidence-explain">';
+    html += '<div class="definition">How predictable are the production rates? Cost-weighted average of field variance bands (±10% to ±40%) across active work types.</div>';
+    ex.prodDrivers.forEach(d => {
+        const costPct = result.explain.totalDirectCost > 0 ? ((d.cost / result.explain.totalDirectCost) * 100).toFixed(0) : 0;
+        html += `<div class="driver"><span class="driver-tag ${driverTag(d.bandScore)}">${d.band}</span> <span>${d.name} (${costPct}% of cost) — ${d.reliability}</span></div>`;
+    });
+    html += '</div>';
+
+    // --- Benchmark Alignment ---
     html += barRow('Benchmark Alignment (30%)', result.benchAlignment);
+    html += '<div class="confidence-explain">';
+    html += `<div class="definition">What percentage of calculated unit costs fall within the P25-P75 range from 347 historical jobs? ${result.details.inRange} of ${result.details.totalChecks} line items are IN RANGE.</div>`;
+    if (ex.benchOutliers.length > 0) {
+        html += '<div style="margin-top:0.15rem;">';
+        ex.benchOutliers.forEach(o => {
+            const tag = (o.status.includes('VERY') ? 'low' : 'warn');
+            html += `<div class="driver"><span class="driver-tag ${tag}">${o.status}</span> <span>${o.name}: $${o.unitCost.toFixed(2)}/${o.unit} (range $${o.p25.toFixed(2)}-$${o.p75.toFixed(2)})</span></div>`;
+        });
+        html += '</div>';
+    } else {
+        html += '<div class="driver"><span class="driver-tag good">✓</span> <span>All line items within historical P25-P75 range</span></div>';
+    }
+    html += '</div>';
+
+    // --- Scope Definition ---
     html += barRow('Scope Definition (20%)', result.scopeDefinition);
+    html += '<div class="confidence-explain">';
+    html += `<div class="definition">Are the entered quantities within typical job-size ranges? ${result.details.scopeInRange} of ${result.details.scopeChecked} line items fall within the normal quantity band.</div>`;
+    if (ex.scopeDrivers.length > 0) {
+        ex.scopeDrivers.forEach(s => {
+            const tag = 'warn';
+            html += `<div class="driver"><span class="driver-tag ${tag}">${s.dir.toUpperCase()}</span> <span>${s.name}: ${s.qty.toLocaleString()} ${s.unit} (typical range: ${s.low.toLocaleString()}-${s.high.toLocaleString()})</span></div>`;
+        });
+    } else {
+        html += '<div class="driver"><span class="driver-tag good">✓</span> <span>All quantities within typical job-size ranges</span></div>';
+    }
+    html += '</div>';
+
+    // --- Data Quality ---
     html += barRow('Data Quality (15%)', result.dataQuality);
+    html += '<div class="confidence-explain">';
+    html += '<div class="definition">How robust is the benchmark data behind each unit cost? Based on historical sample sizes weighted by cost share. n≥30 = strong, n≥15 = good, n≥5 = limited, n>0 = sparse, n=0 = derived (no field data).</div>';
+    const dqTotal = ex.dqDrivers.reduce((s, d) => s + d.cost, 0);
+    ex.dqDrivers.forEach(d => {
+        const tag = d.tier === 'strong' ? 'good' : d.tier === 'good' ? 'good' : d.tier === 'limited' ? 'mid' : d.tier === 'sparse' ? 'warn' : 'low';
+        const costPct = dqTotal > 0 ? ((d.cost / dqTotal) * 100).toFixed(0) : 0;
+        html += `<div class="driver"><span class="driver-tag ${tag}">n=${d.n}</span> <span>${d.name} — ${d.tier} (${costPct}% of cost)</span></div>`;
+    });
+    html += '</div>';
+
     html += '</div>';
 
     const pct = (result.composite * 100).toFixed(0);
@@ -3926,13 +4034,46 @@ function exportComprehensiveText() {
     // ── ESTIMATE CONFIDENCE ──
     if (snap.confidence) {
         const conf = snap.confidence;
+        const ex = conf.explain;
         L.push('='.repeat(W));
         L.push('ESTIMATE CONFIDENCE (AACE RP 42R-08)');
         L.push('='.repeat(W));
+        L.push('');
         L.push('  Production Reliability (35%): ' + (conf.prodReliability * 100).toFixed(0) + '%');
+        L.push('  How predictable are the production rates? Cost-weighted field variance bands.');
+        if (ex && ex.prodDrivers) {
+            ex.prodDrivers.forEach(d => {
+                const costPct = ex.totalDirectCost > 0 ? ((d.cost / ex.totalDirectCost) * 100).toFixed(0) : 0;
+                L.push('    [' + d.band + '] ' + d.name + ' (' + costPct + '% of cost) — ' + d.reliability);
+            });
+        }
+        L.push('');
         L.push('  Benchmark Alignment (30%):    ' + (conf.benchAlignment * 100).toFixed(0) + '%');
+        L.push('  ' + conf.details.inRange + ' of ' + conf.details.totalChecks + ' line items within P25-P75 historical range.');
+        if (ex && ex.benchOutliers && ex.benchOutliers.length > 0) {
+            ex.benchOutliers.forEach(o => {
+                L.push('    [' + o.status + '] ' + o.name + ': $' + o.unitCost.toFixed(2) + '/' + o.unit + ' (range $' + o.p25.toFixed(2) + '-$' + o.p75.toFixed(2) + ')');
+            });
+        }
+        L.push('');
         L.push('  Scope Definition (20%):       ' + (conf.scopeDefinition * 100).toFixed(0) + '%');
+        L.push('  ' + conf.details.scopeInRange + ' of ' + conf.details.scopeChecked + ' line items within typical quantity bands.');
+        if (ex && ex.scopeDrivers && ex.scopeDrivers.length > 0) {
+            ex.scopeDrivers.forEach(s => {
+                L.push('    [' + s.dir.toUpperCase() + '] ' + s.name + ': ' + s.qty.toLocaleString() + ' ' + s.unit + ' (typical ' + s.low.toLocaleString() + '-' + s.high.toLocaleString() + ')');
+            });
+        }
+        L.push('');
         L.push('  Data Quality (15%):           ' + (conf.dataQuality * 100).toFixed(0) + '%');
+        L.push('  Benchmark robustness by sample size, weighted by cost share.');
+        if (ex && ex.dqDrivers) {
+            const dqTotal = ex.dqDrivers.reduce((s, d) => s + d.cost, 0);
+            ex.dqDrivers.forEach(d => {
+                const costPct = dqTotal > 0 ? ((d.cost / dqTotal) * 100).toFixed(0) : 0;
+                L.push('    [n=' + d.n + '] ' + d.name + ' — ' + d.tier + ' (' + costPct + '% of cost)');
+            });
+        }
+        L.push('');
         L.push('  COMPOSITE:                    ' + (conf.composite * 100).toFixed(0) + '% — ' + conf.descriptor);
         L.push('');
     }
@@ -4249,16 +4390,65 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
     // Confidence
     if (snap.confidence) {
         const conf = snap.confidence;
+        const ex = conf.explain;
         h += '<h2>Estimate Confidence</h2>';
         function confBar(label, val) {
             const pct = (val * 100).toFixed(0);
             const col = val >= 0.80 ? '#0a8f3e' : val >= 0.65 ? '#0288d1' : val >= 0.50 ? '#f57c00' : '#c62828';
             return '<div class="conf-bar"><span style="width:160px;">' + label + '</span><div class="track"><div class="fill" style="width:' + pct + '%;background:' + col + ';"></div></div><span class="mono" style="width:40px;text-align:right;">' + pct + '%</span></div>';
         }
+        function drvColor(score) { return score >= 0.85 ? '#0a8f3e' : score >= 0.70 ? '#0288d1' : score >= 0.50 ? '#f57c00' : '#c62828'; }
+        function drvTag(text, col) { return '<span class="mono" style="font-size:9px;font-weight:700;color:' + col + ';">' + text + '</span>'; }
+
+        // Production Reliability
         h += confBar('Production Reliability (35%)', conf.prodReliability);
+        h += '<div style="font-size:9px;color:#777;margin:2px 0 6px 0;line-height:1.5;">';
+        h += '<em>How predictable are the production rates? Cost-weighted average of field variance bands.</em>';
+        if (ex && ex.prodDrivers) {
+            ex.prodDrivers.forEach(function(d) {
+                var costPct = ex.totalDirectCost > 0 ? ((d.cost / ex.totalDirectCost) * 100).toFixed(0) : 0;
+                h += '<br>' + drvTag(d.band, drvColor(d.bandScore)) + ' ' + d.name + ' (' + costPct + '% of cost) — ' + d.reliability;
+            });
+        }
+        h += '</div>';
+
+        // Benchmark Alignment
         h += confBar('Benchmark Alignment (30%)', conf.benchAlignment);
+        h += '<div style="font-size:9px;color:#777;margin:2px 0 6px 0;line-height:1.5;">';
+        h += '<em>' + conf.details.inRange + ' of ' + conf.details.totalChecks + ' line items within P25-P75 historical range.</em>';
+        if (ex && ex.benchOutliers && ex.benchOutliers.length > 0) {
+            ex.benchOutliers.forEach(function(o) {
+                var col = o.status.includes('VERY') ? '#c62828' : '#f57c00';
+                h += '<br>' + drvTag(o.status, col) + ' ' + o.name + ': $' + o.unitCost.toFixed(2) + '/' + o.unit + ' (range $' + o.p25.toFixed(2) + '-$' + o.p75.toFixed(2) + ')';
+            });
+        }
+        h += '</div>';
+
+        // Scope Definition
         h += confBar('Scope Definition (20%)', conf.scopeDefinition);
+        h += '<div style="font-size:9px;color:#777;margin:2px 0 6px 0;line-height:1.5;">';
+        h += '<em>' + conf.details.scopeInRange + ' of ' + conf.details.scopeChecked + ' line items within typical quantity bands.</em>';
+        if (ex && ex.scopeDrivers && ex.scopeDrivers.length > 0) {
+            ex.scopeDrivers.forEach(function(s) {
+                h += '<br>' + drvTag(s.dir.toUpperCase(), '#f57c00') + ' ' + s.name + ': ' + s.qty.toLocaleString() + ' ' + s.unit + ' (typical ' + s.low.toLocaleString() + '-' + s.high.toLocaleString() + ')';
+            });
+        }
+        h += '</div>';
+
+        // Data Quality
         h += confBar('Data Quality (15%)', conf.dataQuality);
+        h += '<div style="font-size:9px;color:#777;margin:2px 0 6px 0;line-height:1.5;">';
+        h += '<em>Benchmark robustness by sample size, weighted by cost share.</em>';
+        if (ex && ex.dqDrivers) {
+            var dqTotal = ex.dqDrivers.reduce(function(s, d) { return s + d.cost; }, 0);
+            ex.dqDrivers.forEach(function(d) {
+                var col = d.tier === 'strong' || d.tier === 'good' ? '#0a8f3e' : d.tier === 'limited' ? '#0288d1' : d.tier === 'sparse' ? '#f57c00' : '#c62828';
+                var costPct = dqTotal > 0 ? ((d.cost / dqTotal) * 100).toFixed(0) : 0;
+                h += '<br>' + drvTag('n=' + d.n, col) + ' ' + d.name + ' — ' + d.tier + ' (' + costPct + '% of cost)';
+            });
+        }
+        h += '</div>';
+
         h += '<div style="font-weight:700;font-size:12px;margin-top:6px;">Composite: ' + (conf.composite * 100).toFixed(0) + '% — ' + conf.descriptor + '</div>';
     }
 
