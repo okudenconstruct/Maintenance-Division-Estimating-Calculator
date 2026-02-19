@@ -1,161 +1,166 @@
 # Maintenance Division Estimating Calculator
 
-A single-file, browser-based estimating tool purpose-built for asphalt maintenance operations. Designed for estimators and cost analysts who need to quickly price multi-trade parking lot and pavement maintenance work using real crew compositions, in-house production rates, and current material costs.
+**Version 4.0** | February 2026
 
-![Version](https://img.shields.io/badge/version-2.0-orange)
-![License](https://img.shields.io/badge/license-MIT-blue)
+A browser-based estimating tool that converts project scope inputs into crew sizes and activity durations for HeavyBid line-item entry. Built for pavement maintenance estimating with field-calibrated production rates, three-tier scheduling, and deterministic job analysis.
 
-## Overview
+---
 
-This calculator handles 12 distinct asphalt maintenance work types in a single unified interface, allowing estimators to build combined estimates with automatic cost rollups and markup calculations. Every crew rate, material unit cost, and production benchmark is fully configurable — no hardcoded assumptions you can't override.
+## What It Does
 
-**v2.0** introduces data-calibrated production rates derived from statistical analysis of 347 historical job records, a built-in benchmarking reference panel showing actual all-in unit cost percentiles, and small/large sign differentiation.
+The calculator sits upstream of HeavyBid. You enter quantities, phases, and travel time. It returns crew sizes and durations across three production tiers (conservative, standard, aggressive). Cost summaries exist as sanity checks against 347-job historical benchmarks — HeavyBid owns all final cost buildup, overhead, and bid pricing.
 
-The tool runs entirely in the browser with zero dependencies, zero build steps, and zero server requirements. Open the HTML file and start estimating.
+**12 work types supported:** Crack Filling, Sealcoating, Striping, Asphalt Repairs, Mastic Crack Fill, Wheel Stops, Signs, Bollards, Rubber Speed Bumps, Speed Humps, Inlet Repair, Paint Removal.
 
-## Work Types
+---
 
-| Work Type | Input Unit | Key Features |
-|-----------|-----------|--------------|
-| **Crack Filling** | LF | Hot rubberized sealant, configurable crew rate |
-| **Seal Coating** | SF | Spray application, 2-coat system with sand |
-| **Striping** | LF / EA | 8 line items (4"/6"/12"/24" lines, HC stalls, arrows, stencils, curbing) with per-item production rates |
-| **Asphalt Repairs** | SF | Depth configuration dropdown (2" surface through full-depth with DGA), auto-selects hot box vs. triaxle crew at 4-ton threshold, rounds tonnage up |
-| **Mastic Crack Filling** | LF | Machine rental per day, includes 1 full day labor for pickup/dropoff |
-| **Wheel Stops** | EA | Three operations: new install, reset/re-pin, remove & dispose — each with separate crew and material costs |
-| **Signs** | EA | Small and large signs, post-mounted or bollard-mounted, with separate material costs and production rates |
-| **Bollard Replacement** | EA | Full replacement including footing and pavement restoration |
-| **Rubber Speed Bumps** | EA | 6' sections with end caps, includes hardware |
-| **Asphalt Speed Humps** | EA | Sinusoidal profile (16'×13'×2.64"), 2.13 tons per hump, supports existing asphalt or mill & pave context |
-| **Inlet Repair / Reconstruction** | EA | Separate hour estimates for repair (4 hrs) vs. full reconstruction (8 hrs), optional castings |
-| **Paint Striping Removal** | LF | Shot blaster/grinder rental per day on top of striping crew |
+## Quick Start
 
-## Key Features
+1. Open `index.html` in any modern browser (Chrome, Edge, Firefox)
+2. Enter a project name
+3. Enable the work types you need and enter quantities
+4. Results calculate live — crew sizes, durations, costs, and analysis update instantly
+5. Export via Quick Export, Full Export, JSON, or Print
 
-- **4-hour minimum charge** enforced across all crew types
-- **Configurable work day** — 6, 8, or 10 hour days
-- **Enable/disable any work type** via checkbox toggles without losing entered data
-- **Combined cost summary** rolls up all active work types into labor/equipment and material subtotals
-- **Markup percentage** applied to direct cost total for bid pricing
-- **Export to clipboard** — generates a formatted text summary of the full estimate
-- **Save/load rates** to browser local storage so your pricing persists between sessions
-- **Fully editable rates panel** — every crew hourly rate, material unit cost, and daily production benchmark can be adjusted
-- **Historical benchmarking panel** — built-in reference showing percentile unit costs from actual job data with job-size tier breakdowns
+No server, no install, no dependencies beyond Google Fonts.
 
-## Data Calibration (v2.0)
+---
 
-Production rates were calibrated against 347 historical job records (Dec 2024 – Dec 2025) using weighted-average Unit/MH productivity analysis across crew compositions.
+## v4.0 Features
 
-### Production Rate Changes (v1.0 → v2.0)
+### Core Engine
+- **Three-Tier Output** — Conservative (80%), Standard (100%), Aggressive (120%) production tiers from the same crew. Gives you a range instead of false precision.
+- **Shift Buffer Zone Optimizer** — Snaps raw hours to practical shift increments (4/6/8/10/12h). Detects hustle zones where a crew can push to finish rather than booking another increment.
+- **Crew Clustering** — Activities sharing equipment (heavy, paint, sealcoat, crack fill, mastic) cluster together to share mobilization. Shift optimization runs per cluster with hours apportioned back to individual activities.
 
-| Item | v1.0 | v2.0 | Basis |
-|------|:----:|:----:|-------|
-| Crack Fill | 5,000 LF/day | 3,500 LF/day | Implied 3,236 from wtd avg 134.8 LF/MH × 3-man × 8hr |
-| Seal Coat | 50,000 SF/day | 60,000 SF/day | Implied 65,545 from wtd avg 2,048 SF/MH × 4-man × 8hr |
-| Stencils | 80 EA/day | 100 EA/day | Implied 102 from wtd avg 4.27 EA/MH × 3-man × 8hr |
-| Asphalt Repair | 500 SF/day | 600 SF/day | Implied 609 from wtd avg 19.0 SF/MH × 4-man × 8hr |
+### Estimating Intelligence
+- **Unit Cost Reasonableness Check** — Compares calculated $/unit against P25-P75 ranges from 347 completed jobs. Flags items as IN RANGE, HIGH, LOW, VERY HIGH, or VERY LOW.
+- **Job Analysis Engine** — Deterministic analysis tracing every flag to specific inputs: quantity vs. typical range, shift utilization, setup/breakdown overhead, phase count, travel ratio, and work-type-specific field logic from a 26-question field operations questionnaire.
+- **Risk-Weighted Estimate Confidence** — Four sub-scores with explanatory drivers:
+  - Production Reliability (35%) — weighted by activity cost share and rate variance bands
+  - Benchmark Alignment (30%) — percentage of unit checks within historical range
+  - Scope Definition (20%) — quantities within normal bands + critical inputs populated
+  - Data Quality (15%) — sample size adequacy across active benchmarks
+- **Scope Exclusions & Assumptions** — 12-item checklist (traffic control, permits, survey, disposal, etc.) with Included/Excluded/N/A status and notes. Exported with every estimate.
 
-Rates confirmed as accurate (no change): 4" Lines (8,000), Arrows (80), HC Symbols (80).
+### Scheduling
+- **Calendar Duration Estimate** — Working-day timeline with activity sequencing, cure windows between dependent activities (crack fill before sealcoat, sealcoat before striping, asphalt before striping), and weather contingency input.
+- **Differentiated Wheel Stop Rates** — Install (80/day), Reset (155/day), Removal (220/day) per field-calibrated data instead of a single blended rate.
 
-### Key Statistical Finding
+### Export & Output
+- **Quick Export** — Clipboard summary with three-tier hours and cost totals
+- **Full Export** — Comprehensive plain-text report structured for HeavyBid workflow: crew/duration first, then analysis, then costs (labeled as reference)
+- **JSON Export** — Complete calculation snapshot for data analysis
+- **Print/PDF** — Clean white-background document in a new window with all sections (crew summary, calendar, confidence scores with explanations, unit costs, analysis, scope assumptions). Triggers browser print dialog for PDF save.
+- **Per-Activity Unit Costs** — Third column in Cost Summary showing $/unit with color-coded status badges
 
-Every dataset exhibits a strong inverse power-law relationship between job quantity and all-in unit cost. This is primarily driven by the 4-hour crew minimum — small jobs absorb the full mobilization cost across fewer production units. The calculator's existing minimum-hours mechanic naturally reproduces this behavior without needing tiered pricing.
+---
 
-Best-fit power law regressions (R² values): Asphalt Repair 0.77, 4" Lines 0.63, HC Symbols 0.43, Arrows 0.31, Sealcoat 0.28.
+## Architecture
 
-### Historical Benchmarking Reference
+### Single-File Design
+The entire application is one HTML file (~4,600 lines) with inline CSS and JavaScript. No build step, no framework, no server. Opens directly in any browser or hosts as a static page.
 
-The calculator includes a built-in collapsible panel showing actual all-in unit cost percentiles (25th, median, 75th, weighted average) for each work type, plus job-size tier breakdowns for high-volume items. This allows estimators to gut-check calculator outputs against real field performance.
+### Technology
+- HTML5 / CSS3 with custom properties (dark theme)
+- Vanilla JavaScript — all calculation, DOM manipulation, and export logic
+- Google Fonts (JetBrains Mono for data, IBM Plex Sans for UI)
+- LocalStorage for persisting rate configurations between sessions
 
-## Calculation Logic
-
-### Asphalt Repairs (Tonnage)
-
-Asphalt tonnage uses the industry-standard formula:
-
+### Data Flow
 ```
-Tons = (SF / 9) × Depth(in) × 0.0575
-```
-
-DGA tonnage:
-
-```
-CY = SF × Depth(in) / 324
-Tons = CY × 1.9
-```
-
-All tonnage is **rounded up to the next whole ton**. If total asphalt tonnage exceeds 4 tons, the calculator automatically switches from the hot box crew composition to the triaxle dump truck crew.
-
-### Production Hours
-
-For each work type:
-
-```
-Raw Hours = (Quantity / Daily Production Rate) × Hours Per Day
-Applied Hours = max(Raw Hours, 4.0)   ← 4-hour minimum
-Days = ceil(Applied Hours / Hours Per Day)
-```
-
-### Cost Buildup
-
-```
-Labor & Equipment = Applied Hours × Crew Hourly Rate
-Material = Quantity × Unit Cost
-Direct Cost = Σ(Labor & Equipment) + Σ(Material)
-Bid Price = Direct Cost × (1 + Markup%)
+Scope Inputs (quantities, phases, travel)
+    |
+Rate Configuration (crew rates, materials, production rates, crew sizes, waste factors)
+    |
+calculateAll()
+    |-- Per-activity calculation (12 work types)
+    |   |-- Raw production hours
+    |   |-- Phase adjustment + three-tier scaling
+    |   |-- Shift optimization (snap to increments, hustle detection)
+    |   |-- Cost calculation (labor + materials + waste)
+    |   +-- Snapshot capture
+    |
+    |-- Crew Clustering (shared mobilization, per-cluster optimization)
+    |-- Estimate Summary Table (crew, hours, days per tier)
+    |-- Calendar Duration (sequencing + cure windows)
+    |-- Estimate Confidence (4 sub-scores + explanations)
+    |-- Unit Cost Check (vs. P25-P75 benchmarks)
+    |-- Job Analysis Engine (deterministic flag reasoning)
+    |-- Cost Summary (labor + material + unit costs + markup)
+    +-- Scope Assumptions
+            |
+    window.lastCalcSnapshot
+            |
+    Exports (Quick / Full / JSON / Print)
 ```
 
-## Getting Started
+---
 
-1. Download `maintenance-calc.html`
-2. Open it in any modern browser
-3. Set your current asphalt pricing in the global settings bar
-4. Expand the rate configuration panel to verify or adjust crew rates, material costs, and production benchmarks
-5. Enable the work types you need, enter quantities, and the calculator runs automatically
-6. Expand the Historical Benchmarking Reference panel to compare your estimate against actual job data
+## Rate Configuration
 
-No installation, no dependencies, no internet connection required.
+All rates are user-editable with field-calibrated defaults:
 
-## Customization
+| Category | Count | Examples |
+|----------|-------|---------|
+| Crew Hourly Rates | 14 | $133.40/hr (wheel stop reset) to $336.48/hr (asphalt repair >4T) |
+| Material Unit Costs | 22 | Per-unit discrete items + per-LF/SF continuous materials |
+| Production Rates | 23 | Crack fill 4,000 LF/day, sealcoat 52,000 SF/day, striping 5,000 LF/day |
+| Default Crew Sizes | 12 | Crack fill 3, sealcoat 4, asphalt repair 4, mastic 5 |
+| Material Waste Factors | 6 | Crack fill 10%, sealcoat 5%, asphalt/DGA 7% |
 
-### Crew Rates
+Rates persist in browser LocalStorage. Save/Load/Reset controls in the Rate Configuration panel.
 
-The rate configuration panel contains pre-loaded crew hourly rates that represent the combined cost of all labor and equipment for each crew type. These are calculated from detailed crew compositions (foremen, laborers, equipment pieces) and can be updated whenever wage rates or equipment costs change.
+---
 
-### Production Rates
+## Key Design Decisions
 
-Daily production benchmarks are calibrated from actual field performance data (v2.0). They represent what a full crew can accomplish in a standard work day under typical conditions. All rates are editable to account for site-specific conditions.
+**Three tiers, not one number.** A single duration implies false precision. Three tiers reflect real variability in crew capability, site complexity, and conditions. The estimator picks the tier that matches their read of the job.
 
-### Material Costs
+**Shift snapping, not raw hours.** You send a crew for a half day or a full day, not 5.3 hours. The optimizer reflects how work is actually scheduled and billed.
 
-Material unit costs include all-in pricing (material + tax + delivery where applicable). Asphalt pricing is set globally since it fluctuates on 15-day intervals.
+**Deterministic analysis, not ML.** Every observation traces to specific inputs and explicit rules from field experience. Same inputs always produce the same analysis. Auditable and predictable.
 
-## Changelog
+**Costs are secondary.** HeavyBid owns cost buildup. Calculator costs exist to sanity-check crew sizing and duration, not to produce bid pricing. Exports label them accordingly.
 
-### v2.0 — Data-Calibrated Release
-- Calibrated production rates from 347 historical job records
-- Added historical benchmarking reference panel with percentile unit costs
-- Added job-size tier breakdowns for high-volume work types
-- Split signs into small and large categories with separate material costs and production rates
-- Updated default production rates: Crack Fill 3,500, Sealcoat 60,000, Stencils 100, Asphalt Repair 600
+**Confidence with explanations.** Bare confidence scores are useless without knowing why. Each component shows its definition and lists every driver sorted by cost impact with severity tags.
 
-### v1.0 — Initial Release
-- 12 work types with full crew composition and material cost modeling
-- 4-hour minimum charge enforcement
-- Configurable work day, markup, and rate persistence
+---
 
-## Roadmap
+## Source Data
 
-- **Future** — Android app conversion (Capacitor), PDF export, project save/recall, 6" line data integration
+| Source | Role |
+|--------|------|
+| Darrell's Production Rates | Baseline crew rates, material costs, daily production rates (all Rate Config defaults) |
+| 347-Job Historical Dataset (Dec 2024 - Dec 2025) | P25/median/P75 unit cost benchmarks, typical quantity ranges, sample sizes per activity |
+| Field Operations Questionnaire (Feb 2026) | 26 questions on crew sizing, site conditions, phasing, judgment calls, work-type specifics. Integrated as deterministic rules in the analysis engine. |
+| MnDOT Asphalt Pavement Maintenance Field Handbook | Specifications for sealcoat windows, HMA temperatures, crack sealing sequencing |
 
-## Technical Details
+---
 
-- **Single HTML file** — all CSS and JavaScript inline, no external dependencies
-- **~1,700 lines** of code including styles, markup, and calculation logic
-- **Local storage** for rate persistence (browser-based, no server)
-- **Responsive layout** — works on desktop, tablet, and mobile
-- **Dark theme** optimized for extended use
+## Version History
 
-## License
+| Version | Changes |
+|---------|---------|
+| **4.0** | Differentiated wheel stop production rates (install/reset/removal). Scope Exclusions & Assumptions checklist. Risk-Weighted Estimate Confidence with explanatory drivers. Per-activity unit cost column with status badges. Calendar Duration Estimate with cure windows and weather contingency. Print/PDF export. BENCHMARKS sample sizes. RATE_CONFIDENCE at module scope. |
+| 3.5 | Sealcoat rate recalibrated to 52,000 SF/day. Crew clustering engine (heavy, paint, sealcoat, crack fill, mastic). Per-cluster shift optimization. Cluster deployment summary. |
+| 3.4 | Field Operations Questionnaire integration (26 questions). Production rate confidence bands. Setup/breakdown detection. Crew-sizing thresholds. Cure window sequencing. Tack-on activity detection. |
+| 3.3 | Job Analysis Engine. Full Export and JSON Export. Snapshot architecture. |
+| 3.2 | Asphalt price warnings. Shift duration clamping. Unit Cost Reasonableness Check (347-job benchmarks). |
+| 3.1 | Base calculator: 12 work types, three-tier output, shift optimizer, cost summary, quick export. |
 
-MIT License — see [LICENSE](LICENSE) for details.
+---
+
+## Standards Alignment
+
+The calculator's methodology aligns with practices described in:
+- **AACE RP 17R-97** — Cost Estimate Classification System
+- **AACE RP 18R-97** — Cost Estimate Classification as Applied to Engineering, Procurement, and Construction
+- **AACE RP 42R-08** — Risk Analysis and Contingency Determination
+- **AACE RP 34R-05** — Basis of Estimate
+- **AACE RP 40R-08** — Estimate Accuracy
+- **ASPE Standard Estimating Practice** — Scope definition, exclusions/assumptions documentation
+
+---
+
+*Maintenance Division Estimating Calculator v4.0 — Internal estimating tool. Not client-facing.*
