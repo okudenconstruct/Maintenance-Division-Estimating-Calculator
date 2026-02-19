@@ -2931,15 +2931,20 @@ function calculateCalendarDuration(snap) {
     for (let i = 0; i < clusterEntries.length; i++) {
         const entry = clusterEntries[i];
 
-        // Check if a cure window is needed before this entry
+        // Check if a cure window is needed before this entry.
+        // Scan ALL prior cluster entries, not just the immediately preceding one,
+        // because a dependent activity (e.g. sealcoat) may be separated from its
+        // prerequisite (e.g. crackFill) by an unrelated cluster (e.g. mastic).
         if (i > 0) {
-            const prevKeys = clusterEntries[i - 1].actKeys;
             const curKeys = entry.actKeys;
             let maxCure = 0;
-            for (const [cureKey, cureDays] of Object.entries(CURE_WINDOWS)) {
-                const [before, , after] = cureKey.split('_');
-                if (prevKeys.includes(before) && curKeys.includes(after)) {
-                    maxCure = Math.max(maxCure, cureDays);
+            for (let j = 0; j < i; j++) {
+                const prevKeys = clusterEntries[j].actKeys;
+                for (const [cureKey, cureDays] of Object.entries(CURE_WINDOWS)) {
+                    const [before, , after] = cureKey.split('_');
+                    if (prevKeys.includes(before) && curKeys.includes(after)) {
+                        maxCure = Math.max(maxCure, cureDays);
+                    }
                 }
             }
             if (maxCure > 0) {
