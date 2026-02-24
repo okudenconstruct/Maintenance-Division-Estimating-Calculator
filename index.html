@@ -632,7 +632,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v4.0 | Field-Calibrated | Three-Tier Output | Crew Clustering | Estimate Confidence | Calendar Duration</span>
+            <span>v4.1 | Field-Calibrated | Three-Tier Output | Crew Clustering | Crew Size Adjustment | Estimate Confidence</span>
         </div>
     </div>
     <div class="header-controls">
@@ -705,7 +705,11 @@
     <div class="panel-content" id="rateContent">
         <div class="rate-grid">
             <div class="rate-section">
-                <h4><span class="tip" data-tip="All-in hourly cost including labor, equipment, and vehicle. From HeavyBid crew setup.">Crew Hourly Rates (Equip + Labor)</span></h4>
+                <h4><span class="tip" data-tip="All-in hourly cost including labor, equipment, and vehicle.">Crew Hourly Rates (Equip + Labor)</span></h4>
+                <div class="rate-row" style="border-bottom:1px solid var(--border-color); padding-bottom:0.4rem; margin-bottom:0.4rem;">
+                    <label><span class="tip" data-tip="Loaded hourly rate for each additional laborer above base crew size (AAS Paint Labor: $26.30 base + 14.19% tax + $8.99 fringe = $39.03). Used to adjust crew rates when crew size differs from the calibrated default.">Laborer Adjustment Rate</span></label>
+                    <input type="number" id="rateLaborerAdj" value="39.03" step="0.01">
+                </div>
                 <div class="rate-row"><label>Crack Fill Crew</label><input type="number" id="rateCrackFill" value="219.34" step="0.01"></div>
                 <div class="rate-row"><label>Sealcoat Crew</label><input type="number" id="rateSealcoat" value="245.79" step="0.01"></div>
                 <div class="rate-row"><label>Striping Crew</label><input type="number" id="rateStriping" value="245.75" step="0.01"></div>
@@ -1345,7 +1349,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v4.0 | Field-Calibrated Production Rates | Crew Clustering | Estimate Confidence | Calendar Duration | Full Export<br>
+    Maintenance Division Estimating Calculator v4.1 | Field-Calibrated Production Rates | Crew Size Adjustment | Crew Clustering | Estimate Confidence | Calendar Duration<br>
     All rates subject to superintendent review.
 </div>
 
@@ -1558,6 +1562,45 @@ const CLUSTER_ACTIVITY_MAP = {
     mastic:        { enableId: 'en_mastic',        snapshotKey: 'mastic' }
 };
 
+// === CREW SIZE ADJUSTMENT ===
+// Base crew sizes each all-in crew rate was calibrated at. When the user
+// changes crew size, delta members are priced at the laborer adjustment rate.
+const BASE_CREW_SIZES = {
+    crackFill:    3,
+    sealcoat:     3,
+    striping:     4,
+    asphaltSmall: 4,
+    asphaltLarge: 4,
+    wsInstall:    3,   // wheel stops (all operations share one crew)
+    speedBump:    3,
+    bollard:      4,
+    sign:         4,
+    mastic:       4,
+    inlet:        4,
+    speedHump:    4
+};
+
+/**
+ * Returns the effective crew hourly rate adjusted for crew size changes.
+ * Formula: baseRate + (currentCrew − baseCrew) × laborerRate
+ * If crew shrinks below base, rate decreases (laborer removed from truck).
+ * @param {number} baseRate   - The all-in crew hourly rate from Rate Config
+ * @param {number} currentCrew - Current crew size from input
+ * @param {number} baseCrew   - Base crew size the rate was calibrated at
+ * @returns {number} Adjusted crew hourly rate
+ */
+function adjustedRate(baseRate, currentCrew, baseCrew) {
+    const laborerRate = gv('rateLaborerAdj');
+    const delta = currentCrew - baseCrew;
+    return baseRate + (delta * laborerRate);
+}
+
+/** Build crew adjustment info object for renderTierTable display */
+function crewAdjInfo(currentCrew, baseCrew) {
+    const delta = currentCrew - baseCrew;
+    return { delta, laborerRate: gv('rateLaborerAdj') };
+}
+
 // === SCOPE EXCLUSIONS & ASSUMPTIONS ===
 const SCOPE_ITEMS = [
     // Default INCLUDED
@@ -1720,7 +1763,7 @@ function calcThreeTier(qty, prodPerDay, stdShift, maxShift, phases, stdCrew) {
 }
 
 // ===== RENDER STANDARD OUTPUT INTO WORK TYPE PANEL =====
-function renderTierTable(containerId, tierData, rate, matCost, extra, travelHrs, travelCost) {
+function renderTierTable(containerId, tierData, rate, matCost, extra, travelHrs, travelCost, crewAdj) {
     const el = document.getElementById(containerId);
     if (!el) return;
     if (!tierData) {
@@ -1736,6 +1779,13 @@ function renderTierTable(containerId, tierData, rate, matCost, extra, travelHrs,
 
     let html = '';
     html += `<div class="output-row"><span class="lbl">Crew Size</span><span class="val">${std.crew}</span></div>`;
+    // Show crew rate adjustment indicator when crew size differs from base
+    if (crewAdj && crewAdj.delta !== 0) {
+        const sign = crewAdj.delta > 0 ? '+' : '';
+        const adjAmt = crewAdj.delta * crewAdj.laborerRate;
+        const adjSign = adjAmt >= 0 ? '+' : '-';
+        html += `<div class="output-row" style="color:#00bcd4;font-size:0.68rem;"><span class="lbl">↳ Rate adj: ${sign}${crewAdj.delta} laborer${Math.abs(crewAdj.delta) > 1 ? 's' : ''} × $${crewAdj.laborerRate.toFixed(2)}/hr</span><span class="val">${adjSign}$${Math.abs(adjAmt).toFixed(2)}/hr</span></div>`;
+    }
     html += `<div class="output-row"><span class="lbl">Shift Hours</span><span class="val">${std.hours.toFixed(1)}</span></div>`;
     html += `<div class="output-row"><span class="lbl">Days</span><span class="val">${std.days}</span></div>`;
     if (std.hustle) {
@@ -1937,50 +1987,53 @@ function calculateAll() {
     // === CRACK FILLING ===
     if (isOn('en_crackfill')) {
         const lf = gv('cf_lf');
-        const rate = gv('rateCrackFill');
+        const baseRate = gv('rateCrackFill');
         const prod = gv('prodCrackFill');
         const phases = Math.max(gv('cf_phases'), 1);
         const crew = gv('crewCrackFill');
+        const rate = adjustedRate(baseRate, crew, BASE_CREW_SIZES.crackFill);
         const travel = gv('cf_travel');
         const matQty = lf * wf.cf;
         const matCost = matQty * gv('matCrackFill');
         const tier = calcThreeTier(lf, prod, stdShift, maxShift, phases, crew);
         const travelCost = travel * rate;
-        renderTierTable('cf_output', tier, rate, matCost, 0, travel, travelCost);
+        renderTierTable('cf_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.crackFill));
         if (tier) {
             sumLabor.cf = tier.std.hours * rate + travelCost;
             sumMat.cf = matCost;
             hbRows.push({ name: 'Crack Filling', tier, travel });
-            snapshot.activities.crackFill = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate: rate, prodPerDay: prod, crewSize: crew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.cf + sumMat.cf } };
+            snapshot.activities.crackFill = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.crackFill }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.cf + sumMat.cf } };
         }
     } else { renderTierTable('cf_output', null); }
 
     // === SEALCOATING ===
     if (isOn('en_sealcoat')) {
         const sf = gv('sc_sf');
-        const rate = gv('rateSealcoat');
+        const baseRate = gv('rateSealcoat');
         const prod = gv('prodSealcoat');
         const phases = Math.max(gv('sc_phases'), 1);
         const crew = gv('crewSealcoat');
+        const rate = adjustedRate(baseRate, crew, BASE_CREW_SIZES.sealcoat);
         const travel = gv('sc_travel');
         const matQty = sf * wf.sc;
         const matCost = matQty * gv('matSealcoat');
         const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
         const travelCost = travel * rate;
-        renderTierTable('sc_output', tier, rate, matCost, 0, travel, travelCost);
+        renderTierTable('sc_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.sealcoat));
         if (tier) {
             sumLabor.sc = tier.std.hours * rate + travelCost;
             sumMat.sc = matCost;
             hbRows.push({ name: 'Sealcoating', tier, travel });
-            snapshot.activities.sealcoat = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, phases, travel }, rates: { crewRate: rate, prodPerDay: prod, crewSize: crew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
+            snapshot.activities.sealcoat = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, phases, travel }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.sealcoat }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
         }
     } else { renderTierTable('sc_output', null); }
 
     // === STRIPING (with concurrency) ===
     if (isOn('en_striping')) {
-        const rate = gv('rateStriping');
+        const baseRate = gv('rateStriping');
         const phases = Math.max(gv('st_phases'), 1);
         const crew = gv('crewStriping');
+        const rate = adjustedRate(baseRate, crew, BASE_CREW_SIZES.striping);
         const travel = gv('st_travel');
         const wasteFactor = wf.st;
 
@@ -2042,11 +2095,11 @@ function calculateAll() {
             };
 
             const travelCost = travel * rate;
-            renderTierTable('st_output', tier, rate, totalMat, 0, travel, travelCost);
+            renderTierTable('st_output', tier, rate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping));
             sumLabor.st = stdR.hours * rate + travelCost;
             sumMat.st = totalMat;
             hbRows.push({ name: 'Striping', tier, travel, note: `Mach: ${machineHrs.toFixed(1)}h / Hand: ${handHrs.toFixed(1)}h / Concurrent: ${concurrentHrs.toFixed(1)}h` });
-            snapshot.activities.striping = { enabled: true, rawProductionHrs: concurrentHrs, inputs: { phases, travel }, lineItems: lineItemData, concurrency: { machineHrs, handHrs, concurrentHrs }, rates: { crewRate: rate, crewSize: crew }, tiers: tier, costs: { laborShift: stdR.hours * rate, laborTravel: travelCost, material: totalMat, total: sumLabor.st + sumMat.st } };
+            snapshot.activities.striping = { enabled: true, rawProductionHrs: concurrentHrs, inputs: { phases, travel }, lineItems: lineItemData, concurrency: { machineHrs, handHrs, concurrentHrs }, rates: { crewRate: rate, baseCrewRate: baseRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.striping }, tiers: tier, costs: { laborShift: stdR.hours * rate, laborTravel: travelCost, material: totalMat, total: sumLabor.st + sumMat.st } };
         } else {
             renderTierTable('st_output', null);
         }
@@ -2074,8 +2127,10 @@ function calculateAll() {
 
         const totalAsphaltTons = surfTons + baseTons;
         const crewIsLarge = totalAsphaltTons > 4;
-        const crewRate = crewIsLarge ? gv('rateAsphaltLarge') : gv('rateAsphaltSmall');
+        const baseCrewRate = crewIsLarge ? gv('rateAsphaltLarge') : gv('rateAsphaltSmall');
         const crew = crewIsLarge ? gv('crewAsphaltLarge') : gv('crewAsphaltSmall');
+        const baseCrew = crewIsLarge ? BASE_CREW_SIZES.asphaltLarge : BASE_CREW_SIZES.asphaltSmall;
+        const crewRate = adjustedRate(baseCrewRate, crew, baseCrew);
         const matAsphalt = (surfTons * asphaltPrice) + (baseTons * baseAsphaltPrice);
         const matDGA = dgaTons * dgaPrice;
         const totalMat = matAsphalt + matDGA;
@@ -2088,12 +2143,12 @@ function calculateAll() {
 
         const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
         const travelCost = travel * crewRate;
-        renderTierTable('ar_output', tier, crewRate, totalMat, 0, travel, travelCost);
+        renderTierTable('ar_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, baseCrew));
         if (tier) {
             sumLabor.ar = tier.std.hours * crewRate + travelCost;
             sumMat.ar = totalMat;
             hbRows.push({ name: 'Asphalt Repair', tier, travel });
-            snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
+            snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: baseCrew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
         }
     } else {
         ['ar_surfTons','ar_baseTons','ar_dgaTons','ar_totalTons'].forEach(id => sv(id, '0'));
@@ -2104,10 +2159,11 @@ function calculateAll() {
     // === MASTIC ===
     if (isOn('en_mastic')) {
         const lf = gv('ma_lf');
-        const crewRate = gv('rateMastic');
+        const baseCrewRate = gv('rateMastic');
         const prod = gv('prodMastic');
         const phases = Math.max(gv('ma_phases'), 1);
         const crew = gv('crewMastic');
+        const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.mastic);
         const travel = gv('ma_travel');
         const crackWidth = gv('ma_width') || 1.0;
         const crackDepth = gv('ma_depth') || 0.5;
@@ -2130,6 +2186,7 @@ function calculateAll() {
             html += `<div class="output-row highlight"><span class="lbl">Boxes Required (30 lb)</span><span class="val">${boxesNeeded}</span></div>`;
             html += `<div class="output-divider"></div>`;
             html += `<div class="output-row"><span class="lbl">Crew Size</span><span class="val">${tier.std.crew}</span></div>`;
+            { const maDelta = crew - BASE_CREW_SIZES.mastic; if (maDelta !== 0) { const maLR = gv('rateLaborerAdj'); const maAdj = maDelta * maLR; html += `<div class="output-row" style="color:#00bcd4;font-size:0.68rem;"><span class="lbl">↳ Rate adj: ${maDelta > 0 ? '+' : ''}${maDelta} laborer${Math.abs(maDelta) > 1 ? 's' : ''} × $${maLR.toFixed(2)}/hr</span><span class="val">${maAdj >= 0 ? '+' : '-'}$${Math.abs(maAdj).toFixed(2)}/hr</span></div>`; } }
             html += `<div class="output-row"><span class="lbl">Shift Hours</span><span class="val">${tier.std.hours.toFixed(1)}</span></div>`;
             html += `<div class="output-row"><span class="lbl">Days</span><span class="val">${tier.std.days}</span></div>`;
             if (tier.std.hustle) {
@@ -2151,7 +2208,7 @@ function calculateAll() {
             sumLabor.ma = tier.std.hours * crewRate + travelCost;
             sumMat.ma = material + machineRental;
             hbRows.push({ name: 'Mastic', tier, travel, note: `${boxesNeeded} boxes` });
-            snapshot.activities.mastic = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, crackWidth, crackDepth, phases, travel }, boxCalc: { crossSection, lfPerBox, boxesNeeded }, rates: { crewRate, crewSize: crew, prodPerDay: prod, boxPrice, machinePerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, machineRental, material, total: sumLabor.ma + sumMat.ma } };
+            snapshot.activities.mastic = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, crackWidth, crackDepth, phases, travel }, boxCalc: { crossSection, lfPerBox, boxesNeeded }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.mastic, prodPerDay: prod, boxPrice, machinePerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, machineRental, material, total: sumLabor.ma + sumMat.ma } };
         } else {
             renderTierTable('ma_output', null);
         }
@@ -2197,9 +2254,11 @@ function calculateAll() {
             const resetFrac = combinedRawHrs > 0 ? resetHrs / combinedRawHrs : 0;
             const removalFrac = combinedRawHrs > 0 ? removalHrs / combinedRawHrs : 0;
 
-            const newLabor = tier.std.hours * installFrac * gv('rateWsInstall');
-            const resetLabor = tier.std.hours * resetFrac * gv('rateWsReset');
-            const removeLabor = tier.std.hours * removalFrac * gv('rateWsRemove');
+            const wsCrewDelta = crew - BASE_CREW_SIZES.wsInstall;
+            const wsLaborerRate = gv('rateLaborerAdj');
+            const newLabor = tier.std.hours * installFrac * (gv('rateWsInstall') + wsCrewDelta * wsLaborerRate);
+            const resetLabor = tier.std.hours * resetFrac * (gv('rateWsReset') + wsCrewDelta * wsLaborerRate);
+            const removeLabor = tier.std.hours * removalFrac * (gv('rateWsRemove') + wsCrewDelta * wsLaborerRate);
             const totalLabor = newLabor + resetLabor + removeLabor;
 
             const newMat = newQty * gv('matWsNew');
@@ -2210,11 +2269,11 @@ function calculateAll() {
             const blendedRate = totalLabor / tier.std.hours;
             const travelCost = travel * blendedRate;
 
-            renderTierTable('ws_output', tier, blendedRate, totalMatCost, 0, travel, travelCost);
+            renderTierTable('ws_output', tier, blendedRate, totalMatCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.wsInstall));
             sumLabor.ws = totalLabor + travelCost;
             sumMat.ws = totalMatCost;
             hbRows.push({ name: 'Wheel Stops', tier, travel });
-            snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: combinedRawHrs, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, prodInstall, prodReset, prodRemoval, prodPerDay: totalQty > 0 ? totalQty / (combinedRawHrs / stdShift) : 0 }, perTypeHrs: { installHrs, resetHrs, removalHrs, combinedRawHrs }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
+            snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: combinedRawHrs, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, baseCrewSize: BASE_CREW_SIZES.wsInstall, crewDelta: wsCrewDelta, prodInstall, prodReset, prodRemoval, prodPerDay: totalQty > 0 ? totalQty / (combinedRawHrs / stdShift) : 0 }, perTypeHrs: { installHrs, resetHrs, removalHrs, combinedRawHrs }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
         } else {
             renderTierTable('ws_output', null);
         }
@@ -2224,9 +2283,10 @@ function calculateAll() {
     if (isOn('en_sign')) {
         const postQty = gv('sg_post');
         const bollQty = gv('sg_bollard');
-        const crewRate = gv('rateSign');
+        const baseCrewRate = gv('rateSign');
         const phases = Math.max(gv('sg_phases'), 1);
         const crew = gv('crewSign');
+        const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.sign);
         const travel = gv('sg_travel');
         const prodPost = gv('prodSignPost');
         const prodBoll = Math.max(gv('prodSignBollard'), 0.01);
@@ -2237,11 +2297,11 @@ function calculateAll() {
         if (equivQty > 0) {
             const tier = calcThreeTier(equivQty, prodPost, stdShift, maxShift, phases, crew);
             const travelCost = travel * crewRate;
-            renderTierTable('sg_output', tier, crewRate, matCost, 0, travel, travelCost);
+            renderTierTable('sg_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.sign));
             sumLabor.sg = tier.std.hours * crewRate + travelCost;
             sumMat.sg = matCost;
             hbRows.push({ name: 'Signs', tier, travel });
-            snapshot.activities.signs = { enabled: true, rawProductionHrs: (equivQty / Math.max(prodPost, 0.01)) * stdShift, inputs: { postQty, bollQty, equivQty, phases, travel }, rates: { crewRate, crewSize: crew, prodPost, prodBoll }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sg + sumMat.sg } };
+            snapshot.activities.signs = { enabled: true, rawProductionHrs: (equivQty / Math.max(prodPost, 0.01)) * stdShift, inputs: { postQty, bollQty, equivQty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.sign, prodPost, prodBoll }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sg + sumMat.sg } };
         } else {
             renderTierTable('sg_output', null);
         }
@@ -2250,50 +2310,53 @@ function calculateAll() {
     // === BOLLARD REPLACEMENT ===
     if (isOn('en_bollard')) {
         const qty = gv('bo_qty');
-        const crewRate = gv('rateBollard');
+        const baseCrewRate = gv('rateBollard');
         const prod = gv('prodBollard');
         const phases = Math.max(gv('bo_phases'), 1);
         const crew = gv('crewBollard');
+        const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.bollard);
         const travel = gv('bo_travel');
         const matCost = qty * gv('matBollard');
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
         const travelCost = travel * crewRate;
-        renderTierTable('bo_output', tier, crewRate, matCost, 0, travel, travelCost);
+        renderTierTable('bo_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.bollard));
         if (tier) {
             sumLabor.bo = tier.std.hours * crewRate + travelCost;
             sumMat.bo = matCost;
             hbRows.push({ name: 'Bollards', tier, travel });
-            snapshot.activities.bollards = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.bo + sumMat.bo } };
+            snapshot.activities.bollards = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.bollard, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.bo + sumMat.bo } };
         }
     } else { renderTierTable('bo_output', null); }
 
     // === RUBBER SPEED BUMPS ===
     if (isOn('en_speedbump')) {
         const qty = gv('sb_qty');
-        const crewRate = gv('rateSpeedBump');
+        const baseCrewRate = gv('rateSpeedBump');
         const prod = gv('prodSpeedBump');
         const phases = Math.max(gv('sb_phases'), 1);
         const crew = gv('crewSpeedBump');
+        const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.speedBump);
         const travel = gv('sb_travel');
         const matCost = qty * gv('matSpeedBump');
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
         const travelCost = travel * crewRate;
-        renderTierTable('sb_output', tier, crewRate, matCost, 0, travel, travelCost);
+        renderTierTable('sb_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedBump));
         if (tier) {
             sumLabor.sb = tier.std.hours * crewRate + travelCost;
             sumMat.sb = matCost;
             hbRows.push({ name: 'Rubber Speed Bumps', tier, travel });
-            snapshot.activities.speedBumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sb + sumMat.sb } };
+            snapshot.activities.speedBumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedBump, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sb + sumMat.sb } };
         }
     } else { renderTierTable('sb_output', null); }
 
     // === SPEED HUMPS ===
     if (isOn('en_speedhump')) {
         const qty = gv('sh_qty');
-        const crewRate = gv('rateSpeedHump');
+        const baseCrewRate = gv('rateSpeedHump');
         const prod = gv('prodSpeedHump');
         const phases = Math.max(gv('sh_phases'), 1);
         const crew = gv('crewSpeedHump');
+        const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.speedHump);
         const travel = gv('sh_travel');
         const tonsPerHump = 2.13;
         const tons = qty > 0 ? Math.ceil(qty * tonsPerHump * wf.sh) : 0;
@@ -2301,12 +2364,12 @@ function calculateAll() {
         sv('sh_tons', tons);
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
         const travelCost = travel * crewRate;
-        renderTierTable('sh_output', tier, crewRate, matCost, 0, travel, travelCost);
+        renderTierTable('sh_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedHump));
         if (tier) {
             sumLabor.sh = tier.std.hours * crewRate + travelCost;
             sumMat.sh = matCost;
             hbRows.push({ name: 'Speed Humps', tier, travel });
-            snapshot.activities.speedHumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, tonnage: { tonsPerHump, totalTons: tons }, rates: { crewRate, crewSize: crew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
+            snapshot.activities.speedHumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, tonnage: { tonsPerHump, totalTons: tons }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedHump, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
         }
     } else {
         sv('sh_tons', '0');
@@ -2318,9 +2381,10 @@ function calculateAll() {
         const repairQty = gv('in_repair');
         const reconQty = gv('in_recon');
         const castingQty = gv('in_casting');
-        const crewRate = gv('rateInlet');
+        const baseCrewRate = gv('rateInlet');
         const phases = Math.max(gv('in_phases'), 1);
         const crew = gv('crewInlet');
+        const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.inlet);
         const travel = gv('in_travel');
 
         const repairProd = Math.max(gv('prodInletRepair'), 0.01);
@@ -2352,11 +2416,11 @@ function calculateAll() {
             const totalMat = blockCost + castingCost;
             const travelCost = travel * crewRate;
 
-            renderTierTable('in_output', tier, crewRate, totalMat, 0, travel, travelCost);
+            renderTierTable('in_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.inlet));
             sumLabor.in = stdR.hours * crewRate + travelCost;
             sumMat.in = totalMat;
             hbRows.push({ name: 'Inlet Repair', tier, travel });
-            snapshot.activities.inletRepair = { enabled: true, rawProductionHrs: combinedHrs, inputs: { repairQty, reconQty, castingQty, phases, travel }, rates: { crewRate, crewSize: crew, repairProd, hrsPerRecon }, combinedRawHrs: combinedHrs, tiers: tier, costs: { laborShift: stdR.hours * crewRate, laborTravel: travelCost, blockCost, castingCost, material: totalMat, total: sumLabor.in + sumMat.in } };
+            snapshot.activities.inletRepair = { enabled: true, rawProductionHrs: combinedHrs, inputs: { repairQty, reconQty, castingQty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.inlet, repairProd, hrsPerRecon }, combinedRawHrs: combinedHrs, tiers: tier, costs: { laborShift: stdR.hours * crewRate, laborTravel: travelCost, blockCost, castingCost, material: totalMat, total: sumLabor.in + sumMat.in } };
         } else {
             renderTierTable('in_output', null);
         }
@@ -2365,11 +2429,12 @@ function calculateAll() {
     // === PAINT REMOVAL ===
     if (isOn('en_paintremoval')) {
         const lf = gv('pr_lf');
-        const crewRate = gv('rateStriping');
+        const baseCrewRate = gv('rateStriping');
         const prod = gv('prodPaintRemoval');
         const rentalPerDay = gv('matPaintRemoval');
         const phases = Math.max(gv('pr_phases'), 1);
         const crew = gv('crewStriping');
+        const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.striping);
         const travel = gv('pr_travel');
 
         if (lf > 0) {
@@ -2377,11 +2442,11 @@ function calculateAll() {
             const rental = tier.std.days * rentalPerDay;
             const travelCost = travel * crewRate;
 
-            renderTierTable('pr_output', tier, crewRate, 0, rental, travel, travelCost);
+            renderTierTable('pr_output', tier, crewRate, 0, rental, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping));
             sumLabor.pr = tier.std.hours * crewRate + travelCost;
             sumMat.pr = rental;
             hbRows.push({ name: 'Paint Removal', tier, travel, note: 'Grinder rental' });
-            snapshot.activities.paintRemoval = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate, crewSize: crew, prodPerDay: prod, rentalPerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, rental, total: sumLabor.pr + sumMat.pr } };
+            snapshot.activities.paintRemoval = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.striping, prodPerDay: prod, rentalPerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, rental, total: sumLabor.pr + sumMat.pr } };
         } else {
             renderTierTable('pr_output', null);
         }
@@ -2594,7 +2659,7 @@ function calculateAll() {
 
     // === BUILD FINAL SNAPSHOT ===
     snapshot.meta = { version: CALC_VERSION, timestamp: new Date().toISOString(), projectName: document.getElementById('projectName').value || 'Unnamed Project' };
-    snapshot.settings = { stdShift, maxShift, asphaltPrice, baseAsphaltPrice, dgaPrice, markupPercent: markup, wasteFactors: { cf: wf.cf, sc: wf.sc, st: wf.st, ar: wf.ar, ma: wf.ma, sh: wf.sh } };
+    snapshot.settings = { stdShift, maxShift, asphaltPrice, baseAsphaltPrice, dgaPrice, markupPercent: markup, laborerAdjRate: gv('rateLaborerAdj'), wasteFactors: { cf: wf.cf, sc: wf.sc, st: wf.st, ar: wf.ar, ma: wf.ma, sh: wf.sh } };
     snapshot.summary = { laborByType: { ...sumLabor }, materialByType: { ...sumMat }, totalLabor, totalMat, directCost, markupPercent: markup, markupAmount: markupAmt, bidPrice: directCost + markupAmt };
     snapshot.hbRows = hbRows;
     snapshot.unitChecks = unitChecks;
@@ -3252,6 +3317,7 @@ function renderClusterSummary(clusterResults) {
 function saveRates() {
     const ids = [
         'hoursPerDay','maxShift','asphaltPrice','baseAsphaltPrice','dgaPrice','markupPercent',
+        'rateLaborerAdj',
         'rateCrackFill','rateSealcoat','rateStriping','rateAsphaltSmall','rateAsphaltLarge',
         'rateWsInstall','rateWsReset','rateWsRemove','rateSpeedBump','rateBollard','rateSign',
         'rateMastic','rateInlet','rateSpeedHump',
@@ -3379,7 +3445,7 @@ function exportResults() {
     const markup = gv('markupPercent') || gv('markupPercent2');
 
     let lines = [];
-    lines.push('MAINTENANCE DIVISION ESTIMATE (v4.0)');
+    lines.push('MAINTENANCE DIVISION ESTIMATE (v4.1)');
     lines.push('='.repeat(70));
     lines.push('Project: ' + proj);
     lines.push('Generated: ' + new Date().toLocaleString());
@@ -4557,7 +4623,16 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
 }
 
 // ===== INIT =====
-const CALC_VERSION = '4.0';
+const CALC_VERSION = '4.1';
+// v4.1: Crew size now affects pricing. Each crew rate is calibrated to a base crew size
+//       (stored in BASE_CREW_SIZES constant). When the user changes crew size, delta members
+//       are priced at the configurable Laborer Adjustment Rate (default $39.03/hr, AAS Paint
+//       Labor fully loaded: $26.30 base + 14.19% tax + $8.99 fringe). Formula:
+//       effectiveRate = baseRate + (currentCrew − baseCrew) × laborerRate.
+//       Works for all 12 activities including wheel stops (3 differentiated rates) and
+//       asphalt repair (auto crew selection by tonnage). Rate adjustment shown in output panels
+//       when crew size differs from base. Persisted in localStorage via save/load.
+//
 // v4.0: Six feature additions aligned with AACE/ASPE/AIA estimating best practices:
 //       1. Differentiated wheel stop production rates (install 80, reset 155, removal 220/day)
 //          per field-calibrated Q21 data. Analysis engine compares user rates vs field benchmarks.
