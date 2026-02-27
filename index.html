@@ -488,6 +488,23 @@
             font-style: italic;
             color: var(--text-muted);
         }
+        .timeline-row.concurrent-row {
+            background: rgba(0,200,255,0.06);
+            border-left: 3px solid var(--accent-cyan);
+        }
+        .concurrent-badge {
+            display: inline-block;
+            font-size: 0.55rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent-cyan);
+            background: rgba(0,200,255,0.1);
+            padding: 0.1rem 0.35rem;
+            border-radius: 3px;
+            margin-left: 0.4rem;
+            vertical-align: middle;
+        }
         .timeline-row .day-range {
             font-family: 'JetBrains Mono', monospace;
             font-weight: 600;
@@ -693,6 +710,10 @@
                 <option value="on" selected>On (shared mobilization)</option>
             </select>
         </div>
+        <div class="setting-group">
+            <label><span class="tip" data-tip="Round-trip daily drive time to the job site. Billed at crew rate every work day. Applies globally to all activities.">Travel (hrs/day)</span></label>
+            <input type="number" id="globalTravel" value="0" min="0" step="0.5" oninput="calculateAll()">
+        </div>
     </div>
 </div>
 
@@ -827,7 +848,6 @@
         <div class="wt-grid">
             <div class="input-group"><label>Linear Feet (LF)</label><input type="number" id="cf_lf" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="cf_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="cf_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section"><h5>Crack Filling Output</h5><div id="cf_output"></div></div>
         <textarea id="note_cf" class="notes-box" placeholder="Reviewer notes for Crack Filling..."></textarea>
@@ -855,7 +875,6 @@
                 </select>
             </div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sc_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="sc_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note" id="sc_methodNote">Spray Rig: 4-man crew (4th operates manual spray bar). 52K SF/day open lot, 42-45K complex. 2-coat at 100 SF/gal, 125 gal/hr sustained.</p>
         <div class="output-section"><h5>Sealcoating Output</h5><div id="sc_output"></div></div>
@@ -875,7 +894,6 @@
     <div class="panel-content" id="wt_striping">
         <div class="wt-grid" style="margin-bottom:0.5rem;">
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="st_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="st_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="tip" data-tip="Machine and hand items run concurrently. Duration = max(machine, hand), not the sum." style="font-size:0.65rem; color:var(--text-muted); margin-bottom:0.5rem;">
             <span style="display:inline-block;width:10px;height:10px;background:var(--accent-blue);border-radius:2px;vertical-align:middle;margin-right:3px;"></span> Machine items
@@ -929,7 +947,6 @@
                 </select>
             </div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="ar_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="ar_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section">
             <h5>Asphalt Repair Output</h5>
@@ -960,7 +977,6 @@
             <div class="input-group"><label><span class="tip" data-tip="Wider cracks consume more material per LF and slow machine speed.">Avg Crack Width (inches)</span></label><input type="number" id="ma_width" value="1.0" min="0.25" step="0.25" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Deeper cracks require more mastic fill. For voids over 1 inch, pre-fill with sand to 0.5 inches from surface.">Avg Crack Depth (inches)</span></label><input type="number" id="ma_depth" value="0.5" min="0.25" step="0.25" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="ma_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="ma_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">5-man crew: 2 dumping buckets, 2 on hot irons, 1 driving/traffic/logistics. Fifth crew member absorbs machine pickup and dropoff within production hours. Machine rental charged per production day.</p>
         <p class="note">Material: 30 lb box yields ~57.5 cu. in. of fill. Coverage per box = 57.5 / (width x depth). For deep voids, fill with sand to 1/2" from surface before mastic.</p>
@@ -984,7 +1000,6 @@
             <div class="input-group"><label>Reset / Re-pin (qty)</label><input type="number" id="ws_reset" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label>Remove & Dispose (qty)</label><input type="number" id="ws_remove" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="ws_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="ws_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section"><h5>Wheel Stop Output</h5><div id="ws_output"></div></div>
         <textarea id="note_ws" class="notes-box" placeholder="Reviewer notes for Wheel Stops..."></textarea>
@@ -1005,7 +1020,6 @@
             <div class="input-group"><label>Signs on Post (qty)</label><input type="number" id="sg_post" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label>Signs in Bollard (qty)</label><input type="number" id="sg_bollard" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sg_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="sg_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">Post signs include small and large at blended rate of 32/day. Bollard signs include sign + bollard material costs.</p>
         <div class="output-section"><h5>Sign Output</h5><div id="sg_output"></div></div>
@@ -1026,7 +1040,6 @@
         <div class="wt-grid">
             <div class="input-group"><label>Bollards (qty)</label><input type="number" id="bo_qty" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="bo_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="bo_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section"><h5>Bollard Output</h5><div id="bo_output"></div></div>
         <textarea id="note_bo" class="notes-box" placeholder="Reviewer notes for Bollards..."></textarea>
@@ -1046,7 +1059,6 @@
         <div class="wt-grid">
             <div class="input-group"><label>Speed Bumps (qty)</label><input type="number" id="sb_qty" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sb_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="sb_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <div class="output-section"><h5>Rubber Speed Bump Output</h5><div id="sb_output"></div></div>
         <textarea id="note_sb" class="notes-box" placeholder="Reviewer notes for Speed Bumps..."></textarea>
@@ -1066,7 +1078,6 @@
         <div class="wt-grid">
             <div class="input-group"><label>Speed Humps (qty)</label><input type="number" id="sh_qty" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sh_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="sh_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">2.13 tons of 9.5mm asphalt per hump (sinusoidal profile, 16'x13'x2.64").</p>
         <div class="output-section"><h5>Speed Hump Output</h5>
@@ -1093,7 +1104,6 @@
             <div class="input-group"><label>Reconstructions (qty)</label><input type="number" id="in_recon" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label>Castings Required (qty)</label><input type="number" id="in_casting" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="in_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="in_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">Repair = 6 units/day (4-man crew). Reconstruction hours depend on scope.</p>
         <div class="output-section"><h5>Inlet Output</h5><div id="in_output"></div></div>
@@ -1114,7 +1124,6 @@
         <div class="wt-grid">
             <div class="input-group"><label>Linear Feet (LF)</label><input type="number" id="pr_lf" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="pr_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="pr_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
         <p class="note">Uses striping crew + grinder rental per day. Grinder runs concurrent with hand painting when both are on the same job.</p>
         <div class="output-section"><h5>Paint Removal Output</h5><div id="pr_output"></div></div>
@@ -1157,7 +1166,7 @@
                     <th colspan="2" style="text-align:center; color:var(--accent-orange);"><span class="tip" data-tip="80% of standard production rate. Use for complex sites, tight access, or first-time crews.">Conservative</span></th>
                     <th colspan="2" style="text-align:center; color:var(--accent-cyan);"><span class="tip" data-tip="100% production rate. Darrell's field-calibrated baseline for experienced crews.">Standard</span></th>
                     <th colspan="2" style="text-align:center; color:var(--accent-green);"><span class="tip" data-tip="120% of standard production rate. Use for wide-open sites with experienced crews.">Aggressive</span></th>
-                    <th>Travel</th>
+                    <th><span class="tip" data-tip="Global round-trip travel time charged per work day at crew rate.">Travel/Day</span></th>
                 </tr>
                 <tr>
                     <th></th>
@@ -1165,7 +1174,7 @@
                     <th>Hours</th><th>Days</th>
                     <th>Hours</th><th>Days</th>
                     <th>Hours</th><th>Days</th>
-                    <th>Hours</th>
+                    <th>Hrs/Day</th>
                 </tr>
             </thead>
             <tbody id="hbBody">
@@ -1208,6 +1217,14 @@
     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
         <label style="font-size:0.75rem; color:var(--text-muted);">Weather Contingency Days:</label>
         <input type="number" id="weatherDays" value="0" min="0" step="1" style="width:60px;" oninput="calculateAll()">
+    </div>
+    <div id="concurrencyPanel" style="display:none; margin-bottom:0.75rem; padding:0.6rem 0.75rem; background:rgba(0,200,255,0.04); border:1px solid rgba(0,200,255,0.15); border-radius:6px;">
+        <div style="font-size:0.72rem; font-weight:600; color:var(--accent-cyan); margin-bottom:0.4rem;">
+            🔀 Concurrent Scheduling
+            <span class="tip" data-tip="Check clusters that work the same days (e.g., crack fill crew stays ahead of sealcoat crew). Checked clusters overlap in the calendar instead of running sequentially."
+                  style="cursor:help; opacity:0.7;">ⓘ</span>
+        </div>
+        <div id="concurrencyCheckboxes" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
     </div>
     <div id="calendarBody"></div>
 </div>
@@ -1357,7 +1374,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v4.1 | Field-Calibrated Production Rates | Crew Size Adjustment | Crew Clustering | Estimate Confidence | Calendar Duration<br>
+    Maintenance Division Estimating Calculator v4.2 | Field-Calibrated Production Rates | Crew Size Adjustment | Crew Clustering | Estimate Confidence | Calendar Duration<br>
     All rates subject to superintendent review.
 </div>
 
@@ -1545,6 +1562,9 @@ const CREW_CLUSTERS = {
         description: 'Mastic machine (rented), 5-man specialized'
     }
 };
+
+// Concurrent scheduling: cluster IDs that run simultaneously
+let CONCURRENT_GROUPS = [];
 
 // Reverse lookup: activity key -> cluster ID
 const ACTIVITY_CLUSTER = {};
@@ -1792,7 +1812,7 @@ function calcThreeTier(qty, prodPerDay, stdShift, maxShift, phases, stdCrew) {
 }
 
 // ===== RENDER STANDARD OUTPUT INTO WORK TYPE PANEL =====
-function renderTierTable(containerId, tierData, rate, matCost, extra, travelHrs, travelCost, crewAdj) {
+function renderTierTable(containerId, tierData, rate, matCost, extra, travelHrs, travelCost, crewAdj, travelDays) {
     const el = document.getElementById(containerId);
     if (!el) return;
     if (!tierData) {
@@ -1821,7 +1841,9 @@ function renderTierTable(containerId, tierData, rate, matCost, extra, travelHrs,
         html += `<div class="output-row" style="color:#ffaa00;font-size:0.7rem;"><span class="lbl">&#9889; Crew can hustle to stay within shift</span><span class="val"></span></div>`;
     }
     if (tvlHrs > 0) {
-        html += `<div class="output-row"><span class="lbl">Travel Time</span><span class="val">${tvlHrs.toFixed(1)} hrs</span></div>`;
+        const tvlDays = travelDays || 1;
+        const tvlLabel = tvlDays > 1 ? `${tvlHrs.toFixed(1)} hrs/day × ${tvlDays} days` : `${tvlHrs.toFixed(1)} hrs`;
+        html += `<div class="output-row"><span class="lbl">Travel Time</span><span class="val">${tvlLabel}</span></div>`;
     }
     html += `<div class="output-divider"></div>`;
     html += `<div class="output-row cost"><span class="lbl">Labor & Equip (shift)</span><span class="val">${fmt(laborCost)}</span></div>`;
@@ -1994,6 +2016,7 @@ function calculateAll() {
     const asphaltPrice = gv('asphaltPrice');
     const baseAsphaltPrice = gv('baseAsphaltPrice');
     const dgaPrice = gv('dgaPrice');
+    const globalTravel = gv('globalTravel');
 
     // Waste factors
     const wf = {
@@ -2021,16 +2044,17 @@ function calculateAll() {
         const phases = Math.max(gv('cf_phases'), 1);
         const crew = gv('crewCrackFill');
         const rate = adjustedRate(baseRate, crew, BASE_CREW_SIZES.crackFill);
-        const travel = gv('cf_travel');
+        const travel = globalTravel;
         const matQty = lf * wf.cf;
         const matCost = matQty * gv('matCrackFill');
         const tier = calcThreeTier(lf, prod, stdShift, maxShift, phases, crew);
-        const travelCost = travel * rate;
-        renderTierTable('cf_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.crackFill));
+        const travelDays = tier ? tier.std.days : 0;
+        const travelCost = travel * rate * travelDays;
+        renderTierTable('cf_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.crackFill), travelDays);
         if (tier) {
             sumLabor.cf = tier.std.hours * rate + travelCost;
             sumMat.cf = matCost;
-            hbRows.push({ name: 'Crack Filling', tier, travel });
+            hbRows.push({ name: 'Crack Filling', tier, travel, travelDays });
             snapshot.activities.crackFill = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.crackFill }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.cf + sumMat.cf } };
         }
     } else { renderTierTable('cf_output', null); }
@@ -2045,16 +2069,17 @@ function calculateAll() {
         const phases = Math.max(gv('sc_phases'), 1);
         const crew = gv('crewSealcoat');
         const rate = adjustedRate(baseRate, crew, scBaseCrew);
-        const travel = gv('sc_travel');
+        const travel = globalTravel;
         const matQty = sf * wf.sc;
         const matCost = matQty * gv('matSealcoat');
         const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
-        const travelCost = travel * rate;
-        renderTierTable('sc_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, scBaseCrew));
+        const travelDays = tier ? tier.std.days : 0;
+        const travelCost = travel * rate * travelDays;
+        renderTierTable('sc_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, scBaseCrew), travelDays);
         if (tier) {
             sumLabor.sc = tier.std.hours * rate + travelCost;
             sumMat.sc = matCost;
-            hbRows.push({ name: 'Sealcoating', tier, travel });
+            hbRows.push({ name: 'Sealcoating', tier, travel, travelDays });
             snapshot.activities.sealcoat = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, phases, travel, method: scMethod }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, crewSize: crew, baseCrewSize: scBaseCrew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
         }
     } else { renderTierTable('sc_output', null); }
@@ -2065,7 +2090,7 @@ function calculateAll() {
         const phases = Math.max(gv('st_phases'), 1);
         const crew = gv('crewStriping');
         const rate = adjustedRate(baseRate, crew, BASE_CREW_SIZES.striping);
-        const travel = gv('st_travel');
+        const travel = globalTravel;
         const wasteFactor = wf.st;
 
         const machineItems = [
@@ -2125,11 +2150,12 @@ function calculateAll() {
                 agg:  { crew: crew, hours: aggR.hours, days: aggR.days, hustle: aggR.hustle }
             };
 
-            const travelCost = travel * rate;
-            renderTierTable('st_output', tier, rate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping));
+            const travelDays = stdR.days;
+            const travelCost = travel * rate * travelDays;
+            renderTierTable('st_output', tier, rate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping), travelDays);
             sumLabor.st = stdR.hours * rate + travelCost;
             sumMat.st = totalMat;
-            hbRows.push({ name: 'Striping', tier, travel, note: `Mach: ${machineHrs.toFixed(1)}h / Hand: ${handHrs.toFixed(1)}h / Concurrent: ${concurrentHrs.toFixed(1)}h` });
+            hbRows.push({ name: 'Striping', tier, travel, travelDays, note: `Mach: ${machineHrs.toFixed(1)}h / Hand: ${handHrs.toFixed(1)}h / Concurrent: ${concurrentHrs.toFixed(1)}h` });
             snapshot.activities.striping = { enabled: true, rawProductionHrs: concurrentHrs, inputs: { phases, travel }, lineItems: lineItemData, concurrency: { machineHrs, handHrs, concurrentHrs }, rates: { crewRate: rate, baseCrewRate: baseRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.striping }, tiers: tier, costs: { laborShift: stdR.hours * rate, laborTravel: travelCost, material: totalMat, total: sumLabor.st + sumMat.st } };
         } else {
             renderTierTable('st_output', null);
@@ -2145,7 +2171,7 @@ function calculateAll() {
         const depthConfig = document.getElementById('ar_depth').value;
         const prod = gv('prodAsphaltRepair');
         const phases = Math.max(gv('ar_phases'), 1);
-        const travel = gv('ar_travel');
+        const travel = globalTravel;
 
         const sy = sf / 9;
         let surfTons = 0, baseTons = 0, dgaTons = 0;
@@ -2173,12 +2199,13 @@ function calculateAll() {
         sv('ar_crewType', crewIsLarge ? '> 4T (Triaxle + crew @ $' + crewRate.toFixed(2) + '/hr)' : '≤ 4T (Hot Box + crew @ $' + crewRate.toFixed(2) + '/hr)');
 
         const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
-        const travelCost = travel * crewRate;
-        renderTierTable('ar_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, baseCrew));
+        const travelDays = tier ? tier.std.days : 0;
+        const travelCost = travel * crewRate * travelDays;
+        renderTierTable('ar_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, baseCrew), travelDays);
         if (tier) {
             sumLabor.ar = tier.std.hours * crewRate + travelCost;
             sumMat.ar = totalMat;
-            hbRows.push({ name: 'Asphalt Repair', tier, travel });
+            hbRows.push({ name: 'Asphalt Repair', tier, travel, travelDays });
             snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: baseCrew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
         }
     } else {
@@ -2195,7 +2222,7 @@ function calculateAll() {
         const phases = Math.max(gv('ma_phases'), 1);
         const crew = gv('crewMastic');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.mastic);
-        const travel = gv('ma_travel');
+        const travel = globalTravel;
         const crackWidth = gv('ma_width') || 1.0;
         const crackDepth = gv('ma_depth') || 0.5;
         const boxPrice = gv('matMasticBox');
@@ -2209,7 +2236,8 @@ function calculateAll() {
             const tier = calcThreeTier(lf, prod, stdShift, maxShift, phases, crew);
             const machineRental = tier.std.days * machinePerDay;
             const material = boxesNeeded * boxPrice;
-            const travelCost = travel * crewRate;
+            const travelDays = tier.std.days;
+            const travelCost = travel * crewRate * travelDays;
 
             const el = document.getElementById('ma_output');
             let html = '';
@@ -2224,7 +2252,7 @@ function calculateAll() {
                 html += `<div class="output-row" style="color:#ffaa00;font-size:0.7rem;"><span class="lbl">&#9889; Crew can hustle to stay within shift</span><span class="val"></span></div>`;
             }
             if (travel > 0) {
-                html += `<div class="output-row"><span class="lbl">Travel Time</span><span class="val">${travel.toFixed(1)} hrs</span></div>`;
+                html += `<div class="output-row"><span class="lbl">Travel Time</span><span class="val">${travel.toFixed(1)} hrs/day × ${travelDays} day${travelDays>1?'s':''}</span></div>`;
             }
             html += `<div class="output-divider"></div>`;
             html += `<div class="output-row cost"><span class="lbl">Labor & Equip (shift)</span><span class="val">${fmt(tier.std.hours * crewRate)}</span></div>`;
@@ -2238,7 +2266,7 @@ function calculateAll() {
 
             sumLabor.ma = tier.std.hours * crewRate + travelCost;
             sumMat.ma = material + machineRental;
-            hbRows.push({ name: 'Mastic', tier, travel, note: `${boxesNeeded} boxes` });
+            hbRows.push({ name: 'Mastic', tier, travel, travelDays, note: `${boxesNeeded} boxes` });
             snapshot.activities.mastic = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, crackWidth, crackDepth, phases, travel }, boxCalc: { crossSection, lfPerBox, boxesNeeded }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.mastic, prodPerDay: prod, boxPrice, machinePerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, machineRental, material, total: sumLabor.ma + sumMat.ma } };
         } else {
             renderTierTable('ma_output', null);
@@ -2255,7 +2283,7 @@ function calculateAll() {
         const prodRemoval = Math.max(gv('prodWsRemoval'), 0.01);
         const phases = Math.max(gv('ws_phases'), 1);
         const crew = gv('crewWsInstall');
-        const travel = gv('ws_travel');
+        const travel = globalTravel;
         const totalQty = newQty + resetQty + removeQty;
 
         if (totalQty > 0) {
@@ -2298,12 +2326,13 @@ function calculateAll() {
             const totalMatCost = newMat + resetMat + removeMat;
 
             const blendedRate = totalLabor / tier.std.hours;
-            const travelCost = travel * blendedRate;
+            const travelDays = stdR.days;
+            const travelCost = travel * blendedRate * travelDays;
 
-            renderTierTable('ws_output', tier, blendedRate, totalMatCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.wsInstall));
+            renderTierTable('ws_output', tier, blendedRate, totalMatCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.wsInstall), travelDays);
             sumLabor.ws = totalLabor + travelCost;
             sumMat.ws = totalMatCost;
-            hbRows.push({ name: 'Wheel Stops', tier, travel });
+            hbRows.push({ name: 'Wheel Stops', tier, travel, travelDays });
             snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: combinedRawHrs, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, baseCrewSize: BASE_CREW_SIZES.wsInstall, crewDelta: wsCrewDelta, prodInstall, prodReset, prodRemoval, prodPerDay: totalQty > 0 ? totalQty / (combinedRawHrs / stdShift) : 0 }, perTypeHrs: { installHrs, resetHrs, removalHrs, combinedRawHrs }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
         } else {
             renderTierTable('ws_output', null);
@@ -2318,7 +2347,7 @@ function calculateAll() {
         const phases = Math.max(gv('sg_phases'), 1);
         const crew = gv('crewSign');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.sign);
-        const travel = gv('sg_travel');
+        const travel = globalTravel;
         const prodPost = gv('prodSignPost');
         const prodBoll = Math.max(gv('prodSignBollard'), 0.01);
 
@@ -2327,11 +2356,12 @@ function calculateAll() {
 
         if (equivQty > 0) {
             const tier = calcThreeTier(equivQty, prodPost, stdShift, maxShift, phases, crew);
-            const travelCost = travel * crewRate;
-            renderTierTable('sg_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.sign));
+            const travelDays = tier ? tier.std.days : 0;
+            const travelCost = travel * crewRate * travelDays;
+            renderTierTable('sg_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.sign), travelDays);
             sumLabor.sg = tier.std.hours * crewRate + travelCost;
             sumMat.sg = matCost;
-            hbRows.push({ name: 'Signs', tier, travel });
+            hbRows.push({ name: 'Signs', tier, travel, travelDays });
             snapshot.activities.signs = { enabled: true, rawProductionHrs: (equivQty / Math.max(prodPost, 0.01)) * stdShift, inputs: { postQty, bollQty, equivQty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.sign, prodPost, prodBoll }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sg + sumMat.sg } };
         } else {
             renderTierTable('sg_output', null);
@@ -2346,15 +2376,16 @@ function calculateAll() {
         const phases = Math.max(gv('bo_phases'), 1);
         const crew = gv('crewBollard');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.bollard);
-        const travel = gv('bo_travel');
+        const travel = globalTravel;
         const matCost = qty * gv('matBollard');
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
-        const travelCost = travel * crewRate;
-        renderTierTable('bo_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.bollard));
+        const travelDays = tier ? tier.std.days : 0;
+        const travelCost = travel * crewRate * travelDays;
+        renderTierTable('bo_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.bollard), travelDays);
         if (tier) {
             sumLabor.bo = tier.std.hours * crewRate + travelCost;
             sumMat.bo = matCost;
-            hbRows.push({ name: 'Bollards', tier, travel });
+            hbRows.push({ name: 'Bollards', tier, travel, travelDays });
             snapshot.activities.bollards = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.bollard, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.bo + sumMat.bo } };
         }
     } else { renderTierTable('bo_output', null); }
@@ -2367,15 +2398,16 @@ function calculateAll() {
         const phases = Math.max(gv('sb_phases'), 1);
         const crew = gv('crewSpeedBump');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.speedBump);
-        const travel = gv('sb_travel');
+        const travel = globalTravel;
         const matCost = qty * gv('matSpeedBump');
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
-        const travelCost = travel * crewRate;
-        renderTierTable('sb_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedBump));
+        const travelDays = tier ? tier.std.days : 0;
+        const travelCost = travel * crewRate * travelDays;
+        renderTierTable('sb_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedBump), travelDays);
         if (tier) {
             sumLabor.sb = tier.std.hours * crewRate + travelCost;
             sumMat.sb = matCost;
-            hbRows.push({ name: 'Rubber Speed Bumps', tier, travel });
+            hbRows.push({ name: 'Rubber Speed Bumps', tier, travel, travelDays });
             snapshot.activities.speedBumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedBump, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sb + sumMat.sb } };
         }
     } else { renderTierTable('sb_output', null); }
@@ -2388,18 +2420,19 @@ function calculateAll() {
         const phases = Math.max(gv('sh_phases'), 1);
         const crew = gv('crewSpeedHump');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.speedHump);
-        const travel = gv('sh_travel');
+        const travel = globalTravel;
         const tonsPerHump = 2.13;
         const tons = qty > 0 ? Math.ceil(qty * tonsPerHump * wf.sh) : 0;
         const matCost = tons * asphaltPrice;
         sv('sh_tons', tons);
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
-        const travelCost = travel * crewRate;
-        renderTierTable('sh_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedHump));
+        const travelDays = tier ? tier.std.days : 0;
+        const travelCost = travel * crewRate * travelDays;
+        renderTierTable('sh_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedHump), travelDays);
         if (tier) {
             sumLabor.sh = tier.std.hours * crewRate + travelCost;
             sumMat.sh = matCost;
-            hbRows.push({ name: 'Speed Humps', tier, travel });
+            hbRows.push({ name: 'Speed Humps', tier, travel, travelDays });
             snapshot.activities.speedHumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, tonnage: { tonsPerHump, totalTons: tons }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedHump, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
         }
     } else {
@@ -2416,7 +2449,7 @@ function calculateAll() {
         const phases = Math.max(gv('in_phases'), 1);
         const crew = gv('crewInlet');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.inlet);
-        const travel = gv('in_travel');
+        const travel = globalTravel;
 
         const repairProd = Math.max(gv('prodInletRepair'), 0.01);
         const hrsPerRecon = gv('prodInletRecon');
@@ -2445,12 +2478,13 @@ function calculateAll() {
             const blockCost = totalQty * gv('matBlock');
             const castingCost = castingQty * gv('matCasting');
             const totalMat = blockCost + castingCost;
-            const travelCost = travel * crewRate;
+            const travelDays = stdR.days;
+            const travelCost = travel * crewRate * travelDays;
 
-            renderTierTable('in_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.inlet));
+            renderTierTable('in_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.inlet), travelDays);
             sumLabor.in = stdR.hours * crewRate + travelCost;
             sumMat.in = totalMat;
-            hbRows.push({ name: 'Inlet Repair', tier, travel });
+            hbRows.push({ name: 'Inlet Repair', tier, travel, travelDays });
             snapshot.activities.inletRepair = { enabled: true, rawProductionHrs: combinedHrs, inputs: { repairQty, reconQty, castingQty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.inlet, repairProd, hrsPerRecon }, combinedRawHrs: combinedHrs, tiers: tier, costs: { laborShift: stdR.hours * crewRate, laborTravel: travelCost, blockCost, castingCost, material: totalMat, total: sumLabor.in + sumMat.in } };
         } else {
             renderTierTable('in_output', null);
@@ -2466,17 +2500,18 @@ function calculateAll() {
         const phases = Math.max(gv('pr_phases'), 1);
         const crew = gv('crewStriping');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.striping);
-        const travel = gv('pr_travel');
+        const travel = globalTravel;
 
         if (lf > 0) {
             const tier = calcThreeTier(lf, prod, stdShift, maxShift, phases, crew);
             const rental = tier.std.days * rentalPerDay;
-            const travelCost = travel * crewRate;
+            const travelDays = tier.std.days;
+            const travelCost = travel * crewRate * travelDays;
 
-            renderTierTable('pr_output', tier, crewRate, 0, rental, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping));
+            renderTierTable('pr_output', tier, crewRate, 0, rental, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping), travelDays);
             sumLabor.pr = tier.std.hours * crewRate + travelCost;
             sumMat.pr = rental;
-            hbRows.push({ name: 'Paint Removal', tier, travel, note: 'Grinder rental' });
+            hbRows.push({ name: 'Paint Removal', tier, travel, travelDays, note: 'Grinder rental' });
             snapshot.activities.paintRemoval = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.striping, prodPerDay: prod, rentalPerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, rental, total: sumLabor.pr + sumMat.pr } };
         } else {
             renderTierTable('pr_output', null);
@@ -2610,27 +2645,28 @@ function calculateAll() {
         const wsI = wsSnap.inputs;
         const wsTier = wsSnap.tiers;
         const wsTravel = wsI.travel;
+        const wsTravelDays = wsTier.std.days;
         if (wsI.totalQty > 0 && wsTier) {
             const stdHrs = wsTier.std.hours;
             // Each type gets its proportional share of shift hours × its own crew rate + its own material
             if (wsI.newQty > 0) {
                 const frac = wsI.newQty / wsI.totalQty;
                 const labor = stdHrs * frac * gv('rateWsInstall');
-                const travelCost = wsTravel * gv('rateWsInstall') * frac;
+                const travelCost = wsTravel * gv('rateWsInstall') * frac * wsTravelDays;
                 const mat = wsI.newQty * gv('matWsNew');
                 addCheck('ws', wsI.newQty, labor + travelCost + mat);
             }
             if (wsI.resetQty > 0) {
                 const frac = wsI.resetQty / wsI.totalQty;
                 const labor = stdHrs * frac * gv('rateWsReset');
-                const travelCost = wsTravel * gv('rateWsReset') * frac;
+                const travelCost = wsTravel * gv('rateWsReset') * frac * wsTravelDays;
                 const mat = wsI.resetQty * gv('matWsPin');
                 addCheck('ws_r', wsI.resetQty, labor + travelCost + mat);
             }
             if (wsI.removeQty > 0) {
                 const frac = wsI.removeQty / wsI.totalQty;
                 const labor = stdHrs * frac * gv('rateWsRemove');
-                const travelCost = wsTravel * gv('rateWsRemove') * frac;
+                const travelCost = wsTravel * gv('rateWsRemove') * frac * wsTravelDays;
                 const mat = wsI.removeQty * gv('matWsDispose');
                 addCheck('ws_rm', wsI.removeQty, labor + travelCost + mat);
             }
@@ -2690,7 +2726,7 @@ function calculateAll() {
 
     // === BUILD FINAL SNAPSHOT ===
     snapshot.meta = { version: CALC_VERSION, timestamp: new Date().toISOString(), projectName: document.getElementById('projectName').value || 'Unnamed Project' };
-    snapshot.settings = { stdShift, maxShift, asphaltPrice, baseAsphaltPrice, dgaPrice, markupPercent: markup, laborerAdjRate: gv('rateLaborerAdj'), wasteFactors: { cf: wf.cf, sc: wf.sc, st: wf.st, ar: wf.ar, ma: wf.ma, sh: wf.sh } };
+    snapshot.settings = { stdShift, maxShift, asphaltPrice, baseAsphaltPrice, dgaPrice, markupPercent: markup, laborerAdjRate: gv('rateLaborerAdj'), globalTravel, concurrentGroups: CONCURRENT_GROUPS, wasteFactors: { cf: wf.cf, sc: wf.sc, st: wf.st, ar: wf.ar, ma: wf.ma, sh: wf.sh } };
     snapshot.summary = { laborByType: { ...sumLabor }, materialByType: { ...sumMat }, totalLabor, totalMat, directCost, markupPercent: markup, markupAmount: markupAmt, bidPrice: directCost + markupAmt };
     snapshot.hbRows = hbRows;
     snapshot.unitChecks = unitChecks;
@@ -2843,6 +2879,7 @@ function calculateAll() {
     renderConfidence(confidence);
 
     // === CALENDAR DURATION ===
+    renderConcurrencyOptions(snapshot);
     const calendar = calculateCalendarDuration(snapshot);
     snapshot.calendar = calendar;
     renderCalendar(calendar);
@@ -3077,6 +3114,45 @@ function renderConfidence(result) {
     body.innerHTML = html;
 }
 
+// ===== CONCURRENT SCHEDULING =====
+function renderConcurrencyOptions(snap) {
+    const panel = document.getElementById('concurrencyPanel');
+    const container = document.getElementById('concurrencyCheckboxes');
+    if (!panel || !container) return;
+
+    const clustering = snap.clustering;
+    if (!clustering) { panel.style.display = 'none'; return; }
+
+    // Collect active clusters (2+ needed for concurrency to make sense)
+    const activeClusters = [];
+    Object.values(clustering).forEach(cluster => {
+        if (cluster.activeActivities && cluster.activeActivities.length > 0) {
+            activeClusters.push(cluster);
+        }
+    });
+
+    if (activeClusters.length < 2) { panel.style.display = 'none'; return; }
+
+    panel.style.display = '';
+    let html = '';
+    activeClusters.forEach(cluster => {
+        const checked = CONCURRENT_GROUPS.includes(cluster.id) ? 'checked' : '';
+        html += `<label style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.75rem; color:var(--text-secondary); cursor:pointer; padding:0.2rem 0.5rem; border-radius:4px; background:rgba(255,255,255,0.03); border:1px solid var(--border-color);">
+            <input type="checkbox" value="${cluster.id}" ${checked} onchange="updateConcurrentGroups(); calculateAll();" style="accent-color:var(--accent-cyan);">
+            ${cluster.icon} ${cluster.name}
+        </label>`;
+    });
+    container.innerHTML = html;
+}
+
+function updateConcurrentGroups() {
+    const checkboxes = document.querySelectorAll('#concurrencyCheckboxes input[type="checkbox"]');
+    CONCURRENT_GROUPS = [];
+    checkboxes.forEach(cb => {
+        if (cb.checked) CONCURRENT_GROUPS.push(cb.value);
+    });
+}
+
 // ===== CALENDAR DURATION =====
 function calculateCalendarDuration(snap) {
     const acts = snap.activities || {};
@@ -3130,6 +3206,43 @@ function calculateCalendarDuration(snap) {
     // Sort by work sequence position
     clusterEntries.sort((a, b) => a.position - b.position);
 
+    // Merge concurrent groups: collapse checked clusters into one calendar block
+    if (CONCURRENT_GROUPS.length >= 2) {
+        // Identify which clusterEntries belong to a concurrent group
+        // Each entry's actKeys map to cluster IDs via ACTIVITY_CLUSTER
+        const concurrentEntries = [];
+        const nonConcurrentEntries = [];
+        clusterEntries.forEach(entry => {
+            // Determine this entry's cluster ID(s)
+            const entryClusterIds = [...new Set(entry.actKeys.map(k => ACTIVITY_CLUSTER[k]).filter(Boolean))];
+            const isConcurrent = entryClusterIds.some(cid => CONCURRENT_GROUPS.includes(cid));
+            if (isConcurrent) {
+                concurrentEntries.push(entry);
+            } else {
+                nonConcurrentEntries.push(entry);
+            }
+        });
+
+        if (concurrentEntries.length >= 2) {
+            // Merge into one block
+            const merged = {
+                name: concurrentEntries.map(e => e.name).join(' + '),
+                days: Math.max(...concurrentEntries.map(e => e.days)),
+                hours: Math.max(...concurrentEntries.map(e => e.hours)),
+                crew: concurrentEntries.reduce((sum, e) => sum + e.crew, 0),
+                position: Math.min(...concurrentEntries.map(e => e.position)),
+                actKeys: concurrentEntries.flatMap(e => e.actKeys),
+                icon: '🔀',
+                isConcurrent: true,
+                subEntries: concurrentEntries
+            };
+            // Replace clusterEntries with merged block + non-concurrent entries, re-sorted
+            clusterEntries.length = 0;
+            clusterEntries.push(merged, ...nonConcurrentEntries);
+            clusterEntries.sort((a, b) => a.position - b.position);
+        }
+    }
+
     // Build timeline with cure windows
     let currentDay = 1;
     for (let i = 0; i < clusterEntries.length; i++) {
@@ -3165,7 +3278,9 @@ function calculateCalendarDuration(snap) {
             name: entry.name,
             crew: entry.crew,
             hours: entry.hours,
-            icon: entry.icon
+            icon: entry.icon,
+            isConcurrent: entry.isConcurrent || false,
+            subEntries: entry.subEntries || null
         });
         currentDay += entry.days;
     }
@@ -3208,6 +3323,14 @@ function renderCalendar(result) {
                 <span class="activity-name">🌧️ ${entry.name}</span>
                 <span class="crew-col">-</span>
                 <span class="hours-col">-</span>
+            </div>`;
+        } else if (entry.isConcurrent) {
+            const badge = '<span class="concurrent-badge">concurrent</span>';
+            html += `<div class="timeline-row concurrent-row">
+                <span class="day-range">${dayLabel}</span>
+                <span class="activity-name">${entry.icon ? entry.icon + ' ' : ''}${entry.name}${badge}</span>
+                <span class="crew-col">${entry.crew}-man</span>
+                <span class="hours-col">${entry.hours.toFixed(1)}h</span>
             </div>`;
         } else {
             html += `<div class="timeline-row">
@@ -3308,7 +3431,7 @@ function renderClusterSummary(clusterResults) {
             }
 
             if (cluster.clusterTravel > 0) {
-                html += `<div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.25rem;">Travel: ${cluster.clusterTravel.toFixed(1)}h (shared, max of cluster activities)</div>`;
+                html += `<div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.25rem;">Travel: ${cluster.clusterTravel.toFixed(1)}h/day (global, charged per work day)</div>`;
             }
 
             totalClusteredHrs += cluster.clusterTotalHrs;
@@ -3363,7 +3486,7 @@ function saveRates() {
         'crewCrackFill','crewSealcoat','crewStriping','crewAsphaltSmall','crewAsphaltLarge',
         'crewWsInstall','crewSpeedBump','crewBollard','crewSign','crewMastic','crewInlet','crewSpeedHump',
         'wasteCrackFill','wasteSealcoat','wasteStriping','wasteAsphalt','wasteMastic','wasteSpeedHump',
-        'clusterMode','weatherDays','sc_method'
+        'clusterMode','weatherDays','sc_method','globalTravel'
     ];
     const data = { _version: CALC_VERSION };
     ids.forEach(id => {
@@ -3377,6 +3500,8 @@ function saveRates() {
         const noteEl = document.getElementById('scope_note_' + item.id);
         if (noteEl && noteEl.value.trim()) data['scope_note_' + item.id] = noteEl.value.trim();
     });
+    // Persist concurrent scheduling groups
+    data.concurrentGroups = CONCURRENT_GROUPS;
     localStorage.setItem('maintCalcRates', JSON.stringify(data));
     showToast('Rates saved locally!');
 }
@@ -3402,6 +3527,10 @@ function loadRates() {
             const el = document.getElementById(key);
             if (el) el.value = data[key];
         });
+        // Restore concurrent scheduling groups
+        if (Array.isArray(data.concurrentGroups)) {
+            CONCURRENT_GROUPS = data.concurrentGroups;
+        }
         // Update sealcoat method note to match loaded selection
         const scNote = document.getElementById('sc_methodNote');
         const scCfg = SEALCOAT_METHODS[document.getElementById('sc_method').value];
@@ -3433,10 +3562,6 @@ function resetForm() {
         'cf_phases','sc_phases','st_phases','ar_phases','ma_phases',
         'ws_phases','sg_phases','bo_phases','sb_phases','sh_phases','in_phases','pr_phases'
     ];
-    const travelInputs = [
-        'cf_travel','sc_travel','st_travel','ar_travel','ma_travel',
-        'ws_travel','sg_travel','bo_travel','sb_travel','sh_travel','in_travel','pr_travel'
-    ];
     quantityInputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -3445,10 +3570,9 @@ function resetForm() {
         const el = document.getElementById(id);
         if (el) el.value = '1';
     });
-    travelInputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '0';
-    });
+    // Reset global travel
+    const globalTravelEl = document.getElementById('globalTravel');
+    if (globalTravelEl) globalTravelEl.value = '0';
     document.getElementById('projectName').value = '';
     document.getElementById('ar_depth').selectedIndex = 0;
     document.getElementById('sc_method').value = 'sprayRig';
@@ -3463,6 +3587,8 @@ function resetForm() {
     // Reset weather days
     const weatherEl = document.getElementById('weatherDays');
     if (weatherEl) weatherEl.value = '0';
+    // Reset concurrent scheduling
+    CONCURRENT_GROUPS = [];
     // Reset scope checklist to defaults
     SCOPE_ITEMS.forEach(item => {
         const defRadio = document.getElementById(`scope_${item.id}_${item.default}`);
@@ -3482,7 +3608,7 @@ function exportResults() {
     const markup = gv('markupPercent') || gv('markupPercent2');
 
     let lines = [];
-    lines.push('MAINTENANCE DIVISION ESTIMATE (v4.1)');
+    lines.push('MAINTENANCE DIVISION ESTIMATE (v' + CALC_VERSION + ')');
     lines.push('='.repeat(70));
     lines.push('Project: ' + proj);
     lines.push('Generated: ' + new Date().toLocaleString());
@@ -3494,7 +3620,7 @@ function exportResults() {
     if (rows.length > 0 && !rows[0].textContent.includes('Enter quantities')) {
         lines.push('ESTIMATE SUMMARY (THREE-TIER)');
         lines.push('-'.repeat(70));
-        lines.push(padR('Activity', 22) + padR('Crew', 6) + padR('Cons Hrs', 10) + padR('Std Hrs', 10) + padR('Agg Hrs', 10) + padR('Travel', 8));
+        lines.push(padR('Activity', 22) + padR('Crew', 6) + padR('Cons Hrs', 10) + padR('Std Hrs', 10) + padR('Agg Hrs', 10) + padR('Tvl/Day', 8));
         lines.push('-'.repeat(70));
         rows.forEach(row => {
             const cells = row.querySelectorAll('td');
@@ -3589,7 +3715,7 @@ function generateAnalysis(snap) {
     const acts = snap.activities;
     const activeCount = Object.values(acts).filter(a => a && a.enabled).length;
     const totalStdHrs = snap.hbRows.reduce((s, r) => s + r.tier.std.hours, 0);
-    const totalTravel = snap.hbRows.reduce((s, r) => s + (r.travel || 0), 0);
+    const travelPerDay = snap.hbRows.length > 0 ? (snap.hbRows[0].travel || 0) : 0;
 
     // RATE_CONFIDENCE moved to module scope
 
@@ -3687,12 +3813,14 @@ function generateAnalysis(snap) {
 
         // --- Travel-based reasoning (enhanced with Q8 distance thresholds) ---
         const travel = act.inputs?.travel || 0;
+        const actDays = act.tiers?.std?.days || 1;
+        const totalTravelHrs = travel * actDays;
         if (travel > 0 && stdHrs > 0) {
-            const travelRatio = travel / stdHrs;
+            const travelRatio = totalTravelHrs / stdHrs;
             if (isHigh && travelRatio > 0.25) {
-                reasons.push(`Travel time (${travel.toFixed(1)} hrs) is ${(travelRatio * 100).toFixed(0)}% of production hours (${stdHrs.toFixed(1)} hrs), significantly increasing per-unit cost.`);
+                reasons.push(`Travel time (${travel.toFixed(1)} hrs/day × ${actDays} day${actDays>1?'s':''} = ${totalTravelHrs.toFixed(1)} hrs total) is ${(travelRatio * 100).toFixed(0)}% of production hours (${stdHrs.toFixed(1)} hrs), significantly increasing per-unit cost.`);
                 if (travel > 1.5) {
-                    reasons.push(`Extended travel (>${(travel * 60).toFixed(0)} min round-trip). Jobs over 45-60 min one-way should consider staging equipment the night before on multi-day work, or scheduling nearby jobs on the same day to reduce dead-heading.`);
+                    reasons.push(`Extended travel (>${(travel * 60).toFixed(0)} min round-trip per day). Jobs over 45-60 min one-way should consider staging equipment the night before on multi-day work, or scheduling nearby jobs on the same day to reduce dead-heading.`);
                 }
             }
         }
@@ -3873,8 +4001,8 @@ function generateAnalysis(snap) {
     if (activeCount > 1) {
         const reasons = [];
         reasons.push(`${activeCount} activities on this job. Benchmarks are based on standalone-bid production rates (Darrell's rates: one crew, one activity, full day). Multi-activity jobs naturally differ from standalone benchmarks.`);
-        if (totalTravel > 0) {
-            reasons.push(`Travel is calculated per-activity (${totalTravel.toFixed(1)} hrs total, ${activeCount} activities). On combined jobs, crews may share mobilization — actual travel overhead per activity could be lower than calculated.`);
+        if (travelPerDay > 0) {
+            reasons.push(`Travel: ${travelPerDay.toFixed(1)} hrs/day round-trip, charged per work day for each crew. On combined jobs with clustering, crews share mobilization — reducing total travel overhead.`);
         }
         // Q14: Small add-on activities on multi-scope jobs
         const smallAddOns = [];
@@ -3934,7 +4062,7 @@ function generateAnalysis(snap) {
     if (totalChecks > 2 && flaggedHigh > totalChecks * 0.5) {
         observations.push({
             activity: 'Pattern', flag: 'INFO', reasons: [
-                `${flaggedHigh} of ${totalChecks} benchmarked activities are flagged HIGH. Common causes on multi-activity jobs: small quantities hitting minimum shift floors, per-activity travel overhead, or add-on work types that could be tacked onto a primary crew's day (Q14). Review whether combining activities in HeavyBid reduces effective overhead.`
+                `${flaggedHigh} of ${totalChecks} benchmarked activities are flagged HIGH. Common causes on multi-activity jobs: small quantities hitting minimum shift floors, daily travel overhead on multi-day activities, or add-on work types that could be tacked onto a primary crew's day (Q14). Review whether clustering activities reduces effective overhead.`
             ]
         });
     }
@@ -3959,7 +4087,7 @@ function generateAnalysis(snap) {
                 });
                 const reasons = [
                     `${cluster.name} shares mobilization across ${actNames.join(', ')}. Combined production: ${cluster.clusterTotalHrs.toFixed(1)}h vs ${cluster.standaloneTotal.toFixed(1)}h standalone (saves ${cluster.hoursSaved.toFixed(1)}h).`,
-                    `Travel charged once at ${cluster.clusterTravel.toFixed(1)}h (max across activities) instead of ${cluster.activeActivities.reduce((s,a) => s + a.travel, 0).toFixed(1)}h cumulative.`
+                    `Global travel: ${cluster.clusterTravel.toFixed(1)}h/day round-trip. Cluster shares one mobilization — travel charged once per cluster work day, not per individual activity.`
                 ];
                 // Tack-on detection within cluster
                 cluster.activeActivities.forEach(act => {
@@ -4071,16 +4199,17 @@ function exportComprehensiveText() {
         L.push('CREW & DURATION SUMMARY');
         L.push('Primary output for HeavyBid line-item entry');
         L.push('='.repeat(W));
-        L.push(padR('Activity', 22) + padR('Crew', 6) + padR('Cons', 9) + padR('Std', 9) + padR('Agg', 9) + padR('Travel', 8));
+        L.push(padR('Activity', 22) + padR('Crew', 6) + padR('Cons', 9) + padR('Std', 9) + padR('Agg', 9) + padR('Tvl/Day', 8));
         L.push('-'.repeat(W));
-        let totC = 0, totS = 0, totA = 0, totT = 0;
+        let totC = 0, totS = 0, totA = 0;
+        const tvlPerDay = snap.hbRows.length > 0 ? (snap.hbRows[0].travel || 0) : 0;
         snap.hbRows.forEach(r => {
             const c = r.tier.cons.hours, s = r.tier.std.hours, a = r.tier.agg.hours, tv = r.travel || 0;
-            totC += c; totS += s; totA += a; totT += tv;
+            totC += c; totS += s; totA += a;
             L.push(padR(r.name, 22) + padR(r.tier.std.crew, 6) + padR(c.toFixed(1) + 'h', 9) + padR(s.toFixed(1) + 'h', 9) + padR(a.toFixed(1) + 'h', 9) + padR(tv > 0 ? tv.toFixed(1) + 'h' : '-', 8));
         });
         L.push('-'.repeat(W));
-        L.push(padR('TOTAL', 22) + padR('-', 6) + padR(totC.toFixed(1) + 'h', 9) + padR(totS.toFixed(1) + 'h', 9) + padR(totA.toFixed(1) + 'h', 9) + padR(totT > 0 ? totT.toFixed(1) + 'h' : '-', 8));
+        L.push(padR('TOTAL', 22) + padR('-', 6) + padR(totC.toFixed(1) + 'h', 9) + padR(totS.toFixed(1) + 'h', 9) + padR(totA.toFixed(1) + 'h', 9) + padR(tvlPerDay > 0 ? tvlPerDay.toFixed(1) + 'h' : '-', 8));
         L.push('');
         L.push('Shift Settings: Standard ' + snap.settings.stdShift + 'h | Max ' + snap.settings.maxShift + 'h');
         L.push('Three-Tier: Conservative (80% prod) | Standard (100%) | Aggressive (120%)');
@@ -4118,7 +4247,7 @@ function exportComprehensiveText() {
                 });
 
                 if (cluster.clusteringApplied) {
-                    L.push(`  Cluster shift: ${cluster.clusterTotalHrs.toFixed(1)}h | Travel: ${cluster.clusterTravel.toFixed(1)}h | Saved: ${cluster.hoursSaved.toFixed(1)}h vs standalone`);
+                    L.push(`  Cluster shift: ${cluster.clusterTotalHrs.toFixed(1)}h | Travel: ${cluster.clusterTravel.toFixed(1)}h/day | Saved: ${cluster.hoursSaved.toFixed(1)}h vs standalone`);
                     totalClusteredHrs += cluster.clusterTotalHrs;
                     totalStandaloneHrs += cluster.standaloneTotal;
                 } else {
@@ -4193,7 +4322,8 @@ function exportComprehensiveText() {
             } else if (entry.type === 'weather') {
                 L.push(padR(dayLabel, 14) + '🌧️ ' + entry.name);
             } else {
-                L.push(padR(dayLabel, 14) + padR(entry.name, 40) + padR(entry.crew + '-man', 8) + entry.hours.toFixed(1) + 'h');
+                const concLabel = entry.isConcurrent ? ' [CONCURRENT]' : '';
+                L.push(padR(dayLabel, 14) + padR(entry.name + concLabel, 40) + padR(entry.crew + '-man', 8) + entry.hours.toFixed(1) + 'h');
             }
         });
         L.push('-'.repeat(W));
@@ -4469,7 +4599,7 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
     // Crew & Duration Summary
     if (snap.hbRows.length > 0) {
         h += '<h2>Crew & Duration Summary</h2>';
-        h += '<table><thead><tr><th>Activity</th><th class="center">Crew</th><th class="right">Cons Hrs</th><th class="right">Cons Days</th><th class="right">Std Hrs</th><th class="right">Std Days</th><th class="right">Agg Hrs</th><th class="right">Agg Days</th><th class="right">Travel</th></tr></thead><tbody>';
+        h += '<table><thead><tr><th>Activity</th><th class="center">Crew</th><th class="right">Cons Hrs</th><th class="right">Cons Days</th><th class="right">Std Hrs</th><th class="right">Std Days</th><th class="right">Agg Hrs</th><th class="right">Agg Days</th><th class="right">Tvl/Day</th></tr></thead><tbody>';
         snap.hbRows.forEach(r => {
             h += `<tr><td>${r.name}</td><td class="center">${r.tier.std.crew}</td><td class="right mono">${r.tier.cons.hours.toFixed(1)}</td><td class="right">${r.tier.cons.days}</td><td class="right mono">${r.tier.std.hours.toFixed(1)}</td><td class="right">${r.tier.std.days}</td><td class="right mono">${r.tier.agg.hours.toFixed(1)}</td><td class="right">${r.tier.agg.days}</td><td class="right mono">${r.travel ? r.travel.toFixed(1) + 'h' : '-'}</td></tr>`;
         });
@@ -4482,7 +4612,8 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
         snap.calendar.timeline.forEach(entry => {
             const dayLabel = entry.days === 1 ? 'Day ' + entry.startDay : 'Day ' + entry.startDay + '-' + entry.endDay;
             if (entry.type === 'work') {
-                h += '<div class="timeline-row"><span class="mono">' + dayLabel + '</span><span>' + entry.name + '</span><span class="center">' + entry.crew + '-man</span><span class="right mono">' + entry.hours.toFixed(1) + 'h</span></div>';
+                var concTag = entry.isConcurrent ? ' <span style="font-size:8px;font-weight:700;color:#00c8ff;background:rgba(0,200,255,0.1);padding:1px 4px;border-radius:2px;">CONCURRENT</span>' : '';
+                h += '<div class="timeline-row"><span class="mono">' + dayLabel + '</span><span>' + entry.name + concTag + '</span><span class="center">' + entry.crew + '-man</span><span class="right mono">' + entry.hours.toFixed(1) + 'h</span></div>';
             } else {
                 h += '<div class="timeline-row cure"><span class="mono">' + dayLabel + '</span><span>' + (entry.type === 'cure' ? '⏳ ' : '🌧️ ') + entry.name + '</span><span>-</span><span>-</span></div>';
             }
@@ -4660,7 +4791,13 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
 }
 
 // ===== INIT =====
-const CALC_VERSION = '4.1';
+const CALC_VERSION = '4.2';
+// v4.2: Global travel time (single input, daily recurring per work day) + Concurrent cluster scheduling (toggle overlapping crews in calendar).
+//       Travel is now a single global input (hrs/day) instead of 12 per-activity inputs.
+//       Formula: travelCost = travelHrsPerDay × crewRate × workDays (charged daily).
+//       Concurrent scheduling toggle allows marking cluster pairs to run simultaneously.
+//       Calendar collapses concurrent clusters to max(days) instead of sum(days).
+//
 // v4.1: Crew size now affects pricing. Each crew rate is calibrated to a base crew size
 //       (stored in BASE_CREW_SIZES constant). When the user changes crew size, delta members
 //       are priced at the configurable Laborer Adjustment Rate (default $39.03/hr, AAS Paint
@@ -4718,6 +4855,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const el = document.getElementById(key);
                 if (el) el.value = data[key];
             });
+            // Restore concurrent scheduling groups
+            if (Array.isArray(data.concurrentGroups)) {
+                CONCURRENT_GROUPS = data.concurrentGroups;
+            }
             // Update sealcoat method note to match loaded selection
             const scNote = document.getElementById('sc_methodNote');
             const scCfg = SEALCOAT_METHODS[document.getElementById('sc_method').value];
