@@ -779,7 +779,7 @@
             <div class="rate-section">
                 <h4>Default Crew Sizes</h4>
                 <div class="rate-row"><label>Crack Fill</label><input type="number" id="crewCrackFill" value="3" min="2" max="5"></div>
-                <div class="rate-row"><label>Sealcoat</label><input type="number" id="crewSealcoat" value="3" min="2" max="5"></div>
+                <div class="rate-row"><label>Sealcoat</label><input type="number" id="crewSealcoat" value="4" min="2" max="8"></div>
                 <div class="rate-row"><label>Striping</label><input type="number" id="crewStriping" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Asphalt Repair (≤4T)</label><input type="number" id="crewAsphaltSmall" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Asphalt Repair (>4T)</label><input type="number" id="crewAsphaltLarge" value="4" min="2" max="5"></div>
@@ -846,10 +846,18 @@
     <div class="panel-content" id="wt_sealcoat">
         <div class="wt-grid">
             <div class="input-group"><label>Square Feet (SF)</label><input type="number" id="sc_sf" placeholder="0" min="0" oninput="calculateAll()"></div>
+            <div class="input-group">
+                <label><span class="tip" data-tip="Application method drives production rate and base crew size. Spray Rig: spray bar + wand edge work (standard commercial). Wand Only: all hand-spray (tight lots, apartments). Dual Wand: two wand operators for schedule compression on larger jobs without rig.">Method</span></label>
+                <select id="sc_method" onchange="applySealcoatMethod(); calculateAll()">
+                    <option value="sprayRig" selected>Spray Rig + Wand</option>
+                    <option value="wandOnly">Wand Only</option>
+                    <option value="dualWand">Dual Wand</option>
+                </select>
+            </div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sc_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Round-trip drive time added to shift hours. Billed at crew rate but outside production time.">Travel (hrs)</span></label><input type="number" id="sc_travel" class="phase-input" value="0" min="0" step="0.5" oninput="calculateAll()"></div>
         </div>
-        <p class="note">4-man crew required for manual spray bar. Rate based on 50K SF/day 3-man baseline + 4th man support gain. Open lot: ~52K standard. Complex lot with islands/medians: ~42-45K. 2-coat application at 100 SF/gal, 125 gal/hr sustained.</p>
+        <p class="note" id="sc_methodNote">Spray Rig: 4-man crew (4th operates manual spray bar). 52K SF/day open lot, 42-45K complex. 2-coat at 100 SF/gal, 125 gal/hr sustained.</p>
         <div class="output-section"><h5>Sealcoating Output</h5><div id="sc_output"></div></div>
         <textarea id="note_sc" class="notes-box" placeholder="Reviewer notes for Sealcoating..."></textarea>
     </div>
@@ -1565,9 +1573,30 @@ const CLUSTER_ACTIVITY_MAP = {
 // === CREW SIZE ADJUSTMENT ===
 // Base crew sizes each all-in crew rate was calibrated at. When the user
 // changes crew size, delta members are priced at the laborer adjustment rate.
+// Sealcoat application method configurations
+// Production rates from Darrell Bishop field data (Feb 2026):
+//   Wand only 3-man: 15K SF/day (2-coat, 8hr day)
+//   Spray rig + wand 4-man: 52K SF/day (manual bar needs dedicated operator)
+//   Dual wand 6-man: 30K SF/day (two 3-man wand teams, schedule compression)
+const SEALCOAT_METHODS = {
+    wandOnly:  { label: 'Wand Only',          prodRate: 15000, baseCrew: 3, note: 'Wand Only: 3-man crew, all hand-spray. 15K SF/day realistic (2-coat, 8hr). Best for tight lots, apartments, heavy edge work.' },
+    sprayRig:  { label: 'Spray Rig + Wand',   prodRate: 52000, baseCrew: 4, note: 'Spray Rig: 4-man crew (4th operates manual spray bar). 52K SF/day open lot, 42-45K complex. 2-coat at 100 SF/gal, 125 gal/hr sustained.' },
+    dualWand:  { label: 'Dual Wand',           prodRate: 30000, baseCrew: 6, note: 'Dual Wand: 6-man crew (two 3-man wand teams). ~30K SF/day. Schedule compression for larger jobs without second rig.' }
+};
+
+/** Apply sealcoat method defaults to production rate, crew size, and note */
+function applySealcoatMethod() {
+    const method = document.getElementById('sc_method').value;
+    const cfg = SEALCOAT_METHODS[method];
+    if (!cfg) return;
+    document.getElementById('prodSealcoat').value = cfg.prodRate;
+    document.getElementById('crewSealcoat').value = cfg.baseCrew;
+    document.getElementById('sc_methodNote').textContent = cfg.note;
+}
+
 const BASE_CREW_SIZES = {
     crackFill:    3,
-    sealcoat:     3,
+    sealcoat:     4,  // dynamic — overridden by SEALCOAT_METHODS based on sc_method
     striping:     4,
     asphaltSmall: 4,
     asphaltLarge: 4,
@@ -2009,22 +2038,24 @@ function calculateAll() {
     // === SEALCOATING ===
     if (isOn('en_sealcoat')) {
         const sf = gv('sc_sf');
+        const scMethod = document.getElementById('sc_method').value;
+        const scBaseCrew = (SEALCOAT_METHODS[scMethod] || SEALCOAT_METHODS.sprayRig).baseCrew;
         const baseRate = gv('rateSealcoat');
         const prod = gv('prodSealcoat');
         const phases = Math.max(gv('sc_phases'), 1);
         const crew = gv('crewSealcoat');
-        const rate = adjustedRate(baseRate, crew, BASE_CREW_SIZES.sealcoat);
+        const rate = adjustedRate(baseRate, crew, scBaseCrew);
         const travel = gv('sc_travel');
         const matQty = sf * wf.sc;
         const matCost = matQty * gv('matSealcoat');
         const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
         const travelCost = travel * rate;
-        renderTierTable('sc_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.sealcoat));
+        renderTierTable('sc_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, scBaseCrew));
         if (tier) {
             sumLabor.sc = tier.std.hours * rate + travelCost;
             sumMat.sc = matCost;
             hbRows.push({ name: 'Sealcoating', tier, travel });
-            snapshot.activities.sealcoat = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, phases, travel }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.sealcoat }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
+            snapshot.activities.sealcoat = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, phases, travel, method: scMethod }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, crewSize: crew, baseCrewSize: scBaseCrew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
         }
     } else { renderTierTable('sc_output', null); }
 
@@ -3332,7 +3363,7 @@ function saveRates() {
         'crewCrackFill','crewSealcoat','crewStriping','crewAsphaltSmall','crewAsphaltLarge',
         'crewWsInstall','crewSpeedBump','crewBollard','crewSign','crewMastic','crewInlet','crewSpeedHump',
         'wasteCrackFill','wasteSealcoat','wasteStriping','wasteAsphalt','wasteMastic','wasteSpeedHump',
-        'clusterMode','weatherDays'
+        'clusterMode','weatherDays','sc_method'
     ];
     const data = { _version: CALC_VERSION };
     ids.forEach(id => {
@@ -3371,6 +3402,10 @@ function loadRates() {
             const el = document.getElementById(key);
             if (el) el.value = data[key];
         });
+        // Update sealcoat method note to match loaded selection
+        const scNote = document.getElementById('sc_methodNote');
+        const scCfg = SEALCOAT_METHODS[document.getElementById('sc_method').value];
+        if (scNote && scCfg) scNote.textContent = scCfg.note;
         showToast('Rates loaded!');
         calculateAll();
     } else {
@@ -3416,6 +3451,8 @@ function resetForm() {
     });
     document.getElementById('projectName').value = '';
     document.getElementById('ar_depth').selectedIndex = 0;
+    document.getElementById('sc_method').value = 'sprayRig';
+    applySealcoatMethod();
     document.getElementById('ma_width').value = '1.0';
     document.getElementById('ma_depth').value = '0.5';
     // Clear all reviewer notes
@@ -4681,6 +4718,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const el = document.getElementById(key);
                 if (el) el.value = data[key];
             });
+            // Update sealcoat method note to match loaded selection
+            const scNote = document.getElementById('sc_methodNote');
+            const scCfg = SEALCOAT_METHODS[document.getElementById('sc_method').value];
+            if (scNote && scCfg) scNote.textContent = scCfg.note;
         }
     }
 
