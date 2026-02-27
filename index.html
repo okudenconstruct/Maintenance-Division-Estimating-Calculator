@@ -529,6 +529,33 @@
             font-size: 0.82rem;
             font-weight: 700;
         }
+        /* === Cost Tier Toggle === */
+        .tier-toggle {
+            display: inline-flex;
+            gap: 0;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            margin-left: 0.75rem;
+            vertical-align: middle;
+        }
+        .tier-btn {
+            padding: 0.25rem 0.6rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border: none;
+            background: var(--bg-primary);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .tier-btn:not(:last-child) { border-right: 1px solid var(--border-color); }
+        .tier-btn:hover { background: var(--bg-tertiary); }
+        .tier-btn.active[data-tier="cons"] { background: rgba(255,152,0,0.15); color: var(--accent-orange); }
+        .tier-btn.active[data-tier="std"]  { background: rgba(0,200,255,0.12); color: var(--accent-cyan); }
+        .tier-btn.active[data-tier="agg"]  { background: rgba(76,175,80,0.15); color: var(--accent-green); }
         /* === Unit Cost Column === */
         .unit-cost-row {
             display: flex;
@@ -1226,6 +1253,14 @@
                   style="cursor:help; opacity:0.7;">ⓘ</span>
         </div>
         <div id="concurrencyCheckboxes" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+        <div id="synergyRow" style="display:none; margin-top:0.5rem; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+            <label style="font-size:0.72rem; color:var(--text-secondary);">
+                <span class="tip" data-tip="Production rate boost applied to concurrent activities. Reflects shared-site efficiencies (staging, barricading, reduced setup/breakdown) when multiple crews work the same job site simultaneously. Typical range: 5-10%.">Synergy Factor</span>
+            </label>
+            <input type="number" id="concurrentSynergy" value="0" min="0" max="25" step="1" style="width:50px; font-size:0.75rem;" oninput="CONCURRENT_SYNERGY = Math.min(25, Math.max(0, parseInt(this.value) || 0)); calculateAll();">
+            <span style="font-size:0.72rem; color:var(--text-muted);">%</span>
+        </div>
+        <div id="synergyPreview" style="display:none; margin-top:0.4rem; font-size:0.68rem; color:var(--text-muted); line-height:1.5;"></div>
     </div>
     <div id="calendarBody"></div>
 </div>
@@ -1273,8 +1308,14 @@
 <!-- ============================================ -->
 <!-- COMBINED COST SUMMARY -->
 <!-- ============================================ -->
-<div class="cost-summary">
-    <h2>💵 Combined Cost Summary (Standard Tier)</h2>
+<div class="cost-summary" id="costSummarySection">
+    <h2 style="display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">💵 Combined Cost Summary
+        <div class="tier-toggle">
+            <button class="tier-btn" data-tier="cons" onclick="setCostTier('cons'); calculateAll();">Cons</button>
+            <button class="tier-btn active" data-tier="std" onclick="setCostTier('std'); calculateAll();">Std</button>
+            <button class="tier-btn" data-tier="agg" onclick="setCostTier('agg'); calculateAll();">Agg</button>
+        </div>
+    </h2>
     <div class="cost-grid">
         <div class="cost-category">
             <h4>Labor & Equipment by Work Type</h4>
@@ -1566,6 +1607,23 @@ const CREW_CLUSTERS = {
 
 // Concurrent scheduling: cluster IDs that run simultaneously
 let CONCURRENT_GROUPS = [];
+
+// Concurrent synergy: production rate boost for concurrent activities (0-25%)
+let CONCURRENT_SYNERGY = 0;
+function getSynergyMultiplier(actKey) {
+    if (CONCURRENT_SYNERGY <= 0 || CONCURRENT_GROUPS.length < 2) return 1;
+    const clusterId = ACTIVITY_CLUSTER[actKey];
+    return clusterId && CONCURRENT_GROUPS.includes(clusterId) ? (1 + CONCURRENT_SYNERGY / 100) : 1;
+}
+
+// Cost summary tier selection: which tier drives the Combined Cost Summary
+let COST_TIER = 'std';
+function setCostTier(tier) {
+    COST_TIER = tier;
+    document.querySelectorAll('.tier-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tier === tier);
+    });
+}
 
 // Reverse lookup: activity key -> cluster ID
 const ACTIVITY_CLUSTER = {};
@@ -2042,7 +2100,9 @@ function calculateAll() {
     if (isOn('en_crackfill')) {
         const lf = gv('cf_lf');
         const baseRate = gv('rateCrackFill');
-        const prod = gv('prodCrackFill');
+        const cfSynMult = getSynergyMultiplier('crackFill');
+        const baseProdCF = gv('prodCrackFill');
+        const prod = baseProdCF * cfSynMult;
         const phases = Math.max(gv('cf_phases'), 1);
         const crew = gv('crewCrackFill');
         const rate = adjustedRate(baseRate, crew, BASE_CREW_SIZES.crackFill);
@@ -2050,14 +2110,15 @@ function calculateAll() {
         const matQty = lf * wf.cf;
         const matCost = matQty * gv('matCrackFill');
         const tier = calcThreeTier(lf, prod, stdShift, maxShift, phases, crew);
-        const travelDays = tier ? tier.std.days : 0;
+        const cfT = tier ? tier[COST_TIER] : null;
+        const travelDays = cfT ? cfT.days : 0;
         const travelCost = travel * rate * travelDays;
         renderTierTable('cf_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.crackFill), travelDays);
         if (tier) {
-            sumLabor.cf = tier.std.hours * rate + travelCost;
+            sumLabor.cf = cfT.hours * rate + travelCost;
             sumMat.cf = matCost;
             hbRows.push({ name: 'Crack Filling', tier, travel, travelDays });
-            snapshot.activities.crackFill = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.crackFill }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.cf + sumMat.cf } };
+            snapshot.activities.crackFill = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, baseProdPerDay: baseProdCF, synergyMult: cfSynMult, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.crackFill }, tiers: tier, costs: { laborShift: cfT.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.cf + sumMat.cf } };
         }
     } else { renderTierTable('cf_output', null); }
 
@@ -2067,7 +2128,9 @@ function calculateAll() {
         const scMethod = document.getElementById('sc_method').value;
         const scBaseCrew = (SEALCOAT_METHODS[scMethod] || SEALCOAT_METHODS.sprayRig).baseCrew;
         const baseRate = gv('rateSealcoat');
-        const prod = gv('prodSealcoat');
+        const scSynMult = getSynergyMultiplier('sealcoat');
+        const baseProdSC = gv('prodSealcoat');
+        const prod = baseProdSC * scSynMult;
         const phases = Math.max(gv('sc_phases'), 1);
         const crew = gv('crewSealcoat');
         const rate = adjustedRate(baseRate, crew, scBaseCrew);
@@ -2075,14 +2138,15 @@ function calculateAll() {
         const matQty = sf * wf.sc;
         const matCost = matQty * gv('matSealcoat');
         const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
-        const travelDays = tier ? tier.std.days : 0;
+        const scT = tier ? tier[COST_TIER] : null;
+        const travelDays = scT ? scT.days : 0;
         const travelCost = travel * rate * travelDays;
         renderTierTable('sc_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, scBaseCrew), travelDays);
         if (tier) {
-            sumLabor.sc = tier.std.hours * rate + travelCost;
+            sumLabor.sc = scT.hours * rate + travelCost;
             sumMat.sc = matCost;
             hbRows.push({ name: 'Sealcoating', tier, travel, travelDays });
-            snapshot.activities.sealcoat = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, phases, travel, method: scMethod }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, crewSize: crew, baseCrewSize: scBaseCrew }, tiers: tier, costs: { laborShift: tier.std.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
+            snapshot.activities.sealcoat = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, phases, travel, method: scMethod }, rates: { crewRate: rate, baseCrewRate: baseRate, prodPerDay: prod, baseProdPerDay: baseProdSC, synergyMult: scSynMult, crewSize: crew, baseCrewSize: scBaseCrew }, tiers: tier, costs: { laborShift: scT.hours * rate, laborTravel: travelCost, material: matCost, total: sumLabor.sc + sumMat.sc } };
         }
     } else { renderTierTable('sc_output', null); }
 
@@ -2108,6 +2172,7 @@ function calculateAll() {
             { qtyId:'st_curb', prodId:'prodCurb', matId:'matCurb', hrsId:'st_curb_hrs', matOutId:'st_curb_mat', prodOutId:'st_curb_prod' },
         ];
 
+        const stSynMult = getSynergyMultiplier('striping');
         let machineHrs = 0, handHrs = 0, totalMat = 0;
         let lineItemData = [];
 
@@ -2115,7 +2180,7 @@ function calculateAll() {
             let groupHrs = 0;
             items.forEach(item => {
                 const qty = gv(item.qtyId);
-                const prod = Math.max(gv(item.prodId), 0.01);
+                const prod = Math.max(gv(item.prodId), 0.01) * stSynMult;
                 const matUnit = gv(item.matId);
                 const itemHrs = qty > 0 ? (qty / prod) * stdShift : 0;
                 const itemMat = qty * matUnit * wasteFactor;
@@ -2152,13 +2217,14 @@ function calculateAll() {
                 agg:  { crew: crew, hours: aggR.hours, days: aggR.days, hustle: aggR.hustle }
             };
 
-            const travelDays = stdR.days;
+            const stT = tier[COST_TIER];
+            const travelDays = stT.days;
             const travelCost = travel * rate * travelDays;
             renderTierTable('st_output', tier, rate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping), travelDays);
-            sumLabor.st = stdR.hours * rate + travelCost;
+            sumLabor.st = stT.hours * rate + travelCost;
             sumMat.st = totalMat;
             hbRows.push({ name: 'Striping', tier, travel, travelDays, note: `Mach: ${machineHrs.toFixed(1)}h / Hand: ${handHrs.toFixed(1)}h / Concurrent: ${concurrentHrs.toFixed(1)}h` });
-            snapshot.activities.striping = { enabled: true, rawProductionHrs: concurrentHrs, inputs: { phases, travel }, lineItems: lineItemData, concurrency: { machineHrs, handHrs, concurrentHrs }, rates: { crewRate: rate, baseCrewRate: baseRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.striping }, tiers: tier, costs: { laborShift: stdR.hours * rate, laborTravel: travelCost, material: totalMat, total: sumLabor.st + sumMat.st } };
+            snapshot.activities.striping = { enabled: true, rawProductionHrs: concurrentHrs, inputs: { phases, travel }, lineItems: lineItemData, concurrency: { machineHrs, handHrs, concurrentHrs }, rates: { crewRate: rate, baseCrewRate: baseRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.striping, synergyMult: stSynMult }, tiers: tier, costs: { laborShift: stT.hours * rate, laborTravel: travelCost, material: totalMat, total: sumLabor.st + sumMat.st } };
         } else {
             renderTierTable('st_output', null);
         }
@@ -2171,7 +2237,9 @@ function calculateAll() {
     if (isOn('en_asphalt')) {
         const sf = gv('ar_sf');
         const depthConfig = document.getElementById('ar_depth').value;
-        const prod = gv('prodAsphaltRepair');
+        const arSynMult = getSynergyMultiplier('asphaltRepair');
+        const baseProdAR = gv('prodAsphaltRepair');
+        const prod = baseProdAR * arSynMult;
         const phases = Math.max(gv('ar_phases'), 1);
         const travel = globalTravel;
 
@@ -2201,14 +2269,15 @@ function calculateAll() {
         sv('ar_crewType', crewIsLarge ? '> 4T (Triaxle + crew @ $' + crewRate.toFixed(2) + '/hr)' : '≤ 4T (Hot Box + crew @ $' + crewRate.toFixed(2) + '/hr)');
 
         const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
-        const travelDays = tier ? tier.std.days : 0;
+        const arT = tier ? tier[COST_TIER] : null;
+        const travelDays = arT ? arT.days : 0;
         const travelCost = travel * crewRate * travelDays;
         renderTierTable('ar_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, baseCrew), travelDays);
         if (tier) {
-            sumLabor.ar = tier.std.hours * crewRate + travelCost;
+            sumLabor.ar = arT.hours * crewRate + travelCost;
             sumMat.ar = totalMat;
             hbRows.push({ name: 'Asphalt Repair', tier, travel, travelDays });
-            snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: baseCrew, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
+            snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: baseCrew, prodPerDay: prod, baseProdPerDay: baseProdAR, synergyMult: arSynMult }, tiers: tier, costs: { laborShift: arT.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
         }
     } else {
         ['ar_surfTons','ar_baseTons','ar_dgaTons','ar_totalTons'].forEach(id => sv(id, '0'));
@@ -2220,7 +2289,9 @@ function calculateAll() {
     if (isOn('en_mastic')) {
         const lf = gv('ma_lf');
         const baseCrewRate = gv('rateMastic');
-        const prod = gv('prodMastic');
+        const maSynMult = getSynergyMultiplier('mastic');
+        const baseProdMA = gv('prodMastic');
+        const prod = baseProdMA * maSynMult;
         const phases = Math.max(gv('ma_phases'), 1);
         const crew = gv('crewMastic');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.mastic);
@@ -2236,9 +2307,10 @@ function calculateAll() {
             const boxesNeeded = Math.ceil((lf / lfPerBox) * wf.ma);
 
             const tier = calcThreeTier(lf, prod, stdShift, maxShift, phases, crew);
-            const machineRental = tier.std.days * machinePerDay;
+            const maT = tier[COST_TIER];
+            const machineRental = maT.days * machinePerDay;
             const material = boxesNeeded * boxPrice;
-            const travelDays = tier.std.days;
+            const travelDays = maT.days;
             const travelCost = travel * crewRate * travelDays;
 
             const el = document.getElementById('ma_output');
@@ -2248,28 +2320,28 @@ function calculateAll() {
             html += `<div class="output-divider"></div>`;
             html += `<div class="output-row"><span class="lbl">Crew Size</span><span class="val">${tier.std.crew}</span></div>`;
             { const maDelta = crew - BASE_CREW_SIZES.mastic; if (maDelta !== 0) { const maLR = gv('rateLaborerAdj'); const maAdj = maDelta * maLR; html += `<div class="output-row" style="color:#00bcd4;font-size:0.68rem;"><span class="lbl">↳ Rate adj: ${maDelta > 0 ? '+' : ''}${maDelta} laborer${Math.abs(maDelta) > 1 ? 's' : ''} × $${maLR.toFixed(2)}/hr</span><span class="val">${maAdj >= 0 ? '+' : '-'}$${Math.abs(maAdj).toFixed(2)}/hr</span></div>`; } }
-            html += `<div class="output-row"><span class="lbl">Shift Hours</span><span class="val">${tier.std.hours.toFixed(1)}</span></div>`;
-            html += `<div class="output-row"><span class="lbl">Days</span><span class="val">${tier.std.days}</span></div>`;
-            if (tier.std.hustle) {
+            html += `<div class="output-row"><span class="lbl">Shift Hours</span><span class="val">${maT.hours.toFixed(1)}</span></div>`;
+            html += `<div class="output-row"><span class="lbl">Days</span><span class="val">${maT.days}</span></div>`;
+            if (maT.hustle) {
                 html += `<div class="output-row" style="color:#ffaa00;font-size:0.7rem;"><span class="lbl">&#9889; Crew can hustle to stay within shift</span><span class="val"></span></div>`;
             }
             if (travel > 0) {
                 html += `<div class="output-row"><span class="lbl">Travel Time</span><span class="val">${travel.toFixed(1)} hrs/day × ${travelDays} day${travelDays>1?'s':''}</span></div>`;
             }
             html += `<div class="output-divider"></div>`;
-            html += `<div class="output-row cost"><span class="lbl">Labor & Equip (shift)</span><span class="val">${fmt(tier.std.hours * crewRate)}</span></div>`;
+            html += `<div class="output-row cost"><span class="lbl">Labor & Equip (shift)</span><span class="val">${fmt(maT.hours * crewRate)}</span></div>`;
             if (travelCost > 0) {
                 html += `<div class="output-row cost"><span class="lbl">Labor & Equip (travel)</span><span class="val">${fmt(travelCost)}</span></div>`;
             }
-            html += `<div class="output-row cost"><span class="lbl">Machine Rental (${tier.std.days} day${tier.std.days>1?'s':''})</span><span class="val">${fmt(machineRental)}</span></div>`;
+            html += `<div class="output-row cost"><span class="lbl">Machine Rental (${maT.days} day${maT.days>1?'s':''})</span><span class="val">${fmt(machineRental)}</span></div>`;
             html += `<div class="output-row cost"><span class="lbl">Material (${boxesNeeded} boxes x ${fmt(boxPrice)})</span><span class="val">${fmt(material)}</span></div>`;
-            html += `<div class="output-row highlight"><span class="lbl">Total</span><span class="val">${fmt(tier.std.hours * crewRate + travelCost + machineRental + material)}</span></div>`;
+            html += `<div class="output-row highlight"><span class="lbl">Total</span><span class="val">${fmt(maT.hours * crewRate + travelCost + machineRental + material)}</span></div>`;
             el.innerHTML = html;
 
-            sumLabor.ma = tier.std.hours * crewRate + travelCost;
+            sumLabor.ma = maT.hours * crewRate + travelCost;
             sumMat.ma = material + machineRental;
             hbRows.push({ name: 'Mastic', tier, travel, travelDays, note: `${boxesNeeded} boxes` });
-            snapshot.activities.mastic = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, crackWidth, crackDepth, phases, travel }, boxCalc: { crossSection, lfPerBox, boxesNeeded }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.mastic, prodPerDay: prod, boxPrice, machinePerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, machineRental, material, total: sumLabor.ma + sumMat.ma } };
+            snapshot.activities.mastic = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, crackWidth, crackDepth, phases, travel }, boxCalc: { crossSection, lfPerBox, boxesNeeded }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.mastic, prodPerDay: prod, baseProdPerDay: baseProdMA, synergyMult: maSynMult, boxPrice, machinePerDay }, tiers: tier, costs: { laborShift: maT.hours * crewRate, laborTravel: travelCost, machineRental, material, total: sumLabor.ma + sumMat.ma } };
         } else {
             renderTierTable('ma_output', null);
         }
@@ -2280,9 +2352,13 @@ function calculateAll() {
         const newQty = gv('ws_new');
         const resetQty = gv('ws_reset');
         const removeQty = gv('ws_remove');
-        const prodInstall = Math.max(gv('prodWsInstall'), 0.01);
-        const prodReset = Math.max(gv('prodWsReset'), 0.01);
-        const prodRemoval = Math.max(gv('prodWsRemoval'), 0.01);
+        const wsSynMult = getSynergyMultiplier('wheelStops');
+        const baseProdInstall = Math.max(gv('prodWsInstall'), 0.01);
+        const baseProdReset = Math.max(gv('prodWsReset'), 0.01);
+        const baseProdRemoval = Math.max(gv('prodWsRemoval'), 0.01);
+        const prodInstall = baseProdInstall * wsSynMult;
+        const prodReset = baseProdReset * wsSynMult;
+        const prodRemoval = baseProdRemoval * wsSynMult;
         const phases = Math.max(gv('ws_phases'), 1);
         const crew = gv('crewWsInstall');
         const travel = globalTravel;
@@ -2317,9 +2393,10 @@ function calculateAll() {
 
             const wsCrewDelta = crew - BASE_CREW_SIZES.wsInstall;
             const wsLaborerRate = gv('rateLaborerAdj');
-            const newLabor = tier.std.hours * installFrac * (gv('rateWsInstall') + wsCrewDelta * wsLaborerRate);
-            const resetLabor = tier.std.hours * resetFrac * (gv('rateWsReset') + wsCrewDelta * wsLaborerRate);
-            const removeLabor = tier.std.hours * removalFrac * (gv('rateWsRemove') + wsCrewDelta * wsLaborerRate);
+            const wsT = tier[COST_TIER];
+            const newLabor = wsT.hours * installFrac * (gv('rateWsInstall') + wsCrewDelta * wsLaborerRate);
+            const resetLabor = wsT.hours * resetFrac * (gv('rateWsReset') + wsCrewDelta * wsLaborerRate);
+            const removeLabor = wsT.hours * removalFrac * (gv('rateWsRemove') + wsCrewDelta * wsLaborerRate);
             const totalLabor = newLabor + resetLabor + removeLabor;
 
             const newMat = newQty * gv('matWsNew');
@@ -2327,15 +2404,15 @@ function calculateAll() {
             const removeMat = removeQty * gv('matWsDispose');
             const totalMatCost = newMat + resetMat + removeMat;
 
-            const blendedRate = totalLabor / tier.std.hours;
-            const travelDays = stdR.days;
+            const blendedRate = totalLabor / wsT.hours;
+            const travelDays = wsT.days;
             const travelCost = travel * blendedRate * travelDays;
 
             renderTierTable('ws_output', tier, blendedRate, totalMatCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.wsInstall), travelDays);
             sumLabor.ws = totalLabor + travelCost;
             sumMat.ws = totalMatCost;
             hbRows.push({ name: 'Wheel Stops', tier, travel, travelDays });
-            snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: combinedRawHrs, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, baseCrewSize: BASE_CREW_SIZES.wsInstall, crewDelta: wsCrewDelta, prodInstall, prodReset, prodRemoval, prodPerDay: totalQty > 0 ? totalQty / (combinedRawHrs / stdShift) : 0 }, perTypeHrs: { installHrs, resetHrs, removalHrs, combinedRawHrs }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
+            snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: combinedRawHrs, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, baseCrewSize: BASE_CREW_SIZES.wsInstall, crewDelta: wsCrewDelta, prodInstall, prodReset, prodRemoval, baseProdInstall, baseProdReset, baseProdRemoval, synergyMult: wsSynMult, prodPerDay: totalQty > 0 ? totalQty / (combinedRawHrs / stdShift) : 0 }, perTypeHrs: { installHrs, resetHrs, removalHrs, combinedRawHrs }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
         } else {
             renderTierTable('ws_output', null);
         }
@@ -2350,21 +2427,25 @@ function calculateAll() {
         const crew = gv('crewSign');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.sign);
         const travel = globalTravel;
-        const prodPost = gv('prodSignPost');
-        const prodBoll = Math.max(gv('prodSignBollard'), 0.01);
+        const sgSynMult = getSynergyMultiplier('signs');
+        const baseProdPost = gv('prodSignPost');
+        const baseProdBoll = Math.max(gv('prodSignBollard'), 0.01);
+        const prodPost = baseProdPost * sgSynMult;
+        const prodBoll = baseProdBoll * sgSynMult;
 
         const equivQty = postQty + (bollQty * (prodPost / prodBoll));
         const matCost = (postQty * gv('matSignSmall')) + (bollQty * (gv('matSignLarge') + gv('matBollard')));
 
         if (equivQty > 0) {
             const tier = calcThreeTier(equivQty, prodPost, stdShift, maxShift, phases, crew);
-            const travelDays = tier ? tier.std.days : 0;
+            const sgT = tier ? tier[COST_TIER] : null;
+            const travelDays = sgT ? sgT.days : 0;
             const travelCost = travel * crewRate * travelDays;
             renderTierTable('sg_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.sign), travelDays);
-            sumLabor.sg = tier.std.hours * crewRate + travelCost;
+            sumLabor.sg = sgT.hours * crewRate + travelCost;
             sumMat.sg = matCost;
             hbRows.push({ name: 'Signs', tier, travel, travelDays });
-            snapshot.activities.signs = { enabled: true, rawProductionHrs: (equivQty / Math.max(prodPost, 0.01)) * stdShift, inputs: { postQty, bollQty, equivQty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.sign, prodPost, prodBoll }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sg + sumMat.sg } };
+            snapshot.activities.signs = { enabled: true, rawProductionHrs: (equivQty / Math.max(prodPost, 0.01)) * stdShift, inputs: { postQty, bollQty, equivQty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.sign, prodPost, prodBoll, baseProdPost, baseProdBoll, synergyMult: sgSynMult }, tiers: tier, costs: { laborShift: sgT.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sg + sumMat.sg } };
         } else {
             renderTierTable('sg_output', null);
         }
@@ -2374,21 +2455,24 @@ function calculateAll() {
     if (isOn('en_bollard')) {
         const qty = gv('bo_qty');
         const baseCrewRate = gv('rateBollard');
-        const prod = gv('prodBollard');
+        const boSynMult = getSynergyMultiplier('bollards');
+        const baseProdBO = gv('prodBollard');
+        const prod = baseProdBO * boSynMult;
         const phases = Math.max(gv('bo_phases'), 1);
         const crew = gv('crewBollard');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.bollard);
         const travel = globalTravel;
         const matCost = qty * gv('matBollard');
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
-        const travelDays = tier ? tier.std.days : 0;
+        const boT = tier ? tier[COST_TIER] : null;
+        const travelDays = boT ? boT.days : 0;
         const travelCost = travel * crewRate * travelDays;
         renderTierTable('bo_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.bollard), travelDays);
         if (tier) {
-            sumLabor.bo = tier.std.hours * crewRate + travelCost;
+            sumLabor.bo = boT.hours * crewRate + travelCost;
             sumMat.bo = matCost;
             hbRows.push({ name: 'Bollards', tier, travel, travelDays });
-            snapshot.activities.bollards = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.bollard, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.bo + sumMat.bo } };
+            snapshot.activities.bollards = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.bollard, prodPerDay: prod, baseProdPerDay: baseProdBO, synergyMult: boSynMult }, tiers: tier, costs: { laborShift: boT.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.bo + sumMat.bo } };
         }
     } else { renderTierTable('bo_output', null); }
 
@@ -2396,21 +2480,24 @@ function calculateAll() {
     if (isOn('en_speedbump')) {
         const qty = gv('sb_qty');
         const baseCrewRate = gv('rateSpeedBump');
-        const prod = gv('prodSpeedBump');
+        const sbSynMult = getSynergyMultiplier('speedBumps');
+        const baseProdSB = gv('prodSpeedBump');
+        const prod = baseProdSB * sbSynMult;
         const phases = Math.max(gv('sb_phases'), 1);
         const crew = gv('crewSpeedBump');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.speedBump);
         const travel = globalTravel;
         const matCost = qty * gv('matSpeedBump');
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
-        const travelDays = tier ? tier.std.days : 0;
+        const sbT = tier ? tier[COST_TIER] : null;
+        const travelDays = sbT ? sbT.days : 0;
         const travelCost = travel * crewRate * travelDays;
         renderTierTable('sb_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedBump), travelDays);
         if (tier) {
-            sumLabor.sb = tier.std.hours * crewRate + travelCost;
+            sumLabor.sb = sbT.hours * crewRate + travelCost;
             sumMat.sb = matCost;
             hbRows.push({ name: 'Rubber Speed Bumps', tier, travel, travelDays });
-            snapshot.activities.speedBumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedBump, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sb + sumMat.sb } };
+            snapshot.activities.speedBumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedBump, prodPerDay: prod, baseProdPerDay: baseProdSB, synergyMult: sbSynMult }, tiers: tier, costs: { laborShift: sbT.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sb + sumMat.sb } };
         }
     } else { renderTierTable('sb_output', null); }
 
@@ -2418,7 +2505,9 @@ function calculateAll() {
     if (isOn('en_speedhump')) {
         const qty = gv('sh_qty');
         const baseCrewRate = gv('rateSpeedHump');
-        const prod = gv('prodSpeedHump');
+        const shSynMult = getSynergyMultiplier('speedHumps');
+        const baseProdSH = gv('prodSpeedHump');
+        const prod = baseProdSH * shSynMult;
         const phases = Math.max(gv('sh_phases'), 1);
         const crew = gv('crewSpeedHump');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.speedHump);
@@ -2428,14 +2517,15 @@ function calculateAll() {
         const matCost = tons * asphaltPrice;
         sv('sh_tons', tons);
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
-        const travelDays = tier ? tier.std.days : 0;
+        const shT = tier ? tier[COST_TIER] : null;
+        const travelDays = shT ? shT.days : 0;
         const travelCost = travel * crewRate * travelDays;
         renderTierTable('sh_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedHump), travelDays);
         if (tier) {
-            sumLabor.sh = tier.std.hours * crewRate + travelCost;
+            sumLabor.sh = shT.hours * crewRate + travelCost;
             sumMat.sh = matCost;
             hbRows.push({ name: 'Speed Humps', tier, travel, travelDays });
-            snapshot.activities.speedHumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, tonnage: { tonsPerHump, totalTons: tons }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedHump, prodPerDay: prod }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
+            snapshot.activities.speedHumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, tonnage: { tonsPerHump, totalTons: tons }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedHump, prodPerDay: prod, baseProdPerDay: baseProdSH, synergyMult: shSynMult }, tiers: tier, costs: { laborShift: shT.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
         }
     } else {
         sv('sh_tons', '0');
@@ -2453,8 +2543,11 @@ function calculateAll() {
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.inlet);
         const travel = globalTravel;
 
-        const repairProd = Math.max(gv('prodInletRepair'), 0.01);
-        const hrsPerRecon = gv('prodInletRecon');
+        const inSynMult = getSynergyMultiplier('inletRepair');
+        const baseRepairProd = Math.max(gv('prodInletRepair'), 0.01);
+        const baseHrsPerRecon = gv('prodInletRecon');
+        const repairProd = baseRepairProd * inSynMult;
+        const hrsPerRecon = inSynMult > 1 ? baseHrsPerRecon / inSynMult : baseHrsPerRecon;
 
         const totalQty = repairQty + reconQty;
         if (totalQty > 0) {
@@ -2477,17 +2570,18 @@ function calculateAll() {
                 agg:  { crew: crew, hours: aggR.hours, days: aggR.days, hustle: aggR.hustle }
             };
 
+            const inT = tier[COST_TIER];
             const blockCost = totalQty * gv('matBlock');
             const castingCost = castingQty * gv('matCasting');
             const totalMat = blockCost + castingCost;
-            const travelDays = stdR.days;
+            const travelDays = inT.days;
             const travelCost = travel * crewRate * travelDays;
 
             renderTierTable('in_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.inlet), travelDays);
-            sumLabor.in = stdR.hours * crewRate + travelCost;
+            sumLabor.in = inT.hours * crewRate + travelCost;
             sumMat.in = totalMat;
             hbRows.push({ name: 'Inlet Repair', tier, travel, travelDays });
-            snapshot.activities.inletRepair = { enabled: true, rawProductionHrs: combinedHrs, inputs: { repairQty, reconQty, castingQty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.inlet, repairProd, hrsPerRecon }, combinedRawHrs: combinedHrs, tiers: tier, costs: { laborShift: stdR.hours * crewRate, laborTravel: travelCost, blockCost, castingCost, material: totalMat, total: sumLabor.in + sumMat.in } };
+            snapshot.activities.inletRepair = { enabled: true, rawProductionHrs: combinedHrs, inputs: { repairQty, reconQty, castingQty, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.inlet, repairProd, hrsPerRecon, baseRepairProd, baseHrsPerRecon, synergyMult: inSynMult }, combinedRawHrs: combinedHrs, tiers: tier, costs: { laborShift: inT.hours * crewRate, laborTravel: travelCost, blockCost, castingCost, material: totalMat, total: sumLabor.in + sumMat.in } };
         } else {
             renderTierTable('in_output', null);
         }
@@ -2497,7 +2591,9 @@ function calculateAll() {
     if (isOn('en_paintremoval')) {
         const lf = gv('pr_lf');
         const baseCrewRate = gv('rateStriping');
-        const prod = gv('prodPaintRemoval');
+        const prSynMult = getSynergyMultiplier('paintRemoval');
+        const baseProdPR = gv('prodPaintRemoval');
+        const prod = baseProdPR * prSynMult;
         const rentalPerDay = gv('matPaintRemoval');
         const phases = Math.max(gv('pr_phases'), 1);
         const crew = gv('crewStriping');
@@ -2506,15 +2602,16 @@ function calculateAll() {
 
         if (lf > 0) {
             const tier = calcThreeTier(lf, prod, stdShift, maxShift, phases, crew);
-            const rental = tier.std.days * rentalPerDay;
-            const travelDays = tier.std.days;
+            const prT = tier[COST_TIER];
+            const rental = prT.days * rentalPerDay;
+            const travelDays = prT.days;
             const travelCost = travel * crewRate * travelDays;
 
             renderTierTable('pr_output', tier, crewRate, 0, rental, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping), travelDays);
-            sumLabor.pr = tier.std.hours * crewRate + travelCost;
+            sumLabor.pr = prT.hours * crewRate + travelCost;
             sumMat.pr = rental;
             hbRows.push({ name: 'Paint Removal', tier, travel, travelDays, note: 'Grinder rental' });
-            snapshot.activities.paintRemoval = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.striping, prodPerDay: prod, rentalPerDay }, tiers: tier, costs: { laborShift: tier.std.hours * crewRate, laborTravel: travelCost, rental, total: sumLabor.pr + sumMat.pr } };
+            snapshot.activities.paintRemoval = { enabled: true, rawProductionHrs: (lf / Math.max(prod, 0.01)) * stdShift, inputs: { lf, phases, travel }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.striping, prodPerDay: prod, baseProdPerDay: baseProdPR, synergyMult: prSynMult, rentalPerDay }, tiers: tier, costs: { laborShift: prT.hours * crewRate, laborTravel: travelCost, rental, total: sumLabor.pr + sumMat.pr } };
         } else {
             renderTierTable('pr_output', null);
         }
@@ -2583,6 +2680,14 @@ function calculateAll() {
     sv('directCostTotal', fmt(directCost));
     sv('markupAmount', fmt(markupAmt));
     sv('bidPrice', fmt(directCost + markupAmt));
+
+    // Update cost summary heading to reflect selected tier
+    const tierLabels = { cons: 'Conservative', std: 'Standard', agg: 'Aggressive' };
+    const costH2 = document.querySelector('#costSummarySection h2');
+    if (costH2) {
+        const toggleHTML = costH2.querySelector('.tier-toggle')?.outerHTML || '';
+        costH2.innerHTML = '💵 Combined Cost Summary — ' + tierLabels[COST_TIER] + ' Tier ' + toggleHTML;
+    }
 
     // === UNIT COST REASONABLENESS CHECK ===
     unitChecks = [];
@@ -2728,7 +2833,7 @@ function calculateAll() {
 
     // === BUILD FINAL SNAPSHOT ===
     snapshot.meta = { version: CALC_VERSION, timestamp: new Date().toISOString(), projectName: document.getElementById('projectName').value || 'Unnamed Project' };
-    snapshot.settings = { stdShift, maxShift, asphaltPrice, baseAsphaltPrice, dgaPrice, markupPercent: markup, laborerAdjRate: gv('rateLaborerAdj'), globalTravel, concurrentGroups: CONCURRENT_GROUPS, wasteFactors: { cf: wf.cf, sc: wf.sc, st: wf.st, ar: wf.ar, ma: wf.ma, sh: wf.sh } };
+    snapshot.settings = { stdShift, maxShift, asphaltPrice, baseAsphaltPrice, dgaPrice, markupPercent: markup, laborerAdjRate: gv('rateLaborerAdj'), globalTravel, costTier: COST_TIER, concurrentGroups: CONCURRENT_GROUPS, wasteFactors: { cf: wf.cf, sc: wf.sc, st: wf.st, ar: wf.ar, ma: wf.ma, sh: wf.sh } };
     snapshot.summary = { laborByType: { ...sumLabor }, materialByType: { ...sumMat }, totalLabor, totalMat, directCost, markupPercent: markup, markupAmount: markupAmt, bidPrice: directCost + markupAmt };
     snapshot.hbRows = hbRows;
     snapshot.unitChecks = unitChecks;
@@ -3145,6 +3250,56 @@ function renderConcurrencyOptions(snap) {
         </label>`;
     });
     container.innerHTML = html;
+
+    // Synergy row: show only when 2+ clusters checked as concurrent
+    const synergyRow = document.getElementById('synergyRow');
+    const synergyPreview = document.getElementById('synergyPreview');
+    if (synergyRow) {
+        synergyRow.style.display = CONCURRENT_GROUPS.length >= 2 ? 'flex' : 'none';
+    }
+
+    // Synergy preview: show adjusted rates for concurrent activities
+    if (synergyPreview) {
+        if (CONCURRENT_SYNERGY > 0 && CONCURRENT_GROUPS.length >= 2) {
+            const prodInputMap = {
+                crackFill: { label: 'Crack Fill', ids: ['prodCrackFill'] },
+                sealcoat: { label: 'Sealcoat', ids: ['prodSealcoat'] },
+                asphaltRepair: { label: 'Asphalt Repair', ids: ['prodAsphalt'] },
+                mastic: { label: 'Mastic', ids: ['prodMastic'] },
+                wheelStops: { label: 'Wheel Stops', ids: ['prodWsInstall'] },
+                signs: { label: 'Signs', ids: ['prodSignPost'] },
+                bollards: { label: 'Bollards', ids: ['prodBollard'] },
+                speedBumps: { label: 'Speed Bumps', ids: ['prodSpeedBump'] },
+                speedHumps: { label: 'Speed Humps', ids: ['prodSpeedHump'] },
+                inletRepair: { label: 'Inlet Repair', ids: ['prodInletRepair'] },
+                striping: { label: 'Striping', ids: [] },
+                paintRemoval: { label: 'Paint Removal', ids: ['prodPaintRemoval'] }
+            };
+            let previewHtml = '<div style="margin-top:0.2rem; padding:0.3rem 0.5rem; background:rgba(0,200,200,0.06); border-radius:4px; border:1px solid rgba(0,200,200,0.15);">';
+            previewHtml += `<div style="font-weight:600; color:var(--accent-cyan); font-size:0.68rem; margin-bottom:0.2rem;">⚡ Synergy +${CONCURRENT_SYNERGY}% applied to:</div>`;
+            let hasItems = false;
+            for (const [actKey, info] of Object.entries(prodInputMap)) {
+                const clusterId = ACTIVITY_CLUSTER[actKey];
+                if (!clusterId || !CONCURRENT_GROUPS.includes(clusterId)) continue;
+                const mapping = CLUSTER_ACTIVITY_MAP[actKey];
+                if (!mapping || !isOn(mapping.enableId)) continue;
+                if (info.ids.length > 0) {
+                    const baseVal = gv(info.ids[0]);
+                    const adjusted = Math.round(baseVal * (1 + CONCURRENT_SYNERGY / 100));
+                    previewHtml += `<div style="color:var(--text-secondary);">${info.label}: ${baseVal.toLocaleString()} → <span style="color:var(--accent-cyan); font-weight:600;">${adjusted.toLocaleString()}</span>/day</div>`;
+                } else {
+                    previewHtml += `<div style="color:var(--text-secondary);">${info.label}: per-item rates ×${(1 + CONCURRENT_SYNERGY / 100).toFixed(2)}</div>`;
+                }
+                hasItems = true;
+            }
+            previewHtml += '</div>';
+            synergyPreview.style.display = hasItems ? '' : 'none';
+            synergyPreview.innerHTML = hasItems ? previewHtml : '';
+        } else {
+            synergyPreview.style.display = 'none';
+            synergyPreview.innerHTML = '';
+        }
+    }
 }
 
 function updateConcurrentGroups() {
@@ -3502,8 +3657,10 @@ function saveRates() {
         const noteEl = document.getElementById('scope_note_' + item.id);
         if (noteEl && noteEl.value.trim()) data['scope_note_' + item.id] = noteEl.value.trim();
     });
-    // Persist concurrent scheduling groups
+    // Persist concurrent scheduling groups, synergy, and cost tier
     data.concurrentGroups = CONCURRENT_GROUPS;
+    data.concurrentSynergy = CONCURRENT_SYNERGY;
+    data.costTier = COST_TIER;
     localStorage.setItem('maintCalcRates', JSON.stringify(data));
     showToast('Rates saved locally!');
 }
@@ -3529,9 +3686,17 @@ function loadRates() {
             const el = document.getElementById(key);
             if (el) el.value = data[key];
         });
-        // Restore concurrent scheduling groups
+        // Restore concurrent scheduling groups, synergy, and cost tier
         if (Array.isArray(data.concurrentGroups)) {
             CONCURRENT_GROUPS = data.concurrentGroups;
+        }
+        if (typeof data.concurrentSynergy === 'number') {
+            CONCURRENT_SYNERGY = Math.min(25, Math.max(0, data.concurrentSynergy));
+            const synInput = document.getElementById('concurrentSynergy');
+            if (synInput) synInput.value = CONCURRENT_SYNERGY;
+        }
+        if (data.costTier && ['cons','std','agg'].includes(data.costTier)) {
+            setCostTier(data.costTier);
         }
         // Update sealcoat method note to match loaded selection
         const scNote = document.getElementById('sc_methodNote');
@@ -3589,8 +3754,12 @@ function resetForm() {
     // Reset weather days
     const weatherEl = document.getElementById('weatherDays');
     if (weatherEl) weatherEl.value = '0';
-    // Reset concurrent scheduling
+    // Reset concurrent scheduling, synergy, and cost tier
     CONCURRENT_GROUPS = [];
+    CONCURRENT_SYNERGY = 0;
+    const synInput = document.getElementById('concurrentSynergy');
+    if (synInput) synInput.value = '0';
+    setCostTier('std');
     // Reset scope checklist to defaults
     SCOPE_ITEMS.forEach(item => {
         const defRadio = document.getElementById(`scope_${item.id}_${item.default}`);
@@ -3642,7 +3811,8 @@ function exportResults() {
     }
 
     lines.push('='.repeat(70));
-    lines.push('COST SUMMARY (Standard Tier)');
+    const qTierLabels = { cons: 'Conservative', std: 'Standard', agg: 'Aggressive' };
+    lines.push('COST SUMMARY (' + qTierLabels[COST_TIER] + ' Tier)');
     lines.push('='.repeat(70));
     lines.push('Labor & Equipment: ' + document.getElementById('sum_laborTotal').textContent);
     lines.push('Materials: ' + document.getElementById('sum_matTotal').textContent);
@@ -4126,6 +4296,30 @@ function generateAnalysis(snap) {
         }
     }
 
+    // Concurrent synergy INFO block
+    if (CONCURRENT_SYNERGY > 0 && CONCURRENT_GROUPS.length >= 2) {
+        const synActs = [];
+        const actDispNames = {
+            asphaltRepair: 'Asphalt Repair', wheelStops: 'Wheel Stops', bollards: 'Bollards',
+            signs: 'Signs', inletRepair: 'Inlet Repair', speedHumps: 'Speed Humps',
+            striping: 'Striping', paintRemoval: 'Paint Removal', speedBumps: 'Speed Bumps',
+            sealcoat: 'Sealcoating', crackFill: 'Crack Filling', mastic: 'Mastic'
+        };
+        for (const [actKey, mapping] of Object.entries(CLUSTER_ACTIVITY_MAP)) {
+            const clusterId = ACTIVITY_CLUSTER[actKey];
+            if (clusterId && CONCURRENT_GROUPS.includes(clusterId) && isOn(mapping.enableId)) {
+                synActs.push(actDispNames[actKey] || actKey);
+            }
+        }
+        if (synActs.length > 0) {
+            observations.push({
+                activity: 'Concurrent Synergy', flag: 'INFO', reasons: [
+                    `Concurrent synergy factor of ${CONCURRENT_SYNERGY}% applied to ${synActs.join(', ')}. Reflects shared-site efficiencies (staging, barricading, crew coordination). Adjusted production rates shown in Activity Details.`
+                ]
+            });
+        }
+    }
+
     if (observations.length === 0 && totalChecks > 0) {
         observations.push({
             activity: 'All Activities', flag: 'OK', reasons: [
@@ -4330,6 +4524,9 @@ function exportComprehensiveText() {
         });
         L.push('-'.repeat(W));
         L.push(`Total: ${snap.calendar.totalDays} calendar days (${snap.calendar.workDays} work + ${snap.calendar.cureDays} cure + ${snap.calendar.weatherDays} weather)`);
+        if (CONCURRENT_SYNERGY > 0 && CONCURRENT_GROUPS.length >= 2) {
+            L.push(`Synergy: +${CONCURRENT_SYNERGY}% production rate on concurrent activities`);
+        }
         L.push('');
     }
 
@@ -4359,7 +4556,15 @@ function exportComprehensiveText() {
             const rateParts = [];
             if (act.rates.crewSize) rateParts.push('Crew: ' + act.rates.crewSize);
             if (act.rates.crewRate) rateParts.push('Crew Rate: $' + act.rates.crewRate.toFixed(2) + '/hr');
-            if (act.rates.prodPerDay) rateParts.push('Production: ' + act.rates.prodPerDay.toLocaleString() + '/day');
+            if (act.rates.prodPerDay) {
+                const synM = act.rates.synergyMult || 1;
+                const basePD = act.rates.baseProdPerDay || act.rates.prodPerDay;
+                if (synM > 1) {
+                    rateParts.push('Production: ' + act.rates.prodPerDay.toLocaleString() + '/day (base ' + basePD.toLocaleString() + ' + ' + Math.round((synM - 1) * 100) + '% synergy)');
+                } else {
+                    rateParts.push('Production: ' + act.rates.prodPerDay.toLocaleString() + '/day');
+                }
+            }
             L.push('  ' + rateParts.join(' | '));
         }
 
@@ -4461,7 +4666,8 @@ function exportComprehensiveText() {
 
     // ── COST SUMMARY (sanity check — HeavyBid owns final bid pricing) ──
     L.push('='.repeat(W));
-    L.push('COST SUMMARY — CALCULATOR ESTIMATE (Standard Tier)');
+    const cTierLabels = { cons: 'Conservative', std: 'Standard', agg: 'Aggressive' };
+    L.push('COST SUMMARY — CALCULATOR ESTIMATE (' + cTierLabels[COST_TIER] + ' Tier)');
     L.push('Reference only — HeavyBid owns final cost buildup, overhead, and bid pricing');
     L.push('='.repeat(W));
     L.push('Labor & Equipment:  ' + fmt(snap.summary.totalLabor));
@@ -4622,6 +4828,9 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
             }
         });
         h += '<div style="font-weight:700;margin-top:6px;font-size:11px;">Total: ' + snap.calendar.totalDays + ' calendar days (' + snap.calendar.workDays + ' work + ' + snap.calendar.cureDays + ' cure + ' + snap.calendar.weatherDays + ' weather)</div>';
+        if (CONCURRENT_SYNERGY > 0 && CONCURRENT_GROUPS.length >= 2) {
+            h += '<div style="font-size:10px;color:#0288d1;margin-top:3px;">⚡ Synergy: +' + CONCURRENT_SYNERGY + '% production rate on concurrent activities</div>';
+        }
     }
 
     // Confidence
@@ -4701,7 +4910,8 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
     }
 
     // Cost Summary
-    h += '<h2>Cost Summary (Standard Tier)</h2>';
+    const pTierLabels = { cons: 'Conservative', std: 'Standard', agg: 'Aggressive' };
+    h += '<h2>Cost Summary (' + pTierLabels[COST_TIER] + ' Tier)</h2>';
     h += '<div class="cost-grid">';
     // Labor column
     h += '<div><h3>Labor & Equipment</h3>';
@@ -4858,9 +5068,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const el = document.getElementById(key);
                 if (el) el.value = data[key];
             });
-            // Restore concurrent scheduling groups
+            // Restore concurrent scheduling groups, synergy, and cost tier
             if (Array.isArray(data.concurrentGroups)) {
                 CONCURRENT_GROUPS = data.concurrentGroups;
+            }
+            if (typeof data.concurrentSynergy === 'number') {
+                CONCURRENT_SYNERGY = Math.min(25, Math.max(0, data.concurrentSynergy));
+                const synInput = document.getElementById('concurrentSynergy');
+                if (synInput) synInput.value = CONCURRENT_SYNERGY;
+            }
+            if (data.costTier && ['cons','std','agg'].includes(data.costTier)) {
+                setCostTier(data.costTier);
             }
             // Update sealcoat method note to match loaded selection
             const scNote = document.getElementById('sc_methodNote');
