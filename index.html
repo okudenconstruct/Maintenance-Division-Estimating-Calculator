@@ -867,16 +867,17 @@
         <div class="wt-grid">
             <div class="input-group"><label>Square Feet (SF)</label><input type="number" id="sc_sf" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group">
-                <label><span class="tip" data-tip="Application method drives production rate and base crew size. Spray Rig: spray bar + wand edge work (standard commercial). Wand Only: all hand-spray (tight lots, apartments). Dual Wand: two wand operators for schedule compression on larger jobs without rig.">Method</span></label>
+                <label><span class="tip" data-tip="Application method drives production rate and base crew size. Spray Rig: standard single-rig commercial. Dual Spray Rig: two rigs for large open lots. Wand Only: all hand-spray for tight sites. Dual Wand: two wand teams for schedule compression without rigs.">Method</span></label>
                 <select id="sc_method" onchange="applySealcoatMethod(); calculateAll()">
                     <option value="sprayRig" selected>Spray Rig + Wand</option>
+                    <option value="dualSprayRig">Dual Spray Rig</option>
                     <option value="wandOnly">Wand Only</option>
                     <option value="dualWand">Dual Wand</option>
                 </select>
             </div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sc_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
         </div>
-        <p class="note" id="sc_methodNote">Spray Rig: 4-man crew (4th operates manual spray bar). 52K SF/day open lot, 42-45K complex. 2-coat at 100 SF/gal, 125 gal/hr sustained.</p>
+        <p class="note" id="sc_methodNote">Single spray rig with manual bar + wand crew for edges. 2-coat at 100 SF/gal, 125 gal/hr sustained.</p>
         <div class="output-section"><h5>Sealcoating Output</h5><div id="sc_output"></div></div>
         <textarea id="note_sc" class="notes-box" placeholder="Reviewer notes for Sealcoating..."></textarea>
     </div>
@@ -1599,9 +1600,10 @@ const CLUSTER_ACTIVITY_MAP = {
 //   Spray rig + wand 4-man: 52K SF/day (manual bar needs dedicated operator)
 //   Dual wand 6-man: 30K SF/day (two 3-man wand teams, schedule compression)
 const SEALCOAT_METHODS = {
-    wandOnly:  { label: 'Wand Only',          prodRate: 15000, baseCrew: 3, note: 'Wand Only: 3-man crew, all hand-spray. 15K SF/day realistic (2-coat, 8hr). Best for tight lots, apartments, heavy edge work.' },
-    sprayRig:  { label: 'Spray Rig + Wand',   prodRate: 52000, baseCrew: 4, note: 'Spray Rig: 4-man crew (4th operates manual spray bar). 52K SF/day open lot, 42-45K complex. 2-coat at 100 SF/gal, 125 gal/hr sustained.' },
-    dualWand:  { label: 'Dual Wand',           prodRate: 30000, baseCrew: 6, note: 'Dual Wand: 6-man crew (two 3-man wand teams). ~30K SF/day. Schedule compression for larger jobs without second rig.' }
+    sprayRig:     { label: 'Spray Rig + Wand',   prodRate: 52000, baseCrew: 4, note: 'Single spray rig with manual bar + wand crew for edges. 2-coat at 100 SF/gal, 125 gal/hr sustained.' },
+    dualSprayRig: { label: 'Dual Spray Rig',     prodRate: 80000, baseCrew: 6, note: '2 spray rigs working non-overlapping zones. ~1.5x single-rig rate due to coordination overhead and shared ground support. Requires staging for dual tankers.' },
+    wandOnly:     { label: 'Wand Only',           prodRate: 15000, baseCrew: 3, note: 'All hand-spray, no rig. For tight lots, heavy edge work, sites where rig can\'t maneuver.' },
+    dualWand:     { label: 'Dual Wand',           prodRate: 30000, baseCrew: 6, note: 'Two independent 3-man wand teams. Schedule compression when a second rig isn\'t available or site won\'t accommodate rigs. 2x wand-only output.' }
 };
 
 /** Apply sealcoat method defaults to production rate, crew size, and note */
@@ -4378,6 +4380,7 @@ function exportComprehensiveText() {
         if (inp.newQty !== undefined) inputParts.push('New: ' + inp.newQty + ', Reset: ' + inp.resetQty + ', Remove: ' + inp.removeQty);
         if (inp.postQty !== undefined) inputParts.push('Post: ' + inp.postQty + ', Bollard: ' + inp.bollQty);
         if (inp.repairQty !== undefined) inputParts.push('Repair: ' + inp.repairQty + ', Reconstruct: ' + inp.reconQty + ', Castings: ' + inp.castingQty);
+        if (inp.method && SEALCOAT_METHODS[inp.method]) inputParts.push('Method: ' + SEALCOAT_METHODS[inp.method].label);
         if (inp.phases) inputParts.push('Phases: ' + inp.phases);
         if (inp.travel) inputParts.push('Travel: ' + inp.travel + 'h');
         if (inp.depthConfig) inputParts.push('Depth: ' + inp.depthConfig);
