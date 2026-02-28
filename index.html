@@ -119,7 +119,6 @@
         .panel-content.open { display: block; }
         .panel-toggle.disabled-look { opacity: 0.5; }
         .wt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-        .wt-grid-wide { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
         .input-group { margin-bottom: 0.65rem; }
         .input-group:last-child { margin-bottom: 0; }
         .input-group label {
@@ -324,7 +323,7 @@
         }
         .analysis-reasons li::before { content: ''; position: absolute; left: 0; top: 0.55rem; width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
         @media (max-width: 768px) {
-            .wt-grid, .wt-grid-wide, .rate-grid, .cost-grid { grid-template-columns: 1fr; }
+            .wt-grid, .rate-grid, .cost-grid { grid-template-columns: 1fr; }
             .settings-row { flex-direction: column; gap: 0.75rem; }
             .header { flex-direction: column; align-items: flex-start; }
         }
@@ -400,7 +399,7 @@
             letter-spacing: 0.5px;
             margin: 0.75rem 0 0.4rem 0;
             padding-bottom: 0.25rem;
-            border-bottom: 1px solid var(--border-primary);
+            border-bottom: 1px solid var(--border-color);
         }
         .scope-section-header.incl { color: var(--accent-green); }
         .scope-section-header.excl { color: var(--accent-orange); }
@@ -426,7 +425,7 @@
             padding: 0.15rem 0.45rem;
             border-radius: 4px;
             cursor: pointer;
-            border: 1px solid var(--border-primary);
+            border: 1px solid var(--border-color);
             color: var(--text-muted);
             transition: all 0.15s ease;
         }
@@ -456,7 +455,7 @@
         .scope-item-note input {
             width: 100%;
             background: var(--bg-tertiary);
-            border: 1px solid var(--border-primary);
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             color: var(--text-primary);
             padding: 0.25rem 0.5rem;
@@ -480,7 +479,7 @@
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border-primary);
+            border-bottom: 1px solid var(--border-color);
         }
         .timeline-row.cure-row {
             background: rgba(255,170,0,0.06);
@@ -2412,7 +2411,8 @@ function calculateAll() {
             sumLabor.ws = totalLabor + travelCost;
             sumMat.ws = totalMatCost;
             hbRows.push({ name: 'Wheel Stops', tier, travel, travelDays });
-            snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: combinedRawHrs, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, baseCrewSize: BASE_CREW_SIZES.wsInstall, crewDelta: wsCrewDelta, prodInstall, prodReset, prodRemoval, baseProdInstall, baseProdReset, baseProdRemoval, synergyMult: wsSynMult, prodPerDay: totalQty > 0 ? totalQty / (combinedRawHrs / stdShift) : 0 }, perTypeHrs: { installHrs, resetHrs, removalHrs, combinedRawHrs }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
+            const wsProdPerDay = totalQty > 0 ? totalQty / (combinedRawHrs / stdShift) : 0;
+            snapshot.activities.wheelStops = { enabled: true, rawProductionHrs: combinedRawHrs, inputs: { newQty, resetQty, removeQty, totalQty, phases, travel }, blendedRate, rates: { crewSize: crew, baseCrewSize: BASE_CREW_SIZES.wsInstall, crewDelta: wsCrewDelta, prodInstall, prodReset, prodRemoval, baseProdInstall, baseProdReset, baseProdRemoval, synergyMult: wsSynMult, prodPerDay: wsProdPerDay, baseProdPerDay: wsSynMult > 1 ? wsProdPerDay / wsSynMult : wsProdPerDay }, perTypeHrs: { installHrs, resetHrs, removalHrs, combinedRawHrs }, tiers: tier, costs: { laborTotal: totalLabor, laborTravel: travelCost, material: totalMatCost, total: sumLabor.ws + sumMat.ws } };
         } else {
             renderTierTable('ws_output', null);
         }
@@ -2547,7 +2547,7 @@ function calculateAll() {
         const baseRepairProd = Math.max(gv('prodInletRepair'), 0.01);
         const baseHrsPerRecon = gv('prodInletRecon');
         const repairProd = baseRepairProd * inSynMult;
-        const hrsPerRecon = inSynMult > 1 ? baseHrsPerRecon / inSynMult : baseHrsPerRecon;
+        const hrsPerRecon = baseHrsPerRecon / inSynMult;
 
         const totalQty = repairQty + reconQty;
         if (totalQty > 0) {
@@ -3168,7 +3168,8 @@ function renderConfidence(result) {
     // --- Benchmark Alignment ---
     html += barRow('Benchmark Alignment (30%)', result.benchAlignment);
     html += '<div class="confidence-explain">';
-    html += `<div class="definition">What percentage of calculated unit costs fall within the P25-P75 range from 347 historical jobs? ${result.details.inRange} of ${result.details.totalChecks} line items are IN RANGE.</div>`;
+    const tierNames = { cons: 'Conservative', std: 'Standard', agg: 'Aggressive' };
+    html += `<div class="definition">What percentage of calculated unit costs fall within the P25-P75 range from 347 historical jobs? ${result.details.inRange} of ${result.details.totalChecks} line items are IN RANGE. <span style="color:var(--text-muted); font-style:italic;">(Unit costs based on ${tierNames[COST_TIER] || 'Standard'} tier labor hours.)</span></div>`;
     if (ex.benchOutliers.length > 0) {
         html += '<div style="margin-top:0.15rem;">';
         ex.benchOutliers.forEach(o => {
@@ -4476,8 +4477,9 @@ function exportComprehensiveText() {
             });
         }
         L.push('');
+        const baTierNames = { cons: 'Conservative', std: 'Standard', agg: 'Aggressive' };
         L.push('  Benchmark Alignment (30%):    ' + (conf.benchAlignment * 100).toFixed(0) + '%');
-        L.push('  ' + conf.details.inRange + ' of ' + conf.details.totalChecks + ' line items within P25-P75 historical range.');
+        L.push('  ' + conf.details.inRange + ' of ' + conf.details.totalChecks + ' line items within P25-P75 historical range. (Unit costs based on ' + (baTierNames[COST_TIER] || 'Standard') + ' tier labor hours.)');
         if (ex && ex.benchOutliers && ex.benchOutliers.length > 0) {
             ex.benchOutliers.forEach(o => {
                 L.push('    [' + o.status + '] ' + o.name + ': $' + o.unitCost.toFixed(2) + '/' + o.unit + ' (range $' + o.p25.toFixed(2) + '-$' + o.p75.toFixed(2) + ')');
@@ -4861,7 +4863,8 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
         // Benchmark Alignment
         h += confBar('Benchmark Alignment (30%)', conf.benchAlignment);
         h += '<div style="font-size:9px;color:#777;margin:2px 0 6px 0;line-height:1.5;">';
-        h += '<em>' + conf.details.inRange + ' of ' + conf.details.totalChecks + ' line items within P25-P75 historical range.</em>';
+        var pTierNames = { cons: 'Conservative', std: 'Standard', agg: 'Aggressive' };
+        h += '<em>' + conf.details.inRange + ' of ' + conf.details.totalChecks + ' line items within P25-P75 historical range. (Unit costs based on ' + (pTierNames[COST_TIER] || 'Standard') + ' tier labor hours.)</em>';
         if (ex && ex.benchOutliers && ex.benchOutliers.length > 0) {
             ex.benchOutliers.forEach(function(o) {
                 var col = o.status.includes('VERY') ? '#c62828' : '#f57c00';
