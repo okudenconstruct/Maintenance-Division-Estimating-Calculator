@@ -963,9 +963,11 @@
     <div class="panel-content" id="wt_asphalt">
         <div class="wt-grid">
             <div class="input-group"><label>Total Repair Area (SF)</label><input type="number" id="ar_sf" placeholder="0" min="0" oninput="calculateAll()"></div>
-            <div class="input-group"><label><span class="tip" data-tip="Determines material layers and tonnage. Each layer adds cost. 2s=surface only, 4b=base course, d=DGA sub-base.">Depth Configuration</span></label>
+            <div class="input-group"><label><span class="tip" data-tip="Determines material layers, tonnage, and production rate. Deeper surface-only patches reduce production: 3&quot; = 1.25× base time, 4&quot; = 1.5× base time (more material, extra compaction passes). Composite configs (base/DGA) add material cost layers.">Depth Configuration</span></label>
                 <select id="ar_depth" onchange="calculateAll()">
                     <option value="2s">2" Surface Only (9.5mm)</option>
+                    <option value="3s">3" Surface Only (9.5mm) — 1.25× prod time</option>
+                    <option value="4s">4" Surface Only (9.5mm) — 1.5× prod time</option>
                     <option value="2s4b">2" Surface + 4" Base (19mm)</option>
                     <option value="2s4d">2" Surface + 4" DGA</option>
                     <option value="2s4b4d">2" Surface + 4" Base + 4" DGA</option>
@@ -2238,14 +2240,19 @@ function calculateAll() {
         const depthConfig = document.getElementById('ar_depth').value;
         const arSynMult = getSynergyMultiplier('asphaltRepair');
         const baseProdAR = gv('prodAsphaltRepair');
-        const prod = baseProdAR * arSynMult;
+        // Depth-based production multiplier: deeper surface patches take longer
+        // (more material handling, extra compaction passes, potential two-lift for 4")
+        const surfDepth = parseInt(depthConfig.match(/^(\d+)s/)?.[1] || '2');
+        const DEPTH_TIME_MULT = { 2: 1.0, 3: 1.25, 4: 1.5 };
+        const depthMult = DEPTH_TIME_MULT[surfDepth] || 1.0;
+        const prod = (baseProdAR / depthMult) * arSynMult;
         const phases = Math.max(gv('ar_phases'), 1);
         const travel = globalTravel;
 
         const sy = sf / 9;
         let surfTons = 0, baseTons = 0, dgaTons = 0;
         if (sf > 0) {
-            if (depthConfig.includes('2s')) surfTons = Math.ceil(sy * 2 * 0.0575 * wf.ar);
+            if (surfDepth) surfTons = Math.ceil(sy * surfDepth * 0.0575 * wf.ar);
             if (depthConfig.includes('4b')) baseTons = Math.ceil(sy * 4 * 0.0575 * wf.ar);
             if (depthConfig.includes('4d')) dgaTons = Math.ceil((sf * 4 / 324) * 1.9 * wf.ar);
             if (depthConfig.includes('6d')) dgaTons = Math.ceil((sf * 6 / 324) * 1.9 * wf.ar);
@@ -2276,7 +2283,7 @@ function calculateAll() {
             sumLabor.ar = arT.hours * crewRate + travelCost;
             sumMat.ar = totalMat;
             hbRows.push({ name: 'Asphalt Repair', tier, travel, travelDays });
-            snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: baseCrew, prodPerDay: prod, baseProdPerDay: baseProdAR, synergyMult: arSynMult }, tiers: tier, costs: { laborShift: arT.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
+            snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: baseCrew, prodPerDay: prod, baseProdPerDay: baseProdAR, synergyMult: arSynMult, depthMult }, tiers: tier, costs: { laborShift: arT.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
         }
     } else {
         ['ar_surfTons','ar_baseTons','ar_dgaTons','ar_totalTons'].forEach(id => sv(id, '0'));
@@ -3644,7 +3651,7 @@ function saveRates() {
         'crewCrackFill','crewSealcoat','crewStriping','crewAsphaltSmall','crewAsphaltLarge',
         'crewWsInstall','crewSpeedBump','crewBollard','crewSign','crewMastic','crewInlet','crewSpeedHump',
         'wasteCrackFill','wasteSealcoat','wasteStriping','wasteAsphalt','wasteMastic','wasteSpeedHump',
-        'clusterMode','weatherDays','sc_method','globalTravel'
+        'clusterMode','weatherDays','sc_method','ar_depth','globalTravel'
     ];
     const data = { _version: CALC_VERSION };
     ids.forEach(id => {
@@ -4023,16 +4030,21 @@ function generateAnalysis(snap) {
         // --- Asphalt-specific reasoning (enhanced with Q9 hot box vs triaxle context) ---
         if (mapping.actKey === 'asphaltRepair' && act.inputs?.depthConfig) {
             const dc = act.inputs.depthConfig;
-            const layers = (dc.includes('2s') ? 1 : 0) + (dc.includes('4b') ? 1 : 0) + (dc.includes('d') ? 1 : 0);
+            const hasSurface = /^\d+s/.test(dc);
+            const layers = (hasSurface ? 1 : 0) + (dc.includes('4b') ? 1 : 0) + (dc.includes('d') ? 1 : 0);
+            const surfDepth = parseInt(dc.match(/^(\d+)s/)?.[1] || '2');
             if (isHigh && layers >= 2) {
                 const layerNames = [];
-                if (dc.includes('2s')) layerNames.push('9.5mm surface');
+                if (hasSurface) layerNames.push('9.5mm surface (' + surfDepth + '")');
                 if (dc.includes('4b')) layerNames.push('19mm base');
                 if (dc.includes('d')) layerNames.push('DGA');
                 reasons.push(`Multi-layer depth config (${layerNames.join(' + ')}) increases material tonnage and cost per SF vs. surface-only jobs.`);
             }
             if (isLow && layers === 1) {
-                reasons.push('Simple depth config (surface only) minimizes material layers and tonnage.');
+                reasons.push('Simple depth config (surface only, ' + surfDepth + '") minimizes material layers and tonnage.');
+            }
+            if (act.rates?.depthMult > 1) {
+                reasons.push(`Production rate adjusted ${act.rates.depthMult}× for ${surfDepth}" depth (base rate ${act.rates.baseProdPerDay?.toLocaleString()} SF/day → ${act.rates.prodPerDay?.toLocaleString()} SF/day). Deeper cuts require more material placement and compaction time.`);
             }
             // Q9: Hot box vs triaxle decision context
             if (act.crewType === 'large' && isHigh) {
@@ -4560,9 +4572,13 @@ function exportComprehensiveText() {
             if (act.rates.crewRate) rateParts.push('Crew Rate: $' + act.rates.crewRate.toFixed(2) + '/hr');
             if (act.rates.prodPerDay) {
                 const synM = act.rates.synergyMult || 1;
+                const depM = act.rates.depthMult || 1;
                 const basePD = act.rates.baseProdPerDay || act.rates.prodPerDay;
-                if (synM > 1) {
-                    rateParts.push('Production: ' + act.rates.prodPerDay.toLocaleString() + '/day (base ' + basePD.toLocaleString() + ' + ' + Math.round((synM - 1) * 100) + '% synergy)');
+                const modifiers = [];
+                if (depM > 1) modifiers.push(depM + 'x depth');
+                if (synM > 1) modifiers.push('+' + Math.round((synM - 1) * 100) + '% synergy');
+                if (modifiers.length > 0) {
+                    rateParts.push('Production: ' + act.rates.prodPerDay.toLocaleString() + '/day (base ' + basePD.toLocaleString() + ', ' + modifiers.join(', ') + ')');
                 } else {
                     rateParts.push('Production: ' + act.rates.prodPerDay.toLocaleString() + '/day');
                 }
@@ -4590,7 +4606,10 @@ function exportComprehensiveText() {
         if (inp.method && SEALCOAT_METHODS[inp.method]) inputParts.push('Method: ' + SEALCOAT_METHODS[inp.method].label);
         if (inp.phases) inputParts.push('Phases: ' + inp.phases);
         if (inp.travel) inputParts.push('Travel: ' + inp.travel + 'h');
-        if (inp.depthConfig) inputParts.push('Depth: ' + inp.depthConfig);
+        if (inp.depthConfig) {
+            const depthLabels = { '2s': '2" Surface', '3s': '3" Surface', '4s': '4" Surface', '2s4b': '2" Surf + 4" Base', '2s4d': '2" Surf + 4" DGA', '2s4b4d': '2" Surf + 4" Base + 4" DGA', '2s4b6d': '2" Surf + 4" Base + 6" DGA', '2s6d': '2" Surf + 6" DGA' };
+            inputParts.push('Depth: ' + (depthLabels[inp.depthConfig] || inp.depthConfig));
+        }
         if (inp.crackWidth) inputParts.push('Crack: ' + inp.crackWidth + '" x ' + inp.crackDepth + '"');
         if (inputParts.length > 0) L.push('  Scope: ' + inputParts.join(' | '));
 
