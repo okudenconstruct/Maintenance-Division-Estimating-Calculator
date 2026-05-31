@@ -675,7 +675,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v4.2 | Field-Calibrated | Three-Tier Output | Crew Clustering | Crew Size Adjustment | Estimate Confidence</span>
+            <span>v4.3 | Field-Calibrated | Size-Tiered Patching | Three-Tier Output | Crew Clustering | Estimate Confidence</span>
         </div>
     </div>
     <div class="header-controls">
@@ -809,7 +809,14 @@
                 <div class="rate-row"><label>Arrows (EA/day)</label><input type="number" id="prodArrow" value="50"></div>
                 <div class="rate-row"><label>Stencils/Lettering (EA/day)</label><input type="number" id="prodStencil" value="200"></div>
                 <div class="rate-row"><label>Curbing (LF/day)</label><input type="number" id="prodCurb" value="5000"></div>
-                <div class="rate-row"><label>Asphalt Repair (SF/day)</label><input type="number" id="prodAsphaltRepair" value="600"></div>
+                <div class="rate-row" style="border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color); padding:0.4rem 0; margin:0.4rem 0;"><label style="font-weight:700; color:var(--accent-orange);"><span class="tip" data-tip="Patch production is tiered by job size, from 106 historical patch records. Small patches carry heavy mobilization overhead; large jobs amortize it. Rates are SF/day at 2&quot; surface depth, standard crew. The Max Tons/Day cap below adds days only when total tonnage forces more than one load-day.">Asphalt Repair by Size (SF/day @2")</span></label><span></span></div>
+                <div class="rate-row"><label>&nbsp;&nbsp;&#8804; 50 SF</label><input type="number" id="prodAR_xs" value="150"></div>
+                <div class="rate-row"><label>&nbsp;&nbsp;51 - 150 SF</label><input type="number" id="prodAR_sm" value="375"></div>
+                <div class="rate-row"><label>&nbsp;&nbsp;151 - 300 SF</label><input type="number" id="prodAR_md" value="600"></div>
+                <div class="rate-row"><label>&nbsp;&nbsp;301 - 600 SF</label><input type="number" id="prodAR_lg" value="825"></div>
+                <div class="rate-row"><label>&nbsp;&nbsp;601 - 1,200 SF</label><input type="number" id="prodAR_xl" value="1700"></div>
+                <div class="rate-row"><label>&nbsp;&nbsp;&gt; 1,200 SF</label><input type="number" id="prodAR_xxl" value="1450"></div>
+                <div class="rate-row" style="border-bottom:1px solid var(--border-color); padding-bottom:0.4rem; margin-bottom:0.4rem;"><label><span class="tip" data-tip="One triaxle load of hot mix placeable/compactable per day. At 2&quot; &asymp; 1,450 SF; deeper configs yield fewer SF. Applied as a per-day tonnage floor on days (not a rate clip) so one-load jobs run at burst pace and only multi-load or deep-section jobs get stretched. Surface+base only, not DGA.">Asphalt Max Tons/Day</span></label><input type="number" id="maxAsphaltTons" value="20" step="1"></div>
                 <div class="rate-row"><label><span class="tip" data-tip="New install: drill, set, pin. Field-calibrated Q21.">WS Install (UN/day)</span></label><input type="number" id="prodWsInstall" value="80"></div>
                 <div class="rate-row"><label><span class="tip" data-tip="Re-pin existing stop. ~2x faster than install (no drilling). Field Q21.">WS Reset (UN/day)</span></label><input type="number" id="prodWsReset" value="155"></div>
                 <div class="rate-row"><label><span class="tip" data-tip="Remove & dispose. ~2.5-3x faster than install. Field Q21.">WS Removal (UN/day)</span></label><input type="number" id="prodWsRemoval" value="220"></div>
@@ -984,6 +991,9 @@
             <div class="output-row"><span class="lbl">DGA (tons)</span><span class="val" id="ar_dgaTons">0</span></div>
             <div class="output-row highlight"><span class="lbl">Total Asphalt (tons)</span><span class="val" id="ar_totalTons">0</span></div>
             <div class="output-row"><span class="lbl">Crew Type</span><span class="val" id="ar_crewType">-</span></div>
+            <div class="output-row"><span class="lbl">Size Tier</span><span class="val" id="ar_band">-</span></div>
+            <div class="output-row highlight"><span class="lbl">Effective Production (std)</span><span class="val" id="ar_effProd">-</span></div>
+            <div class="output-row"><span class="lbl">Daily Material Cap (<span id="ar_capTons">20</span> T)</span><span class="val" id="ar_capSF">-</span></div>
             <div class="output-divider"></div>
             <div id="ar_output"></div>
         </div>
@@ -1417,7 +1427,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v4.2 | Field-Calibrated Production Rates | Crew Size Adjustment | Crew Clustering | Estimate Confidence | Calendar Duration<br>
+    Maintenance Division Estimating Calculator v4.3 | Field-Calibrated Production Rates | Size-Tiered Patching | Crew Clustering | Estimate Confidence | Calendar Duration<br>
     All rates subject to superintendent review.
 </div>
 
@@ -1476,6 +1486,25 @@ function syncMarkup(el) {
 // ===== SHIFT OPTIMIZATION ENGINE =====
 const SHIFT_INCREMENTS = [4, 6, 8, 10, 12];
 const HUSTLE_THRESHOLD = 0.5;
+
+// Asphalt patching: production tiered by job size (SF), from 106 historical patch records.
+// Each band's rate is independently editable in Rate Config (defaults @2" surface depth).
+// The 20-ton material cap is enforced as a per-day tonnage FLOOR on days (not a rate clip),
+// so one-load jobs run at the band's burst pace and only multi-load or deep-section jobs
+// get stretched by material throughput.
+const ASPHALT_BANDS = [
+    { id: 'prodAR_xs',  max: 50,       label: '\u2264 50 SF' },
+    { id: 'prodAR_sm',  max: 150,      label: '51-150 SF' },
+    { id: 'prodAR_md',  max: 300,      label: '151-300 SF' },
+    { id: 'prodAR_lg',  max: 600,      label: '301-600 SF' },
+    { id: 'prodAR_xl',  max: 1200,     label: '601-1,200 SF' },
+    { id: 'prodAR_xxl', max: Infinity, label: '> 1,200 SF' }
+];
+function asphaltBandRate(sf) {
+    const b = ASPHALT_BANDS.find(x => sf <= x.max) || ASPHALT_BANDS[ASPHALT_BANDS.length - 1];
+    return { rate: gv(b.id), label: b.label, id: b.id };
+}
+const ASPHALT_TONS_PER_SF = 0.0575 / 9; // per inch of depth, before waste
 
 // Historical benchmark ranges (P25/median/P75) from 347 jobs
 // Basis: ADJUSTED = tuned empirical, EMPIRICAL = raw dataset, DERIVED = calculated from crew/rates/material
@@ -2234,31 +2263,47 @@ function calculateAll() {
         renderTierTable('st_output', null);
     }
 
-    // === ASPHALT REPAIRS ===
+    // === ASPHALT REPAIRS (size-tiered production, tonnage-floor material cap) ===
     if (isOn('en_asphalt')) {
         const sf = gv('ar_sf');
         const depthConfig = document.getElementById('ar_depth').value;
         const arSynMult = getSynergyMultiplier('asphaltRepair');
-        const baseProdAR = gv('prodAsphaltRepair');
-        // Depth-based production multiplier: deeper surface patches take longer
-        // (more material handling, extra compaction passes, potential two-lift for 4")
-        const surfDepth = parseInt(depthConfig.match(/^(\d+)s/)?.[1] || '2');
-        const DEPTH_TIME_MULT = { 2: 1.0, 3: 1.25, 4: 1.5 };
-        const depthMult = DEPTH_TIME_MULT[surfDepth] || 1.0;
-        const prod = (baseProdAR / depthMult) * arSynMult;
         const phases = Math.max(gv('ar_phases'), 1);
         const travel = globalTravel;
 
+        const surfDepth = parseInt(depthConfig.match(/^(\d+)s/)?.[1] || '2');
+        const DEPTH_TIME_MULT = { 2: 1.0, 3: 1.25, 4: 1.5 };
+        const depthMult = DEPTH_TIME_MULT[surfDepth] || 1.0;
+        const has4b = depthConfig.includes('4b');
+
+        // Tonnage (unchanged math)
         const sy = sf / 9;
         let surfTons = 0, baseTons = 0, dgaTons = 0;
         if (sf > 0) {
             if (surfDepth) surfTons = Math.ceil(sy * surfDepth * 0.0575 * wf.ar);
-            if (depthConfig.includes('4b')) baseTons = Math.ceil(sy * 4 * 0.0575 * wf.ar);
+            if (has4b) baseTons = Math.ceil(sy * 4 * 0.0575 * wf.ar);
             if (depthConfig.includes('4d')) dgaTons = Math.ceil((sf * 4 / 324) * 1.9 * wf.ar);
             if (depthConfig.includes('6d')) dgaTons = Math.ceil((sf * 6 / 324) * 1.9 * wf.ar);
         }
-
         const totalAsphaltTons = surfTons + baseTons;
+
+        // Production: size-tier rate (depth + synergy adjusted), with material cap as a
+        // tons-per-day FLOOR on days (not a rate clip). One-load jobs run at burst pace;
+        // multi-load jobs get stretched only when total tonnage forces extra load-days.
+        const band = asphaltBandRate(sf);                              // {rate,label,id} @2"
+        const bandRate2in = band.rate;
+        const laborRate = (bandRate2in / depthMult) * arSynMult;       // SF/day labor-limited
+        const maxAsphaltTons = gv('maxAsphaltTons') || 20;
+        const tonsPerSfAsphalt = (surfDepth + (has4b ? 4 : 0)) * ASPHALT_TONS_PER_SF * wf.ar;
+        const capSF = tonsPerSfAsphalt > 0 ? maxAsphaltTons / tonsPerSfAsphalt : Infinity;
+        const minDaysByMaterial = totalAsphaltTons > 0 ? Math.max(1, Math.ceil(totalAsphaltTons / maxAsphaltTons)) : 0;
+
+        // Probe std-tier labor-only days to flag when material is the binding constraint
+        const stdRawHrs = sf > 0 ? (sf / Math.max(laborRate, 0.01)) * stdShift : 0;
+        const stdLaborOnly = optimizeShifts(stdRawHrs, stdShift, maxShift, phases);
+        const capBinding = sf > 0 && minDaysByMaterial > stdLaborOnly.days;
+        const stdEffRate = capBinding ? capSF : laborRate;
+
         const crewIsLarge = totalAsphaltTons > 4;
         const baseCrewRate = crewIsLarge ? gv('rateAsphaltLarge') : gv('rateAsphaltSmall');
         const crew = crewIsLarge ? gv('crewAsphaltLarge') : gv('crewAsphaltSmall');
@@ -2272,9 +2317,30 @@ function calculateAll() {
         sv('ar_baseTons', baseTons);
         sv('ar_dgaTons', dgaTons);
         sv('ar_totalTons', totalAsphaltTons);
-        sv('ar_crewType', crewIsLarge ? '> 4T (Triaxle + crew @ $' + crewRate.toFixed(2) + '/hr)' : '≤ 4T (Hot Box + crew @ $' + crewRate.toFixed(2) + '/hr)');
+        sv('ar_crewType', crewIsLarge ? '> 4T (Triaxle + crew @ $' + crewRate.toFixed(2) + '/hr)' : '\u2264 4T (Hot Box + crew @ $' + crewRate.toFixed(2) + '/hr)');
+        sv('ar_band', sf > 0 ? band.label + ' \u2192 ' + Math.round(bandRate2in).toLocaleString() + ' SF/day @2"' : '-');
+        sv('ar_effProd', sf > 0 ? Math.round(stdEffRate).toLocaleString() + ' SF/day' + (capBinding ? ' \u26d4 material-capped' : '') : '-');
+        sv('ar_capTons', maxAsphaltTons);
+        sv('ar_capSF', sf > 0 && isFinite(capSF) ? Math.round(capSF).toLocaleString() + ' SF/day' : '-');
 
-        const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
+        // Build three tiers manually so the material floor binds on ALL tiers
+        // (a faster crew cannot beat the truck; agg converges to the floor on multi-load jobs)
+        function arTierCalc(factor) {
+            const effRate = laborRate * factor;
+            const adjHrs = sf > 0 ? (sf / Math.max(effRate, 0.01)) * stdShift : 0;
+            const minDays = Math.max(phases, minDaysByMaterial);
+            return optimizeShifts(adjHrs, stdShift, maxShift, minDays);
+        }
+        let tier = null;
+        if (sf > 0) {
+            const stdR = arTierCalc(1.0), consR = arTierCalc(0.80), aggR = arTierCalc(1.20);
+            tier = {
+                cons: { crew, hours: consR.hours, days: consR.days, hustle: consR.hustle },
+                std:  { crew, hours: stdR.hours,  days: stdR.days,  hustle: stdR.hustle },
+                agg:  { crew, hours: aggR.hours,  days: aggR.days,  hustle: aggR.hustle }
+            };
+        }
+
         const arT = tier ? tier[COST_TIER] : null;
         const travelDays = arT ? arT.days : 0;
         const travelCost = travel * crewRate * travelDays;
@@ -2282,12 +2348,12 @@ function calculateAll() {
         if (tier) {
             sumLabor.ar = arT.hours * crewRate + travelCost;
             sumMat.ar = totalMat;
-            hbRows.push({ name: 'Asphalt Repair', tier, travel, travelDays });
-            snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(prod, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: baseCrew, prodPerDay: prod, baseProdPerDay: baseProdAR, synergyMult: arSynMult, depthMult }, tiers: tier, costs: { laborShift: arT.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
+            hbRows.push({ name: 'Asphalt Repair', tier, travel, travelDays, note: capBinding ? `Material-capped ${maxAsphaltTons}T/day` : band.label });
+            snapshot.activities.asphaltRepair = { enabled: true, rawProductionHrs: (sf / Math.max(stdEffRate, 0.01)) * stdShift, inputs: { sf, depthConfig, phases, travel }, tonnage: { surfTons, baseTons, dgaTons, totalAsphaltTons }, crewType: crewIsLarge ? 'large' : 'small', rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: baseCrew, prodPerDay: stdEffRate, baseProdPerDay: bandRate2in, sizeBand: band.label, laborRate, capSF, capBinding, minDaysByMaterial, maxAsphaltTons, synergyMult: arSynMult, depthMult }, tiers: tier, costs: { laborShift: arT.hours * crewRate, laborTravel: travelCost, matAsphalt, matDGA, material: totalMat, total: sumLabor.ar + sumMat.ar } };
         }
     } else {
         ['ar_surfTons','ar_baseTons','ar_dgaTons','ar_totalTons'].forEach(id => sv(id, '0'));
-        sv('ar_crewType', '-');
+        sv('ar_crewType', '-'); sv('ar_band', '-'); sv('ar_effProd', '-'); sv('ar_capSF', '-');
         renderTierTable('ar_output', null);
     }
 
@@ -3272,7 +3338,7 @@ function renderConcurrencyOptions(snap) {
             const prodInputMap = {
                 crackFill: { label: 'Crack Fill', ids: ['prodCrackFill'] },
                 sealcoat: { label: 'Sealcoat', ids: ['prodSealcoat'] },
-                asphaltRepair: { label: 'Asphalt Repair', ids: ['prodAsphalt'] },
+                asphaltRepair: { label: 'Asphalt Repair', ids: [] },
                 mastic: { label: 'Mastic', ids: ['prodMastic'] },
                 wheelStops: { label: 'Wheel Stops', ids: ['prodWsInstall'] },
                 signs: { label: 'Signs', ids: ['prodSignPost'] },
@@ -3645,7 +3711,7 @@ function saveRates() {
         'matSpeedBump','matBollard','matSignSmall','matSignLarge','matMasticBox','matMasticMachine',
         'matBlock','matCasting','matPaintRemoval',
         'prodCrackFill','prodSealcoat','prod4Line','prod6Line','prod12Line','prod24Bar',
-        'prodHC','prodArrow','prodStencil','prodCurb','prodAsphaltRepair','prodWsInstall','prodWsReset','prodWsRemoval',
+        'prodHC','prodArrow','prodStencil','prodCurb','prodAR_xs','prodAR_sm','prodAR_md','prodAR_lg','prodAR_xl','prodAR_xxl','maxAsphaltTons','prodWsInstall','prodWsReset','prodWsRemoval',
         'prodSpeedBump','prodBollard','prodSignPost','prodSignBollard','prodMastic',
         'prodInletRepair','prodInletRecon','prodSpeedHump','prodPaintRemoval',
         'crewCrackFill','crewSealcoat','crewStriping','crewAsphaltSmall','crewAsphaltLarge',
@@ -5026,7 +5092,18 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
 }
 
 // ===== INIT =====
-const CALC_VERSION = '4.2';
+const CALC_VERSION = '4.3';
+// v4.3: Asphalt patching production is now size-tiered (6 editable bands derived from 106
+//       historical patch records). Replaces the previous flat 600 SF/day. The 20-ton material
+//       constraint is implemented as a per-day tonnage FLOOR on days (not a rate clip), so
+//       one-load jobs run at the band's burst pace and only multi-load or deep-section jobs
+//       get stretched. Default band rates @2" surface: 150 / 375 / 600 / 825 / 1700 / 1450
+//       SF/day. The 601-1,200 band sits highest because those jobs fit in one triaxle load
+//       and one day; the >1,200 band drops to 1,450 because it crosses the multi-load wall.
+//       Cap default 20 tons/day, editable. New display rows: Size Tier, Effective Production,
+//       Daily Material Cap. Also fixed renderConcurrencyOptions to drop the broken
+//       'prodAsphalt' synergy reference (asphalt synergy now reads as no-op like striping).
+//
 // v4.2: Global travel time (single input, daily recurring per work day) + Concurrent cluster scheduling (toggle overlapping crews in calendar).
 //       Travel is now a single global input (hrs/day) instead of 12 per-activity inputs.
 //       Formula: travelCost = travelHrsPerDay × crewRate × workDays (charged daily).
