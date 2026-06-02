@@ -691,7 +691,7 @@
 <!-- Project Info -->
 <div class="project-info">
     <label>Project</label>
-    <input type="text" id="projectName" placeholder="Enter project name...">
+    <input type="text" id="projectName" placeholder="Enter project name..." oninput="calculateAll()">
 </div>
 
 <!-- Global Settings -->
@@ -4464,7 +4464,7 @@ function exportComprehensiveText() {
 
     L.push('MAINTENANCE DIVISION ESTIMATING CALCULATOR - FULL REPORT (v' + snap.meta.version + ')');
     L.push('='.repeat(W));
-    L.push('Project: ' + snap.meta.projectName);
+    L.push('Project: ' + (document.getElementById('projectName').value || snap.meta.projectName));
     L.push('Generated: ' + new Date().toLocaleString());
     L.push('');
 
@@ -4824,7 +4824,7 @@ function exportJSON() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = (snap.meta.projectName.replace(/[^a-zA-Z0-9]/g, '_') || 'estimate') + '_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = ((document.getElementById('projectName').value || snap.meta.projectName).replace(/[^a-zA-Z0-9]/g, '_') || 'estimate') + '_' + new Date().toISOString().slice(0, 10) + '.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -4838,7 +4838,7 @@ function printEstimate() {
     if (!snap) { showToast('Calculate first'); return; }
 
     const analysis = generateAnalysis(snap);
-    const proj = snap.meta.projectName || 'Unnamed Project';
+    const proj = document.getElementById('projectName').value || snap.meta.projectName || 'Unnamed Project';
     const W = 80;
 
     // Build clean HTML document
@@ -5197,6 +5197,20 @@ document.addEventListener('DOMContentLoaded', function() {
             settingsPanel.appendChild(warn);
         }
     }
+
+    // Global safety net: any input/select/textarea change refreshes the export
+    // snapshot. Many fields (Rate Config, reviewer notes, scope radios/notes)
+    // have no inline oninput handler, so without this they would not update
+    // window.lastCalcSnapshot and Print/Full/JSON exports would use stale data.
+    // Delegated on document so it also covers dynamically-rendered fields
+    // (scope checklist, concurrency checkboxes). 'input' fires on text/number
+    // typing; 'change' fires on radios, checkboxes, and selects.
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('input, textarea, select')) calculateAll();
+    });
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('input, select')) calculateAll();
+    });
 
     calculateAll();
 });
