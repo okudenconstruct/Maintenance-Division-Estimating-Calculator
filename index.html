@@ -675,7 +675,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v4.3 | Field-Calibrated | Size-Tiered Patching | Three-Tier Output | Crew Clustering | Estimate Confidence</span>
+            <span>v4.4 | Field-Calibrated | Size-Tiered Patching | Three-Tier Output | Crew Clustering | Estimate Confidence</span>
         </div>
     </div>
     <div class="header-controls">
@@ -727,7 +727,7 @@
         </div>
         <div class="setting-group">
             <label><span class="tip" data-tip="Applied to direct cost (labor + material) to calculate bid price.">Markup %</span></label>
-            <input type="number" id="markupPercent" value="60" step="1" oninput="calculateAll()">
+            <input type="number" id="markupPercent" value="60" step="1" oninput="syncMarkup(this); calculateAll();">
         </div>
         <div class="setting-group">
             <label><span class="tip" data-tip="ON groups co-deployed activities sharing equipment into one mobilization. OFF calculates each activity standalone.">Crew Clustering</span></label>
@@ -1060,7 +1060,7 @@
             <div class="input-group"><label>Signs in Bollard (qty)</label><input type="number" id="sg_bollard" placeholder="0" min="0" oninput="calculateAll()"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sg_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
         </div>
-        <p class="note">Post signs include small and large at blended rate of 32/day. Bollard signs include sign + bollard material costs.</p>
+        <p class="note">Post signs include small and large at blended rate of 30/day. Bollard signs include sign + bollard material costs.</p>
         <div class="output-section"><h5>Sign Output</h5><div id="sg_output"></div></div>
         <textarea id="note_sg" class="notes-box" placeholder="Reviewer notes for Signs..."></textarea>
     </div>
@@ -1427,7 +1427,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v4.3 | Field-Calibrated Production Rates | Size-Tiered Patching | Crew Clustering | Estimate Confidence | Calendar Duration<br>
+    Maintenance Division Estimating Calculator v4.4 | Field-Calibrated Production Rates | Size-Tiered Patching | Crew Clustering | Estimate Confidence | Calendar Duration<br>
     All rates subject to superintendent review.
 </div>
 
@@ -1910,14 +1910,21 @@ function renderTierTable(containerId, tierData, rate, matCost, extra, travelHrs,
         return;
     }
 
-    const { std } = tierData;
+    const t = tierData[COST_TIER] || tierData.std;
     const extraCost = extra || 0;
-    const laborCost = std.hours * rate;
+    const laborCost = t.hours * rate;
     const tvlCost = travelCost || 0;
     const tvlHrs = travelHrs || 0;
 
     let html = '';
-    html += `<div class="output-row"><span class="lbl">Crew Size</span><span class="val">${std.crew}</span></div>`;
+    // Flag non-standard tier so panel figures visibly match the Combined Cost Summary
+    if (COST_TIER !== 'std') {
+        const tierInfo = COST_TIER === 'cons'
+            ? ['Conservative (80% prod)', 'var(--accent-orange)']
+            : ['Aggressive (120% prod)', 'var(--accent-green)'];
+        html += `<div class="output-row" style="color:${tierInfo[1]};font-size:0.68rem;"><span class="lbl">Cost Tier</span><span class="val">${tierInfo[0]}</span></div>`;
+    }
+    html += `<div class="output-row"><span class="lbl">Crew Size</span><span class="val">${t.crew}</span></div>`;
     // Show crew rate adjustment indicator when crew size differs from base
     if (crewAdj && crewAdj.delta !== 0) {
         const sign = crewAdj.delta > 0 ? '+' : '';
@@ -1925,9 +1932,9 @@ function renderTierTable(containerId, tierData, rate, matCost, extra, travelHrs,
         const adjSign = adjAmt >= 0 ? '+' : '-';
         html += `<div class="output-row" style="color:#00bcd4;font-size:0.68rem;"><span class="lbl">↳ Rate adj: ${sign}${crewAdj.delta} laborer${Math.abs(crewAdj.delta) > 1 ? 's' : ''} × $${crewAdj.laborerRate.toFixed(2)}/hr</span><span class="val">${adjSign}$${Math.abs(adjAmt).toFixed(2)}/hr</span></div>`;
     }
-    html += `<div class="output-row"><span class="lbl">Shift Hours</span><span class="val">${std.hours.toFixed(1)}</span></div>`;
-    html += `<div class="output-row"><span class="lbl">Days</span><span class="val">${std.days}</span></div>`;
-    if (std.hustle) {
+    html += `<div class="output-row"><span class="lbl">Shift Hours</span><span class="val">${t.hours.toFixed(1)}</span></div>`;
+    html += `<div class="output-row"><span class="lbl">Days</span><span class="val">${t.days}</span></div>`;
+    if (t.hustle) {
         html += `<div class="output-row" style="color:#ffaa00;font-size:0.7rem;"><span class="lbl">&#9889; Crew can hustle to stay within shift</span><span class="val"></span></div>`;
     }
     if (tvlHrs > 0) {
@@ -1949,7 +1956,30 @@ function renderTierTable(containerId, tierData, rate, matCost, extra, travelHrs,
     el.innerHTML = html;
 }
 
-// ===== ASPHALT PRICE WARNING =====
+// ===== MISSING RATE / PRICE WARNINGS =====
+// Fields checked per activity when it is enabled with quantity entered.
+// gv() coerces empty/invalid inputs to 0, so a cleared crew rate or material
+// price would otherwise flow into the bid as a silent $0 cost line.
+const RATE_WARNING_CHECKS = [
+    { active: () => isOn('en_crackfill') && gv('cf_lf') > 0, fields: [['rateCrackFill', 'Crack Fill crew rate'], ['matCrackFill', 'crack fill material price']] },
+    { active: () => isOn('en_sealcoat') && gv('sc_sf') > 0, fields: [['rateSealcoat', 'Sealcoat crew rate'], ['matSealcoat', 'sealer price']] },
+    { active: () => isOn('en_striping') && ['st_4line', 'st_6line', 'st_12line', 'st_24bar', 'st_hc', 'st_arrow', 'st_stencil', 'st_curb'].some(id => gv(id) > 0), fields: [['rateStriping', 'Striping crew rate']] },
+    { active: () => isOn('en_asphalt') && gv('ar_sf') > 0, fields: [['rateAsphaltSmall', 'Asphalt crew rate (≤4T)'], ['rateAsphaltLarge', 'Asphalt crew rate (>4T)']] },
+    { active: () => isOn('en_mastic') && gv('ma_lf') > 0, fields: [['rateMastic', 'Mastic crew rate'], ['matMasticBox', 'mastic box price'], ['matMasticMachine', 'mastic machine rate']] },
+    { active: () => isOn('en_wheelstop') && gv('ws_new') > 0, fields: [['rateWsInstall', 'WS install crew rate'], ['matWsNew', 'wheel stop price']] },
+    { active: () => isOn('en_wheelstop') && gv('ws_reset') > 0, fields: [['rateWsReset', 'WS reset crew rate']] },
+    { active: () => isOn('en_wheelstop') && gv('ws_remove') > 0, fields: [['rateWsRemove', 'WS removal crew rate']] },
+    { active: () => isOn('en_sign') && (gv('sg_post') > 0 || gv('sg_bollard') > 0), fields: [['rateSign', 'Sign crew rate'], ['prodSignPost', 'Signs-Post production rate']] },
+    { active: () => isOn('en_sign') && gv('sg_post') > 0, fields: [['matSignSmall', 'small sign price']] },
+    { active: () => isOn('en_sign') && gv('sg_bollard') > 0, fields: [['matSignLarge', 'large sign price'], ['matBollard', 'bollard price'], ['prodSignBollard', 'Signs-Bollard production rate']] },
+    { active: () => isOn('en_bollard') && gv('bo_qty') > 0, fields: [['rateBollard', 'Bollard crew rate'], ['matBollard', 'bollard price'], ['prodBollard', 'Bollard production rate']] },
+    { active: () => isOn('en_speedbump') && gv('sb_qty') > 0, fields: [['rateSpeedBump', 'Speed bump crew rate'], ['matSpeedBump', 'speed bump price']] },
+    { active: () => isOn('en_speedhump') && gv('sh_qty') > 0, fields: [['rateSpeedHump', 'Speed hump crew rate']] },
+    { active: () => isOn('en_inlet') && (gv('in_repair') > 0 || gv('in_recon') > 0), fields: [['rateInlet', 'Inlet crew rate'], ['matBlock', 'block & mortar price']] },
+    { active: () => isOn('en_inlet') && gv('in_casting') > 0, fields: [['matCasting', 'casting price']] },
+    { active: () => isOn('en_paintremoval') && gv('pr_lf') > 0, fields: [['rateStriping', 'Striping crew rate (paint removal)'], ['matPaintRemoval', 'grinder rental rate']] }
+];
+
 function checkAsphaltPrices() {
     const warn = document.getElementById('asphaltWarning');
     if (!warn) return;
@@ -1971,8 +2001,17 @@ function checkAsphaltPrices() {
         if (!warnings.some(w => w.includes('9.5mm'))) warnings.push('9.5mm asphalt price is empty (speed humps)');
     }
 
+    // General sweep: active activities with quantity but empty/zero rate or price fields
+    RATE_WARNING_CHECKS.forEach(chk => {
+        if (!chk.active()) return;
+        chk.fields.forEach(([id, label]) => {
+            const msg = label + ' is empty';
+            if (gv(id) <= 0 && !warnings.includes(msg)) warnings.push(msg);
+        });
+    });
+
     if (warnings.length > 0) {
-        warn.innerHTML = '&#9888; ' + warnings.join(' &#8226; ') + '. Affected material costs will be $0.';
+        warn.innerHTML = '&#9888; ' + warnings.join(' &#8226; ') + '. Affected costs will be $0 or wrong.';
         warn.style.display = 'block';
     } else {
         warn.style.display = 'none';
@@ -2501,7 +2540,7 @@ function calculateAll() {
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.sign);
         const travel = globalTravel;
         const sgSynMult = getSynergyMultiplier('signs');
-        const baseProdPost = gv('prodSignPost');
+        const baseProdPost = Math.max(gv('prodSignPost'), 0.01);
         const baseProdBoll = Math.max(gv('prodSignBollard'), 0.01);
         const prodPost = baseProdPost * sgSynMult;
         const prodBoll = baseProdBoll * sgSynMult;
@@ -3739,48 +3778,56 @@ function saveRates() {
     showToast('Rates saved locally!');
 }
 
+// Shared restore: apply a saved rates object to the form and app state.
+// Used by loadRates() and the DOMContentLoaded auto-restore so the two
+// paths cannot drift. Keys whose element no longer exists are skipped.
+function applyRatesData(data) {
+    Object.keys(data).forEach(key => {
+        if (key === '_version' || key === 'concurrentGroups' || key === 'concurrentSynergy' || key === 'costTier') return;
+        // Scope radio states (scope notes fall through to the generic id lookup)
+        if (key.startsWith('scope_') && !key.startsWith('scope_note_')) {
+            const radio = document.getElementById(key + '_' + data[key]);
+            if (radio) radio.checked = true;
+            return;
+        }
+        const el = document.getElementById(key);
+        if (el) el.value = data[key];
+    });
+    // Restore concurrent scheduling groups, synergy, and cost tier
+    if (Array.isArray(data.concurrentGroups)) {
+        CONCURRENT_GROUPS = data.concurrentGroups;
+    }
+    if (typeof data.concurrentSynergy === 'number') {
+        CONCURRENT_SYNERGY = Math.min(25, Math.max(0, data.concurrentSynergy));
+        const synInput = document.getElementById('concurrentSynergy');
+        if (synInput) synInput.value = CONCURRENT_SYNERGY;
+    }
+    if (data.costTier && ['cons','std','agg'].includes(data.costTier)) {
+        setCostTier(data.costTier);
+    }
+    // Update sealcoat method note to match loaded selection
+    const scNote = document.getElementById('sc_methodNote');
+    const scCfg = SEALCOAT_METHODS[document.getElementById('sc_method').value];
+    if (scNote && scCfg) scNote.textContent = scCfg.note;
+}
+
 function loadRates() {
     const saved = localStorage.getItem('maintCalcRates');
-    if (saved) {
-        const data = JSON.parse(saved);
-        Object.keys(data).forEach(key => {
-            if (key === '_version') return;
-            // Scope radio states
-            if (key.startsWith('scope_') && !key.startsWith('scope_note_')) {
-                const radio = document.getElementById(key + '_' + data[key]);
-                if (radio) radio.checked = true;
-                return;
-            }
-            // Scope notes
-            if (key.startsWith('scope_note_')) {
-                const el = document.getElementById(key);
-                if (el) el.value = data[key];
-                return;
-            }
-            const el = document.getElementById(key);
-            if (el) el.value = data[key];
-        });
-        // Restore concurrent scheduling groups, synergy, and cost tier
-        if (Array.isArray(data.concurrentGroups)) {
-            CONCURRENT_GROUPS = data.concurrentGroups;
-        }
-        if (typeof data.concurrentSynergy === 'number') {
-            CONCURRENT_SYNERGY = Math.min(25, Math.max(0, data.concurrentSynergy));
-            const synInput = document.getElementById('concurrentSynergy');
-            if (synInput) synInput.value = CONCURRENT_SYNERGY;
-        }
-        if (data.costTier && ['cons','std','agg'].includes(data.costTier)) {
-            setCostTier(data.costTier);
-        }
-        // Update sealcoat method note to match loaded selection
-        const scNote = document.getElementById('sc_methodNote');
-        const scCfg = SEALCOAT_METHODS[document.getElementById('sc_method').value];
-        if (scNote && scCfg) scNote.textContent = scCfg.note;
-        showToast('Rates loaded!');
-        calculateAll();
-    } else {
+    if (!saved) {
         showToast('No saved rates found');
+        return;
     }
+    let data;
+    try {
+        data = JSON.parse(saved);
+    } catch (e) {
+        localStorage.removeItem('maintCalcRates');
+        showToast('Saved rates were corrupted — cleared. Current values unchanged.');
+        return;
+    }
+    applyRatesData(data);
+    showToast('Rates loaded!');
+    calculateAll();
 }
 
 function clearSavedRates() {
@@ -5092,7 +5139,24 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
 }
 
 // ===== INIT =====
-const CALC_VERSION = '4.3';
+const CALC_VERSION = '4.4';
+// Keys intentionally recalibrated in this release. On version migration these
+// are dropped from the user's saved rates so the new field-calibrated defaults
+// apply; all other saved values are preserved.
+const MIGRATION_RESET_KEYS = ['prodBollard', 'prodSignPost', 'prodSignBollard'];
+// v4.4: Code-review fixes. (1) prodSignPost now zero-guarded — previously a cleared/zero
+//       post-sign rate silently dropped ALL bollard-sign hours to zero. (2) Work-type output
+//       panels now display the selected cost tier (Cons/Std/Agg) with a tier label, matching
+//       the Combined Cost Summary instead of always showing Standard while travel used the
+//       selected tier. (3) Header markup input now syncs to the summary markup input.
+//       (4) Missing rate/price sweep: warning banner lists any active activity with quantity
+//       whose crew rate or material price is empty/zero (previously silent $0 cost lines;
+//       asphalt prices were the only fields checked). (5) localStorage restore wrapped in
+//       try/catch — a corrupted save no longer blocks app init. (6) Version bumps now MIGRATE
+//       saved rates (backup old blob, preserve user values, re-default MIGRATION_RESET_KEYS)
+//       instead of wiping everything. (7) Sign panel note corrected 32/day → 30/day (rates
+//       updated 7/9/26 per Darrell Bishop email: bollards 6/day, post signs 30/day, bollard
+//       signs 5/day additive). Restore logic deduplicated into applyRatesData().
 // v4.3: Asphalt patching production is now size-tiered (6 editable bands derived from 106
 //       historical patch records). Replaces the previous flat 600 SF/day. The 20-ton material
 //       constraint is implemented as a per-day tonnage FLOOR on days (not a rate clip), so
@@ -5145,44 +5209,27 @@ document.addEventListener('DOMContentLoaded', function() {
     renderScopeChecklist();
     const saved = localStorage.getItem('maintCalcRates');
     if (saved) {
-        const data = JSON.parse(saved);
-        if (data._version !== CALC_VERSION) {
+        let data = null;
+        try {
+            data = JSON.parse(saved);
+        } catch (e) {
             localStorage.removeItem('maintCalcRates');
-            showToast('Rates reset to v' + CALC_VERSION + ' defaults (previous version cleared)');
-        } else {
-            Object.keys(data).forEach(key => {
-                if (key === '_version') return;
-                // Scope radio states
-                if (key.startsWith('scope_') && !key.startsWith('scope_note_')) {
-                    const radio = document.getElementById(key + '_' + data[key]);
-                    if (radio) radio.checked = true;
-                    return;
-                }
-                // Scope notes
-                if (key.startsWith('scope_note_')) {
-                    const el = document.getElementById(key);
-                    if (el) el.value = data[key];
-                    return;
-                }
-                const el = document.getElementById(key);
-                if (el) el.value = data[key];
-            });
-            // Restore concurrent scheduling groups, synergy, and cost tier
-            if (Array.isArray(data.concurrentGroups)) {
-                CONCURRENT_GROUPS = data.concurrentGroups;
+            showToast('Saved rates were corrupted — reset to v' + CALC_VERSION + ' defaults');
+        }
+        if (data) {
+            if (data._version !== CALC_VERSION) {
+                // Migrate saved rates instead of wiping: back up the old blob,
+                // keep user-saved values for fields that still exist, and drop
+                // keys intentionally recalibrated this release so new defaults apply.
+                localStorage.setItem('maintCalcRates_backup_v' + (data._version || 'unknown'), saved);
+                MIGRATION_RESET_KEYS.forEach(k => delete data[k]);
+                data._version = CALC_VERSION;
+                localStorage.setItem('maintCalcRates', JSON.stringify(data));
+                applyRatesData(data);
+                showToast('Saved rates migrated to v' + CALC_VERSION + ' (recalibrated fields reset to new defaults — review Rate Config)');
+            } else {
+                applyRatesData(data);
             }
-            if (typeof data.concurrentSynergy === 'number') {
-                CONCURRENT_SYNERGY = Math.min(25, Math.max(0, data.concurrentSynergy));
-                const synInput = document.getElementById('concurrentSynergy');
-                if (synInput) synInput.value = CONCURRENT_SYNERGY;
-            }
-            if (data.costTier && ['cons','std','agg'].includes(data.costTier)) {
-                setCostTier(data.costTier);
-            }
-            // Update sealcoat method note to match loaded selection
-            const scNote = document.getElementById('sc_methodNote');
-            const scCfg = SEALCOAT_METHODS[document.getElementById('sc_method').value];
-            if (scNote && scCfg) scNote.textContent = scCfg.note;
         }
     }
 
