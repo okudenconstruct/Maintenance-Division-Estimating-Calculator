@@ -24,6 +24,10 @@ You enter quantities, phases, and travel time. It returns crew sizes and duratio
 
 No server, no install, no dependencies beyond Google Fonts.
 
+**Before committing changes to `index.html`:** run `node tests/run-tests.js` —
+golden-master regression tests that catch any unintended change to calculation
+output. See [tests/README.md](tests/README.md).
+
 ---
 
 ## v4.0 Features

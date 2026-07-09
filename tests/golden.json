@@ -1,0 +1,644 @@
+{
+  "signs-bollard-6 (email worked example)": {
+    "activities": {
+      "signs": {
+        "tiers": {
+          "cons": {
+            "hours": 12,
+            "days": 2
+          },
+          "std": {
+            "hours": 10,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 6187.3,
+        "material": 2580
+      }
+    },
+    "summary": {
+      "totalLabor": 3607.3,
+      "totalMat": 2580,
+      "directCost": 6187.3,
+      "bidPrice": 9899.68
+    }
+  },
+  "bollards-6 (email worked example)": {
+    "activities": {
+      "bollards": {
+        "tiers": {
+          "cons": {
+            "hours": 10,
+            "days": 1
+          },
+          "std": {
+            "hours": 8,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 4445.84,
+        "material": 1560
+      }
+    },
+    "summary": {
+      "totalLabor": 2885.84,
+      "totalMat": 1560,
+      "directCost": 4445.84,
+      "bidPrice": 7113.34
+    }
+  },
+  "signs-post-6": {
+    "activities": {
+      "signs": {
+        "tiers": {
+          "cons": {
+            "hours": 4,
+            "days": 1
+          },
+          "std": {
+            "hours": 4,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 2102.92,
+        "material": 660
+      }
+    },
+    "summary": {
+      "totalLabor": 1442.92,
+      "totalMat": 660,
+      "directCost": 2102.92,
+      "bidPrice": 3364.67
+    }
+  },
+  "signs-mixed-10post-4bollard": {
+    "activities": {
+      "signs": {
+        "tiers": {
+          "cons": {
+            "hours": 12,
+            "days": 2
+          },
+          "std": {
+            "hours": 10,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 6427.3,
+        "material": 2820
+      }
+    },
+    "summary": {
+      "totalLabor": 3607.3,
+      "totalMat": 2820,
+      "directCost": 6427.3,
+      "bidPrice": 10283.68
+    }
+  },
+  "signs-prodSignPost-zero-guard": {
+    "activities": {
+      "signs": {
+        "tiers": {
+          "cons": {
+            "hours": 10,
+            "days": 1
+          },
+          "std": {
+            "hours": 10,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 6187.3,
+        "material": 2580
+      }
+    },
+    "summary": {
+      "totalLabor": 3607.3,
+      "totalMat": 2580,
+      "directCost": 6187.3,
+      "bidPrice": 9899.68
+    }
+  },
+  "crackfill-4000": {
+    "activities": {
+      "crackFill": {
+        "tiers": {
+          "cons": {
+            "hours": 10,
+            "days": 1
+          },
+          "std": {
+            "hours": 8,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 2590.72,
+        "material": 836
+      }
+    },
+    "summary": {
+      "totalLabor": 1754.72,
+      "totalMat": 836,
+      "directCost": 2590.72,
+      "bidPrice": 4145.15
+    }
+  },
+  "crackfill-6000-2phase-travel1h": {
+    "activities": {
+      "crackFill": {
+        "tiers": {
+          "cons": {
+            "hours": 16,
+            "days": 2
+          },
+          "std": {
+            "hours": 12,
+            "days": 2
+          },
+          "agg": {
+            "hours": 12,
+            "days": 2
+          }
+        },
+        "total": 4324.76,
+        "material": 1254
+      }
+    },
+    "summary": {
+      "totalLabor": 3070.76,
+      "totalMat": 1254,
+      "directCost": 4324.76,
+      "bidPrice": 6919.62
+    }
+  },
+  "sealcoat-52000": {
+    "activities": {
+      "sealcoat": {
+        "tiers": {
+          "cons": {
+            "hours": 10,
+            "days": 1
+          },
+          "std": {
+            "hours": 8,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 5788.32,
+        "material": 3822
+      }
+    },
+    "summary": {
+      "totalLabor": 1966.32,
+      "totalMat": 3822,
+      "directCost": 5788.32,
+      "bidPrice": 9261.31
+    }
+  },
+  "asphalt-500sf-2s": {
+    "activities": {
+      "asphaltRepair": {
+        "tiers": {
+          "cons": {
+            "hours": 8,
+            "days": 1
+          },
+          "std": {
+            "hours": 6,
+            "days": 1
+          },
+          "agg": {
+            "hours": 6,
+            "days": 1
+          }
+        },
+        "total": 3925.6,
+        "material": 595
+      }
+    },
+    "summary": {
+      "totalLabor": 3330.6,
+      "totalMat": 595,
+      "directCost": 3925.6,
+      "bidPrice": 6280.96
+    }
+  },
+  "asphalt-3000sf-2s4b-multiload": {
+    "activities": {
+      "asphaltRepair": {
+        "tiers": {
+          "cons": {
+            "hours": 22,
+            "days": 3
+          },
+          "std": {
+            "hours": 18,
+            "days": 3
+          },
+          "agg": {
+            "hours": 18,
+            "days": 3
+          }
+        },
+        "total": 13561.8,
+        "material": 3570
+      }
+    },
+    "summary": {
+      "totalLabor": 9991.8,
+      "totalMat": 3570,
+      "directCost": 13561.8,
+      "bidPrice": 21698.88
+    }
+  },
+  "asphalt-100sf-4s-depthmult": {
+    "activities": {
+      "asphaltRepair": {
+        "tiers": {
+          "cons": {
+            "hours": 4,
+            "days": 1
+          },
+          "std": {
+            "hours": 4,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 1660.4,
+        "material": 255
+      }
+    },
+    "summary": {
+      "totalLabor": 1405.4,
+      "totalMat": 255,
+      "directCost": 1660.4,
+      "bidPrice": 2656.64
+    }
+  },
+  "striping-mix": {
+    "activities": {
+      "striping": {
+        "tiers": {
+          "cons": {
+            "hours": 16,
+            "days": 2
+          },
+          "std": {
+            "hours": 14,
+            "days": 2
+          },
+          "agg": {
+            "hours": 12,
+            "days": 2
+          }
+        },
+        "total": 4465.3,
+        "material": 1024.8
+      }
+    },
+    "summary": {
+      "totalLabor": 3440.5,
+      "totalMat": 1024.8,
+      "directCost": 4465.3,
+      "bidPrice": 7144.48
+    }
+  },
+  "wheelstops-20new-10reset-10remove": {
+    "activities": {
+      "wheelStops": {
+        "tiers": {
+          "cons": {
+            "hours": 4,
+            "days": 1
+          },
+          "std": {
+            "hours": 4,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 2221.03,
+        "material": 1306.7
+      }
+    },
+    "summary": {
+      "totalLabor": 914.33,
+      "totalMat": 1306.7,
+      "directCost": 2221.03,
+      "bidPrice": 3553.65
+    }
+  },
+  "mastic-1000lf": {
+    "activities": {
+      "mastic": {
+        "tiers": {
+          "cons": {
+            "hours": 10,
+            "days": 1
+          },
+          "std": {
+            "hours": 8,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 3386.5,
+        "material": 319.9
+      }
+    },
+    "summary": {
+      "totalLabor": 2480.16,
+      "totalMat": 906.34,
+      "directCost": 3386.5,
+      "bidPrice": 5418.4
+    }
+  },
+  "speedbumps-4": {
+    "activities": {
+      "speedBumps": {
+        "tiers": {
+          "cons": {
+            "hours": 4,
+            "days": 1
+          },
+          "std": {
+            "hours": 4,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 3317.08,
+        "material": 2240
+      }
+    },
+    "summary": {
+      "totalLabor": 1077.08,
+      "totalMat": 2240,
+      "directCost": 3317.08,
+      "bidPrice": 5307.33
+    }
+  },
+  "speedhumps-3": {
+    "activities": {
+      "speedHumps": {
+        "tiers": {
+          "cons": {
+            "hours": 8,
+            "days": 1
+          },
+          "std": {
+            "hours": 6,
+            "days": 1
+          },
+          "agg": {
+            "hours": 6,
+            "days": 1
+          }
+        },
+        "total": 3679.12,
+        "material": 595
+      }
+    },
+    "summary": {
+      "totalLabor": 3084.12,
+      "totalMat": 595,
+      "directCost": 3679.12,
+      "bidPrice": 5886.59
+    }
+  },
+  "inlet-2repair-1recon-1casting": {
+    "activities": {
+      "inletRepair": {
+        "tiers": {
+          "cons": {
+            "hours": 14,
+            "days": 2
+          },
+          "std": {
+            "hours": 12,
+            "days": 2
+          },
+          "agg": {
+            "hours": 10,
+            "days": 1
+          }
+        },
+        "total": 4314.84,
+        "material": 750
+      }
+    },
+    "summary": {
+      "totalLabor": 3564.84,
+      "totalMat": 750,
+      "directCost": 4314.84,
+      "bidPrice": 6903.74
+    }
+  },
+  "paintremoval-2000lf": {
+    "activities": {
+      "paintRemoval": {
+        "tiers": {
+          "cons": {
+            "hours": 10,
+            "days": 1
+          },
+          "std": {
+            "hours": 8,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 2616,
+        "material": 0
+      }
+    },
+    "summary": {
+      "totalLabor": 1966,
+      "totalMat": 650,
+      "directCost": 2616,
+      "bidPrice": 4185.6
+    }
+  },
+  "heavy-cluster-multiactivity": {
+    "activities": {
+      "asphaltRepair": {
+        "tiers": {
+          "cons": {
+            "hours": 6,
+            "days": 1
+          },
+          "std": {
+            "hours": 4,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 2730.4,
+        "material": 510
+      },
+      "wheelStops": {
+        "tiers": {
+          "cons": {
+            "hours": 4,
+            "days": 1
+          },
+          "std": {
+            "hours": 4,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 1597.96,
+        "material": 550
+      },
+      "signs": {
+        "tiers": {
+          "cons": {
+            "hours": 6,
+            "days": 1
+          },
+          "std": {
+            "hours": 6,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 3454.38,
+        "material": 1290
+      },
+      "bollards": {
+        "tiers": {
+          "cons": {
+            "hours": 4,
+            "days": 1
+          },
+          "std": {
+            "hours": 4,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 1962.92,
+        "material": 520
+      }
+    },
+    "summary": {
+      "totalLabor": 6875.66,
+      "totalMat": 2870,
+      "directCost": 9745.66,
+      "bidPrice": 15593.06
+    }
+  },
+  "signs-bollard-6-cons-tier": {
+    "activities": {
+      "signs": {
+        "tiers": {
+          "cons": {
+            "hours": 12,
+            "days": 2
+          },
+          "std": {
+            "hours": 10,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 6908.76,
+        "material": 2580
+      }
+    },
+    "summary": {
+      "totalLabor": 4328.76,
+      "totalMat": 2580,
+      "directCost": 6908.76,
+      "bidPrice": 11054.02
+    }
+  },
+  "signs-bollard-6-agg-tier": {
+    "activities": {
+      "signs": {
+        "tiers": {
+          "cons": {
+            "hours": 12,
+            "days": 2
+          },
+          "std": {
+            "hours": 10,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 5465.84,
+        "material": 2580
+      }
+    },
+    "summary": {
+      "totalLabor": 2885.84,
+      "totalMat": 2580,
+      "directCost": 5465.84,
+      "bidPrice": 8745.34
+    }
+  }
+}
