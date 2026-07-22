@@ -758,25 +758,38 @@
     <div class="panel-content" id="rateContent">
         <div class="rate-grid">
             <div class="rate-section">
-                <h4><span class="tip" data-tip="All-in hourly cost including labor, equipment, and vehicle.">Crew Hourly Rates (Equip + Labor)</span></h4>
-                <div class="rate-row" style="border-bottom:1px solid var(--border-color); padding-bottom:0.4rem; margin-bottom:0.4rem;">
-                    <label><span class="tip" data-tip="Loaded hourly rate for each additional laborer above base crew size (AAS Paint Labor: $26.30 base + 14.19% tax + $8.99 fringe = $39.03). Used to adjust crew rates when crew size differs from the calibrated default.">Laborer Adjustment Rate</span></label>
-                    <input type="number" id="rateLaborerAdj" value="39.03" step="0.01">
+                <h4><span class="tip" data-tip="Labor wage table mirroring the bid system. Loaded $/MH = base x (1 + tax%) x (1 + WC%) + fringe. Every crew is 1 Foreman + (N-1) General Laborers.">Labor &amp; Wage Mode</span></h4>
+                <div class="rate-row" style="background:var(--bg-secondary); padding:0.4rem 0.5rem; border-radius:4px; margin-bottom:0.5rem;">
+                    <label style="font-weight:700; color:var(--accent-orange);"><span class="tip" data-tip="ON = prevailing wage. Swaps every crew's labor content to the PW wage table. Equipment and material are unchanged.">Prevailing Wage (PW)</span></label>
+                    <input type="checkbox" id="pwMode" onchange="calculateAll()" style="width:auto; accent-color:var(--accent-orange);">
                 </div>
-                <div class="rate-row"><label>Crack Fill Crew</label><input type="number" id="rateCrackFill" value="219.34" step="0.01"></div>
-                <div class="rate-row"><label>Sealcoat Crew</label><input type="number" id="rateSealcoat" value="245.79" step="0.01"></div>
-                <div class="rate-row"><label>Striping Crew</label><input type="number" id="rateStriping" value="245.75" step="0.01"></div>
-                <div class="rate-row"><label>Asphalt Repair (≤4T)</label><input type="number" id="rateAsphaltSmall" value="351.35" step="0.01"></div>
-                <div class="rate-row"><label>Asphalt Repair (>4T)</label><input type="number" id="rateAsphaltLarge" value="555.10" step="0.01"></div>
-                <div class="rate-row"><label>Wheel Stop Install</label><input type="number" id="rateWsInstall" value="261.99" step="0.01"></div>
-                <div class="rate-row"><label>Wheel Stop Reset</label><input type="number" id="rateWsReset" value="133.40" step="0.01"></div>
-                <div class="rate-row"><label>Wheel Stop Removal</label><input type="number" id="rateWsRemove" value="179.94" step="0.01"></div>
-                <div class="rate-row"><label>Rubber Speed Bump</label><input type="number" id="rateSpeedBump" value="269.27" step="0.01"></div>
-                <div class="rate-row"><label>Bollard Crew</label><input type="number" id="rateBollard" value="360.73" step="0.01"></div>
-                <div class="rate-row"><label>Sign Crew</label><input type="number" id="rateSign" value="360.73" step="0.01"></div>
-                <div class="rate-row"><label>Mastic Crew (excl machine)</label><input type="number" id="rateMastic" value="310.02" step="0.01"></div>
-                <div class="rate-row"><label>Inlet Crew</label><input type="number" id="rateInlet" value="297.07" step="0.01"></div>
-                <div class="rate-row"><label>Speed Hump Crew</label><input type="number" id="rateSpeedHump" value="514.02" step="0.01"></div>
+                <div class="rate-row"><label>Foreman base ($/MH)</label><input type="number" id="wageForemanBase" value="52.50" step="0.01"></div>
+                <div class="rate-row"><label>Foreman fringe ($/MH)</label><input type="number" id="wageForemanFringe" value="10.50" step="0.01"></div>
+                <div class="rate-row"><label>Laborer base ($/MH)</label><input type="number" id="wageLaborerBase" value="37.50" step="0.01"></div>
+                <div class="rate-row"><label>Laborer fringe ($/MH)</label><input type="number" id="wageLaborerFringe" value="5.50" step="0.01"></div>
+                <div class="rate-row"><label>Payroll tax (%)</label><input type="number" id="wageTaxPct" value="16.5" step="0.01"></div>
+                <div class="rate-row"><label><span class="tip" data-tip="Workers' comp loading (NJ5500), applied on top of payroll tax. Derived from the bid system actuals: reconciles both the 16.5% standard and 18.5% PW jobs at ~6.93%.">Workers' comp (%)</span></label><input type="number" id="wageWcPct" value="6.93" step="0.01"></div>
+                <div class="rate-row"><label><span class="tip" data-tip="NJ sales tax applied to all material costs. the bid system shows this as the 106.625 Tax/OT factor on material lines.">Sales tax on material (%)</span></label><input type="number" id="salesTaxPct" value="6.625" step="0.001"></div>
+                <div class="rate-row" style="border-top:1px solid var(--border-color); padding-top:0.4rem; margin-top:0.4rem;">
+                    <label><span class="tip" data-tip="Derived, not editable. Straight-time loaded cost of one added/removed General Laborer at the active wage mode. Used when crew size differs from base.">Laborer adj (derived)</span></label>
+                    <input type="number" id="rateLaborerAdj" value="52.22" step="0.01" readonly style="opacity:0.65;">
+                </div>
+                <p class="note" id="wageNote" style="margin-top:0.4rem;"></p>
+                <h4 style="margin-top:0.9rem;"><span class="tip" data-tip="Work-hours-only rate: crew labor at standard wage + equipment. Travel is billed separately as labor-only manhours at 1.5x.">Crew Hourly Rates (Equip + Labor)</span></h4>
+                <div class="rate-row"><label>Crack Fill Crew</label><input type="number" id="rateCrackFill" value="232.33" step="0.01"></div>
+                <div class="rate-row"><label>Sealcoat Crew</label><input type="number" id="rateSealcoat" value="304.55" step="0.01"></div>
+                <div class="rate-row"><label>Striping Crew</label><input type="number" id="rateStriping" value="225.33" step="0.01"></div>
+                <div class="rate-row"><label>Asphalt Repair (≤4T)</label><input type="number" id="rateAsphaltSmall" value="390.30" step="0.01"></div>
+                <div class="rate-row"><label>Asphalt Repair (>4T)</label><input type="number" id="rateAsphaltLarge" value="489.05" step="0.01"></div>
+                <div class="rate-row"><label>Wheel Stop Install</label><input type="number" id="rateWsInstall" value="214.00" step="0.01"></div>
+                <div class="rate-row"><label>Wheel Stop Reset</label><input type="number" id="rateWsReset" value="214.00" step="0.01"></div>
+                <div class="rate-row"><label>Wheel Stop Removal</label><input type="number" id="rateWsRemove" value="214.00" step="0.01"></div>
+                <div class="rate-row"><label>Rubber Speed Bump</label><input type="number" id="rateSpeedBump" value="214.00" step="0.01"></div>
+                <div class="rate-row"><label>Bollard Crew</label><input type="number" id="rateBollard" value="214.00" step="0.01"></div>
+                <div class="rate-row"><label>Sign Crew</label><input type="number" id="rateSign" value="214.00" step="0.01"></div>
+                <div class="rate-row"><label>Mastic Crew (excl machine)</label><input type="number" id="rateMastic" value="212.33" step="0.01"></div>
+                <div class="rate-row"><label>Inlet Crew</label><input type="number" id="rateInlet" value="307.55" step="0.01"></div>
+                <div class="rate-row"><label>Speed Hump Crew</label><input type="number" id="rateSpeedHump" value="489.05" step="0.01"></div>
             </div>
             <div class="rate-section">
                 <h4>Material Unit Costs</h4>
@@ -797,7 +810,7 @@
                 <div class="rate-row"><label>Bollard ($/UN)</label><input type="number" id="matBollard" value="260.00" step="0.01"></div>
                 <div class="rate-row"><label>Small Sign ($/UN)</label><input type="number" id="matSignSmall" value="110.00" step="0.01"></div>
                 <div class="rate-row"><label>Large Sign ($/UN)</label><input type="number" id="matSignLarge" value="170.00" step="0.01"></div>
-                <div class="rate-row"><label>Mastic Box 30lb ($/box incl tax)</label><input type="number" id="matMasticBox" value="31.99" step="0.01"></div>
+                <div class="rate-row"><label>Mastic Box 30lb ($/box, pre-tax)</label><input type="number" id="matMasticBox" value="30.00" step="0.01"></div>
                 <div class="rate-row"><label>Mastic Machine ($/DAY incl tax)</label><input type="number" id="matMasticMachine" value="586.44" step="0.01"></div>
                 <div class="rate-row"><label>Block & Mortar ($/UN)</label><input type="number" id="matBlock" value="150.00" step="0.01"></div>
                 <div class="rate-row"><label>Casting ($/EA)</label><input type="number" id="matCasting" value="300.00" step="0.01"></div>
@@ -841,25 +854,25 @@
                 <h4>Default Crew Sizes</h4>
                 <div class="rate-row"><label>Crack Fill</label><input type="number" id="crewCrackFill" value="3" min="2" max="5"></div>
                 <div class="rate-row"><label>Sealcoat</label><input type="number" id="crewSealcoat" value="4" min="2" max="8"></div>
-                <div class="rate-row"><label>Striping</label><input type="number" id="crewStriping" value="4" min="2" max="5"></div>
+                <div class="rate-row"><label>Striping</label><input type="number" id="crewStriping" value="3" min="2" max="5"></div>
                 <div class="rate-row"><label>Asphalt Repair (≤4T)</label><input type="number" id="crewAsphaltSmall" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Asphalt Repair (>4T)</label><input type="number" id="crewAsphaltLarge" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Wheel Stop Install</label><input type="number" id="crewWsInstall" value="3" min="2" max="5"></div>
                 <div class="rate-row"><label>Rubber Speed Bump</label><input type="number" id="crewSpeedBump" value="3" min="2" max="5"></div>
-                <div class="rate-row"><label>Bollard</label><input type="number" id="crewBollard" value="4" min="2" max="5"></div>
-                <div class="rate-row"><label>Sign</label><input type="number" id="crewSign" value="4" min="2" max="5"></div>
-                <div class="rate-row"><label>Mastic</label><input type="number" id="crewMastic" value="4" min="2" max="6"></div>
+                <div class="rate-row"><label>Bollard</label><input type="number" id="crewBollard" value="3" min="2" max="5"></div>
+                <div class="rate-row"><label>Sign</label><input type="number" id="crewSign" value="3" min="2" max="5"></div>
+                <div class="rate-row"><label>Mastic</label><input type="number" id="crewMastic" value="3" min="2" max="6"></div>
                 <div class="rate-row"><label>Inlet</label><input type="number" id="crewInlet" value="4" min="2" max="5"></div>
                 <div class="rate-row"><label>Speed Hump</label><input type="number" id="crewSpeedHump" value="4" min="2" max="5"></div>
             </div>
             <div class="rate-section">
                 <h4><span class="tip" data-tip="Extra material ordered beyond calculated qty. Accounts for spillage, overspray, and cut waste.">Material Waste Factors (%)</span></h4>
                 <p style="font-size:0.65rem; color:var(--text-muted); margin-bottom:0.5rem;">Applied to material quantities before costing. Discrete items (wheel stops, signs, etc.) do not need waste.</p>
-                <div class="rate-row"><label>Crack Fill</label><input type="number" id="wasteCrackFill" value="10" min="0" step="1"> %</div>
-                <div class="rate-row"><label>Sealcoat</label><input type="number" id="wasteSealcoat" value="5" min="0" step="1"> %</div>
-                <div class="rate-row"><label>Striping Paint</label><input type="number" id="wasteStriping" value="5" min="0" step="1"> %</div>
+                <div class="rate-row"><label>Crack Fill</label><input type="number" id="wasteCrackFill" value="0" min="0" step="1"> %</div>
+                <div class="rate-row"><label>Sealcoat</label><input type="number" id="wasteSealcoat" value="0" min="0" step="1"> %</div>
+                <div class="rate-row"><label>Striping Paint</label><input type="number" id="wasteStriping" value="0" min="0" step="1"> %</div>
                 <div class="rate-row"><label>Asphalt / DGA</label><input type="number" id="wasteAsphalt" value="7" min="0" step="1"> %</div>
-                <div class="rate-row"><label>Mastic</label><input type="number" id="wasteMastic" value="10" min="0" step="1"> %</div>
+                <div class="rate-row"><label>Mastic</label><input type="number" id="wasteMastic" value="0" min="0" step="1"> %</div>
                 <div class="rate-row"><label>Speed Hump Asphalt</label><input type="number" id="wasteSpeedHump" value="5" min="0" step="1"> %</div>
             </div>
         </div>
@@ -1717,17 +1730,87 @@ function applySealcoatMethod() {
 const BASE_CREW_SIZES = {
     crackFill:    3,
     sealcoat:     4,  // dynamic — overridden by SEALCOAT_METHODS based on sc_method
-    striping:     4,
+    striping:     3,   // 1F+2L (the bid system Paint Crew)
     asphaltSmall: 4,
     asphaltLarge: 4,
     wsInstall:    3,   // wheel stops (all operations share one crew)
     speedBump:    3,
-    bollard:      4,
-    sign:         4,
-    mastic:       4,
+    bollard:      3,   // 1F+2L (the bid system Sign & Bollard Crew)
+    sign:         3,   // 1F+2L (the bid system Sign & Bollard Crew)
+    mastic:       3,   // 1F+2L — same crew as crack fill
     inlet:        4,
     speedHump:    4
 };
+
+/**
+ * LABOR COST MODEL — mirrors the bid system resource costing.
+ *
+ * Fully-loaded straight-time cost per manhour:
+ *     loaded/MH = base × (1 + tax%) × (1 + WC%) + fringe
+ *
+ * WC% (workers' comp, NJ5500) is derived: it is the loading that reconciles the bid system's
+ * actual burden on BOTH a non-prevailing job (16.5% tax → 24.59% effective) and a
+ * prevailing-wage job (18.5% tax → 26.70% effective). Both independently yield
+ * ~6.93%.
+ *
+ * TRAVEL is booked as EXTRA MANHOURS paid at 1.5× base (the travel hour pushes the
+ * day past 8), and equipment is NOT charged during travel. A 1 hr/shift round trip
+ * therefore yields MH × 1.125 and the bid system's 105.56% "Tax/OT" factor:
+ *     (8 + 1×1.5) ÷ 9 = 1.0556
+ *
+ * Every crew is 1 Foreman + (N−1) General Laborers — verified across 6 the bid system jobs
+ * (patch, crack fill, sealcoat, striping, sign) in both NPW and PW.
+ */
+const WC_PCT         = 6.93;   // workers' comp loading applied on top of tax %
+const TRAVEL_OT_MULT = 1.5;    // travel hours are paid at time-and-a-half
+
+const LABOR_CLASSES = {
+    npw: { label: 'Standard',        taxPct: 16.5,
+           foreman: { base: 52.50, fringe: 10.50 }, laborer: { base: 37.50, fringe: 5.50   } },
+    pw:  { label: 'Prevailing Wage', taxPct: 18.5,
+           foreman: { base: 89.71, fringe: 0     }, laborer: { base: 52.25, fringe: 47.318 } }
+};
+
+function laborMode() { return isOn('pwMode') ? 'pw' : 'npw'; }
+
+/**
+ * Active wage table. Standard-mode values come from the Rate Config inputs so they
+ * can be maintained without code changes; PW comes from the wage sheet. Each field
+ * falls back to its constant if the input is missing (older saved rate sets).
+ */
+function laborCfg(mode) {
+    const d = LABOR_CLASSES[mode];
+    if (mode !== 'npw') return d;
+    const pick = (id, def) => { const el = document.getElementById(id); const v = el ? parseFloat(el.value) : NaN; return isNaN(v) ? def : v; };
+    return {
+        taxPct:  pick('wageTaxPct', d.taxPct),
+        foreman: { base: pick('wageForemanBase', d.foreman.base),  fringe: pick('wageForemanFringe', d.foreman.fringe) },
+        laborer: { base: pick('wageLaborerBase', d.laborer.base),  fringe: pick('wageLaborerFringe', d.laborer.fringe) }
+    };
+}
+function wcPct() { const el = document.getElementById('wageWcPct'); const v = el ? parseFloat(el.value) : NaN; return isNaN(v) ? WC_PCT : v; }
+function burdenMult(mode) { return (1 + laborCfg(mode).taxPct / 100) * (1 + wcPct() / 100); }
+
+/** Straight-time fully-loaded cost of one manhour for a classification. */
+function loadedMH(cls, mode) {
+    const r = laborCfg(mode)[cls];
+    return r.base * burdenMult(mode) + r.fringe;
+}
+/** Loaded cost of one TRAVEL manhour — base at 1.5×, burden and fringe unchanged. */
+function travelMH(cls, mode) {
+    const r = laborCfg(mode)[cls];
+    return r.base * TRAVEL_OT_MULT + (r.base * (burdenMult(mode) - 1) + r.fringe);
+}
+/** Crew labor $/hr for a crew of n (1 Foreman + (n−1) Laborers). */
+function crewLaborPerHr(n, mode) {
+    return loadedMH('foreman', mode) + Math.max(0, n - 1) * loadedMH('laborer', mode);
+}
+/** Crew labor $/hr while travelling (labor only — no equipment on travel time). */
+function crewTravelPerHr(n, mode) {
+    return travelMH('foreman', mode) + Math.max(0, n - 1) * travelMH('laborer', mode);
+}
+/** Sales tax multiplier applied to all material (NJ 6.625%). */
+function taxMult() { return 1 + (gv('salesTaxPct') / 100); }
 
 /**
  * Asphalt speed-hump geometry (fully variable dimensions).
@@ -1758,24 +1841,26 @@ const SH_STD_AREA    = SH_STD_LENGTH * SH_STD_WIDTH;                 // 208 SF f
 const SH_TON_FACTOR  = SH_STD_TONS / (SH_MAX_DEPTH * SH_STD_WIDTH * SH_STD_LENGTH); // tons per (in·ft·ft)
 
 /**
- * Returns the effective crew hourly rate adjusted for crew size changes.
- * Formula: baseRate + (currentCrew − baseCrew) × laborerRate
- * If crew shrinks below base, rate decreases (laborer removed from truck).
- * @param {number} baseRate   - The all-in crew hourly rate from Rate Config
- * @param {number} currentCrew - Current crew size from input
- * @param {number} baseCrew   - Base crew size the rate was calibrated at
- * @returns {number} Adjusted crew hourly rate
+ * Returns the effective crew hourly rate for the current crew size and wage mode.
+ *
+ * The configured base rate is the STANDARD-wage, work-hours-only rate at the crew's
+ * base size (labor + equipment, no travel). We swap out that base labor content and
+ * swap in the labor for the actual crew size at the active wage mode:
+ *
+ *     rate = baseRate + crewLabor(currentCrew, mode) − crewLabor(baseCrew, 'npw')
+ *
+ * At base size in standard mode this returns baseRate untouched. Growing the crew
+ * adds a loaded laborer; turning on prevailing wage adds the wage differential for
+ * every person on the crew. Equipment is unaffected by either.
  */
 function adjustedRate(baseRate, currentCrew, baseCrew) {
-    const laborerRate = gv('rateLaborerAdj');
-    const delta = currentCrew - baseCrew;
-    return baseRate + (delta * laborerRate);
+    return baseRate + crewLaborPerHr(currentCrew, laborMode()) - crewLaborPerHr(baseCrew, 'npw');
 }
 
 /** Build crew adjustment info object for renderTierTable display */
 function crewAdjInfo(currentCrew, baseCrew) {
     const delta = currentCrew - baseCrew;
-    return { delta, laborerRate: gv('rateLaborerAdj') };
+    return { delta, laborerRate: loadedMH('laborer', laborMode()) };
 }
 
 // === SCOPE EXCLUSIONS & ASSUMPTIONS ===
@@ -2208,6 +2293,17 @@ function renderSpeedHumpDims() {
 
 // ===== MAIN CALCULATION =====
 function calculateAll() {
+    // Refresh derived labor readouts (display only — calcs call the model directly)
+    const wageMode = laborMode();
+    const ladjEl = document.getElementById('rateLaborerAdj');
+    if (ladjEl) ladjEl.value = loadedMH('laborer', wageMode).toFixed(2);
+    const wageNoteEl = document.getElementById('wageNote');
+    if (wageNoteEl) wageNoteEl.textContent =
+        LABOR_CLASSES[wageMode].label + ' — loaded $/MH: Foreman $' + loadedMH('foreman', wageMode).toFixed(2)
+        + ', Laborer $' + loadedMH('laborer', wageMode).toFixed(2)
+        + '. Travel hr @' + TRAVEL_OT_MULT + 'x: Foreman $' + travelMH('foreman', wageMode).toFixed(2)
+        + ', Laborer $' + travelMH('laborer', wageMode).toFixed(2) + '.';
+
     let stdShift = gv('hoursPerDay');
     let maxShift = gv('maxShift');
     // Enforce maxShift >= stdShift
@@ -2250,11 +2346,11 @@ function calculateAll() {
         const rate = adjustedRate(baseRate, crew, BASE_CREW_SIZES.crackFill);
         const travel = globalTravel;
         const matQty = lf * wf.cf;
-        const matCost = matQty * gv('matCrackFill');
+        const matCost = matQty * gv('matCrackFill') * taxMult();
         const tier = calcThreeTier(lf, prod, stdShift, maxShift, phases, crew);
         const cfT = tier ? tier[COST_TIER] : null;
         const travelDays = cfT ? cfT.days : 0;
-        const travelCost = travel * rate * travelDays;
+        const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
         renderTierTable('cf_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.crackFill), travelDays);
         if (tier) {
             sumLabor.cf = cfT.hours * rate + travelCost;
@@ -2278,11 +2374,11 @@ function calculateAll() {
         const rate = adjustedRate(baseRate, crew, scBaseCrew);
         const travel = globalTravel;
         const matQty = sf * wf.sc;
-        const matCost = matQty * gv('matSealcoat');
+        const matCost = matQty * gv('matSealcoat') * taxMult();
         const tier = calcThreeTier(sf, prod, stdShift, maxShift, phases, crew);
         const scT = tier ? tier[COST_TIER] : null;
         const travelDays = scT ? scT.days : 0;
-        const travelCost = travel * rate * travelDays;
+        const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
         renderTierTable('sc_output', tier, rate, matCost, 0, travel, travelCost, crewAdjInfo(crew, scBaseCrew), travelDays);
         if (tier) {
             sumLabor.sc = scT.hours * rate + travelCost;
@@ -2327,7 +2423,7 @@ function calculateAll() {
                 const itemHrs = qty > 0 ? (qty / prod) * stdShift : 0;
                 const itemMat = qty * matUnit * wasteFactor;
                 groupHrs += itemHrs;
-                totalMat += itemMat;
+                totalMat += itemMat * taxMult();
                 sv(item.hrsId, itemHrs.toFixed(1));
                 sv(item.matOutId, fmt2(itemMat));
                 sv(item.prodOutId, prod.toLocaleString());
@@ -2361,7 +2457,7 @@ function calculateAll() {
 
             const stT = tier[COST_TIER];
             const travelDays = stT.days;
-            const travelCost = travel * rate * travelDays;
+            const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
             renderTierTable('st_output', tier, rate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping), travelDays);
             sumLabor.st = stT.hours * rate + travelCost;
             sumMat.st = totalMat;
@@ -2423,7 +2519,7 @@ function calculateAll() {
         const crewRate = adjustedRate(baseCrewRate, crew, baseCrew);
         const matAsphalt = (surfTons * asphaltPrice) + (baseTons * baseAsphaltPrice);
         const matDGA = dgaTons * dgaPrice;
-        const totalMat = matAsphalt + matDGA;
+        const totalMat = (matAsphalt + matDGA) * taxMult();
 
         sv('ar_surfTons', surfTons);
         sv('ar_baseTons', baseTons);
@@ -2455,7 +2551,7 @@ function calculateAll() {
 
         const arT = tier ? tier[COST_TIER] : null;
         const travelDays = arT ? arT.days : 0;
-        const travelCost = travel * crewRate * travelDays;
+        const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
         renderTierTable('ar_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, baseCrew), travelDays);
         if (tier) {
             sumLabor.ar = arT.hours * crewRate + travelCost;
@@ -2493,9 +2589,9 @@ function calculateAll() {
             const tier = calcThreeTier(lf, prod, stdShift, maxShift, phases, crew);
             const maT = tier[COST_TIER];
             const machineRental = maT.days * machinePerDay;
-            const material = boxesNeeded * boxPrice;
+            const material = boxesNeeded * boxPrice * taxMult();
             const travelDays = maT.days;
-            const travelCost = travel * crewRate * travelDays;
+            const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
 
             const el = document.getElementById('ma_output');
             let html = '';
@@ -2586,11 +2682,11 @@ function calculateAll() {
             const newMat = newQty * gv('matWsNew');
             const resetMat = resetQty * gv('matWsPin');
             const removeMat = removeQty * gv('matWsDispose');
-            const totalMatCost = newMat + resetMat + removeMat;
+            const totalMatCost = (newMat + resetMat + removeMat) * taxMult();
 
             const blendedRate = totalLabor / wsT.hours;
             const travelDays = wsT.days;
-            const travelCost = travel * blendedRate * travelDays;
+            const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
 
             renderTierTable('ws_output', tier, blendedRate, totalMatCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.wsInstall), travelDays);
             sumLabor.ws = totalLabor + travelCost;
@@ -2619,13 +2715,13 @@ function calculateAll() {
         const prodBoll = baseProdBoll * sgSynMult;
 
         const equivQty = postQty + (bollQty * (prodPost / prodBoll));
-        const matCost = (postQty * gv('matSignSmall')) + (bollQty * (gv('matSignLarge') + gv('matBollard')));
+        const matCost = ((postQty * gv('matSignSmall')) + (bollQty * (gv('matSignLarge') + gv('matBollard')))) * taxMult();
 
         if (equivQty > 0) {
             const tier = calcThreeTier(equivQty, prodPost, stdShift, maxShift, phases, crew);
             const sgT = tier ? tier[COST_TIER] : null;
             const travelDays = sgT ? sgT.days : 0;
-            const travelCost = travel * crewRate * travelDays;
+            const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
             renderTierTable('sg_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.sign), travelDays);
             sumLabor.sg = sgT.hours * crewRate + travelCost;
             sumMat.sg = matCost;
@@ -2647,11 +2743,11 @@ function calculateAll() {
         const crew = gv('crewBollard');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.bollard);
         const travel = globalTravel;
-        const matCost = qty * gv('matBollard');
+        const matCost = qty * gv('matBollard') * taxMult();
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
         const boT = tier ? tier[COST_TIER] : null;
         const travelDays = boT ? boT.days : 0;
-        const travelCost = travel * crewRate * travelDays;
+        const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
         renderTierTable('bo_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.bollard), travelDays);
         if (tier) {
             sumLabor.bo = boT.hours * crewRate + travelCost;
@@ -2672,11 +2768,11 @@ function calculateAll() {
         const crew = gv('crewSpeedBump');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.speedBump);
         const travel = globalTravel;
-        const matCost = qty * gv('matSpeedBump');
+        const matCost = qty * gv('matSpeedBump') * taxMult();
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
         const sbT = tier ? tier[COST_TIER] : null;
         const travelDays = sbT ? sbT.days : 0;
-        const travelCost = travel * crewRate * travelDays;
+        const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
         renderTierTable('sb_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedBump), travelDays);
         if (tier) {
             sumLabor.sb = sbT.hours * crewRate + travelCost;
@@ -2726,7 +2822,7 @@ function calculateAll() {
         const totalLength = lengths.reduce((a, b) => a + b, 0);
         const tons = nHumps > 0 ? Math.ceil(rawTons * wf.sh) : 0;
         const avgTonsPerHump = nHumps > 0 ? +(rawTons / nHumps).toFixed(3) : 0;
-        const matCost = tons * asphaltPrice;
+        const matCost = tons * asphaltPrice * taxMult();
         sv('sh_tons', tons);
         sv('sh_totlen', +totalLength.toFixed(1));
         sv('sh_totarea', totalArea);
@@ -2735,7 +2831,7 @@ function calculateAll() {
         const tier = calcThreeTier(equivTotal, prod, stdShift, maxShift, phases, crew);
         const shT = tier ? tier[COST_TIER] : null;
         const travelDays = shT ? shT.days : 0;
-        const travelCost = travel * crewRate * travelDays;
+        const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
         renderTierTable('sh_output', tier, crewRate, matCost, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.speedHump), travelDays);
         if (tier) {
             sumLabor.sh = shT.hours * crewRate + travelCost;
@@ -2791,9 +2887,9 @@ function calculateAll() {
             const inT = tier[COST_TIER];
             const blockCost = totalQty * gv('matBlock');
             const castingCost = castingQty * gv('matCasting');
-            const totalMat = blockCost + castingCost;
+            const totalMat = (blockCost + castingCost) * taxMult();
             const travelDays = inT.days;
-            const travelCost = travel * crewRate * travelDays;
+            const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
 
             renderTierTable('in_output', tier, crewRate, totalMat, 0, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.inlet), travelDays);
             sumLabor.in = inT.hours * crewRate + travelCost;
@@ -2823,7 +2919,7 @@ function calculateAll() {
             const prT = tier[COST_TIER];
             const rental = prT.days * rentalPerDay;
             const travelDays = prT.days;
-            const travelCost = travel * crewRate * travelDays;
+            const travelCost = travel * crewTravelPerHr(crew, laborMode()) * travelDays;
 
             renderTierTable('pr_output', tier, crewRate, 0, rental, travel, travelCost, crewAdjInfo(crew, BASE_CREW_SIZES.striping), travelDays);
             sumLabor.pr = prT.hours * crewRate + travelCost;
@@ -2977,21 +3073,21 @@ function calculateAll() {
             if (wsI.newQty > 0) {
                 const frac = wsI.newQty / wsI.totalQty;
                 const labor = stdHrs * frac * gv('rateWsInstall');
-                const travelCost = wsTravel * gv('rateWsInstall') * frac * wsTravelDays;
+                const travelCost = wsTravel * crewTravelPerHr(wsSnap.rates.crewSize, laborMode()) * frac * wsTravelDays;
                 const mat = wsI.newQty * gv('matWsNew');
                 addCheck('ws', wsI.newQty, labor + travelCost + mat);
             }
             if (wsI.resetQty > 0) {
                 const frac = wsI.resetQty / wsI.totalQty;
                 const labor = stdHrs * frac * gv('rateWsReset');
-                const travelCost = wsTravel * gv('rateWsReset') * frac * wsTravelDays;
+                const travelCost = wsTravel * crewTravelPerHr(wsSnap.rates.crewSize, laborMode()) * frac * wsTravelDays;
                 const mat = wsI.resetQty * gv('matWsPin');
                 addCheck('ws_r', wsI.resetQty, labor + travelCost + mat);
             }
             if (wsI.removeQty > 0) {
                 const frac = wsI.removeQty / wsI.totalQty;
                 const labor = stdHrs * frac * gv('rateWsRemove');
-                const travelCost = wsTravel * gv('rateWsRemove') * frac * wsTravelDays;
+                const travelCost = wsTravel * crewTravelPerHr(wsSnap.rates.crewSize, laborMode()) * frac * wsTravelDays;
                 const mat = wsI.removeQty * gv('matWsDispose');
                 addCheck('ws_rm', wsI.removeQty, labor + travelCost + mat);
             }
@@ -3051,7 +3147,7 @@ function calculateAll() {
 
     // === BUILD FINAL SNAPSHOT ===
     snapshot.meta = { version: CALC_VERSION, timestamp: new Date().toISOString(), projectName: document.getElementById('projectName').value || 'Unnamed Project' };
-    snapshot.settings = { stdShift, maxShift, asphaltPrice, baseAsphaltPrice, dgaPrice, markupPercent: markup, laborerAdjRate: gv('rateLaborerAdj'), globalTravel, costTier: COST_TIER, concurrentGroups: CONCURRENT_GROUPS, wasteFactors: { cf: wf.cf, sc: wf.sc, st: wf.st, ar: wf.ar, ma: wf.ma, sh: wf.sh } };
+    snapshot.settings = { stdShift, maxShift, asphaltPrice, baseAsphaltPrice, dgaPrice, markupPercent: markup, laborerAdjRate: gv('rateLaborerAdj'), wageMode: laborMode(), wageLabel: LABOR_CLASSES[laborMode()].label, loadedForemanMH: +loadedMH('foreman', laborMode()).toFixed(2), loadedLaborerMH: +loadedMH('laborer', laborMode()).toFixed(2), salesTaxPct: gv('salesTaxPct'), globalTravel, costTier: COST_TIER, concurrentGroups: CONCURRENT_GROUPS, wasteFactors: { cf: wf.cf, sc: wf.sc, st: wf.st, ar: wf.ar, ma: wf.ma, sh: wf.sh } };
     snapshot.summary = { laborByType: { ...sumLabor }, materialByType: { ...sumMat }, totalLabor, totalMat, directCost, markupPercent: markup, markupAmount: markupAmt, bidPrice: directCost + markupAmt };
     snapshot.hbRows = hbRows;
     snapshot.unitChecks = unitChecks;
@@ -3847,7 +3943,7 @@ function renderClusterSummary(clusterResults) {
 function saveRates() {
     const ids = [
         'hoursPerDay','maxShift','asphaltPrice','baseAsphaltPrice','dgaPrice','markupPercent',
-        'rateLaborerAdj',
+        'rateLaborerAdj','wageForemanBase','wageForemanFringe','wageLaborerBase','wageLaborerFringe','wageTaxPct','wageWcPct','salesTaxPct',
         'rateCrackFill','rateSealcoat','rateStriping','rateAsphaltSmall','rateAsphaltLarge',
         'rateWsInstall','rateWsReset','rateWsRemove','rateSpeedBump','rateBollard','rateSign',
         'rateMastic','rateInlet','rateSpeedHump',

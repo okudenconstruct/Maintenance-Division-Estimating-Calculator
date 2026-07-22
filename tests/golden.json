@@ -16,16 +16,18 @@
             "days": 1
           }
         },
-        "total": 6187.3,
-        "material": 2580
+        "total": 4890.92,
+        "material": 2750.92,
+        "crewRate": 214
       }
     },
     "summary": {
-      "totalLabor": 3607.3,
-      "totalMat": 2580,
-      "directCost": 6187.3,
-      "bidPrice": 9899.68
-    }
+      "totalLabor": 2140,
+      "totalMat": 2750.92,
+      "directCost": 4890.92,
+      "bidPrice": 7825.48
+    },
+    "wageMode": "npw"
   },
   "bollards-6 (email worked example)": {
     "activities": {
@@ -44,16 +46,18 @@
             "days": 1
           }
         },
-        "total": 4445.84,
-        "material": 1560
+        "total": 3375.35,
+        "material": 1663.35,
+        "crewRate": 214
       }
     },
     "summary": {
-      "totalLabor": 2885.84,
-      "totalMat": 1560,
-      "directCost": 4445.84,
-      "bidPrice": 7113.34
-    }
+      "totalLabor": 1712,
+      "totalMat": 1663.35,
+      "directCost": 3375.35,
+      "bidPrice": 5400.56
+    },
+    "wageMode": "npw"
   },
   "signs-post-6": {
     "activities": {
@@ -72,16 +76,18 @@
             "days": 1
           }
         },
-        "total": 2102.92,
-        "material": 660
+        "total": 1559.72,
+        "material": 703.72,
+        "crewRate": 214
       }
     },
     "summary": {
-      "totalLabor": 1442.92,
-      "totalMat": 660,
-      "directCost": 2102.92,
-      "bidPrice": 3364.67
-    }
+      "totalLabor": 856,
+      "totalMat": 703.72,
+      "directCost": 1559.72,
+      "bidPrice": 2495.56
+    },
+    "wageMode": "npw"
   },
   "signs-mixed-10post-4bollard": {
     "activities": {
@@ -100,16 +106,18 @@
             "days": 1
           }
         },
-        "total": 6427.3,
-        "material": 2820
+        "total": 5146.82,
+        "material": 3006.82,
+        "crewRate": 214
       }
     },
     "summary": {
-      "totalLabor": 3607.3,
-      "totalMat": 2820,
-      "directCost": 6427.3,
-      "bidPrice": 10283.68
-    }
+      "totalLabor": 2140,
+      "totalMat": 3006.82,
+      "directCost": 5146.82,
+      "bidPrice": 8234.92
+    },
+    "wageMode": "npw"
   },
   "signs-prodSignPost-zero-guard": {
     "activities": {
@@ -128,16 +136,18 @@
             "days": 1
           }
         },
-        "total": 6187.3,
-        "material": 2580
+        "total": 4890.92,
+        "material": 2750.92,
+        "crewRate": 214
       }
     },
     "summary": {
-      "totalLabor": 3607.3,
-      "totalMat": 2580,
-      "directCost": 6187.3,
-      "bidPrice": 9899.68
-    }
+      "totalLabor": 2140,
+      "totalMat": 2750.92,
+      "directCost": 4890.92,
+      "bidPrice": 7825.48
+    },
+    "wageMode": "npw"
   },
   "crackfill-4000": {
     "activities": {
@@ -156,16 +166,18 @@
             "days": 1
           }
         },
-        "total": 2590.72,
-        "material": 836
+        "total": 2668.99,
+        "material": 810.35,
+        "crewRate": 232.33
       }
     },
     "summary": {
-      "totalLabor": 1754.72,
-      "totalMat": 836,
-      "directCost": 2590.72,
-      "bidPrice": 4145.15
-    }
+      "totalLabor": 1858.64,
+      "totalMat": 810.35,
+      "directCost": 2668.99,
+      "bidPrice": 4270.38
+    },
+    "wageMode": "npw"
   },
   "crackfill-6000-2phase-travel1h": {
     "activities": {
@@ -184,16 +196,18 @@
             "days": 2
           }
         },
-        "total": 4324.76,
-        "material": 1254
+        "total": 4491.65,
+        "material": 1215.52,
+        "crewRate": 232.33
       }
     },
     "summary": {
-      "totalLabor": 3070.76,
-      "totalMat": 1254,
-      "directCost": 4324.76,
-      "bidPrice": 6919.62
-    }
+      "totalLabor": 3276.12,
+      "totalMat": 1215.52,
+      "directCost": 4491.65,
+      "bidPrice": 7186.64
+    },
+    "wageMode": "npw"
   },
   "sealcoat-52000": {
     "activities": {
@@ -212,16 +226,18 @@
             "days": 1
           }
         },
-        "total": 5788.32,
-        "material": 3822
+        "total": 6317.55,
+        "material": 3881.15,
+        "crewRate": 304.55
       }
     },
     "summary": {
-      "totalLabor": 1966.32,
-      "totalMat": 3822,
-      "directCost": 5788.32,
-      "bidPrice": 9261.31
-    }
+      "totalLabor": 2436.4,
+      "totalMat": 3881.15,
+      "directCost": 6317.55,
+      "bidPrice": 10108.08
+    },
+    "wageMode": "npw"
   },
   "asphalt-500sf-2s": {
     "activities": {
@@ -240,19 +256,21 @@
             "days": 1
           }
         },
-        "total": 3925.6,
-        "material": 595,
+        "total": 3568.72,
+        "material": 634.42,
+        "crewRate": 489.05,
         "tonnage": {
           "totalAsphaltTons": 7
         }
       }
     },
     "summary": {
-      "totalLabor": 3330.6,
-      "totalMat": 595,
-      "directCost": 3925.6,
-      "bidPrice": 6280.96
-    }
+      "totalLabor": 2934.3,
+      "totalMat": 634.42,
+      "directCost": 3568.72,
+      "bidPrice": 5709.95
+    },
+    "wageMode": "npw"
   },
   "asphalt-3000sf-2s4b-multiload": {
     "activities": {
@@ -271,19 +289,21 @@
             "days": 3
           }
         },
-        "total": 13561.8,
-        "material": 3570,
+        "total": 12609.41,
+        "material": 3806.51,
+        "crewRate": 489.05,
         "tonnage": {
           "totalAsphaltTons": 42
         }
       }
     },
     "summary": {
-      "totalLabor": 9991.8,
-      "totalMat": 3570,
-      "directCost": 13561.8,
-      "bidPrice": 21698.88
-    }
+      "totalLabor": 8802.9,
+      "totalMat": 3806.51,
+      "directCost": 12609.41,
+      "bidPrice": 20175.06
+    },
+    "wageMode": "npw"
   },
   "asphalt-100sf-4s-depthmult": {
     "activities": {
@@ -302,19 +322,21 @@
             "days": 1
           }
         },
-        "total": 1660.4,
-        "material": 255,
+        "total": 1833.09,
+        "material": 271.89,
+        "crewRate": 390.3,
         "tonnage": {
           "totalAsphaltTons": 3
         }
       }
     },
     "summary": {
-      "totalLabor": 1405.4,
-      "totalMat": 255,
-      "directCost": 1660.4,
-      "bidPrice": 2656.64
-    }
+      "totalLabor": 1561.2,
+      "totalMat": 271.89,
+      "directCost": 1833.09,
+      "bidPrice": 2932.95
+    },
+    "wageMode": "npw"
   },
   "striping-mix": {
     "activities": {
@@ -333,16 +355,18 @@
             "days": 2
           }
         },
-        "total": 4465.3,
-        "material": 1024.8
+        "total": 4195.28,
+        "material": 1040.66,
+        "crewRate": 225.33
       }
     },
     "summary": {
-      "totalLabor": 3440.5,
-      "totalMat": 1024.8,
-      "directCost": 4465.3,
-      "bidPrice": 7144.48
-    }
+      "totalLabor": 3154.62,
+      "totalMat": 1040.66,
+      "directCost": 4195.28,
+      "bidPrice": 6712.45
+    },
+    "wageMode": "npw"
   },
   "wheelstops-20new-10reset-10remove": {
     "activities": {
@@ -361,16 +385,17 @@
             "days": 1
           }
         },
-        "total": 2221.03,
-        "material": 1306.7
+        "total": 2249.27,
+        "material": 1393.27
       }
     },
     "summary": {
-      "totalLabor": 914.33,
-      "totalMat": 1306.7,
-      "directCost": 2221.03,
-      "bidPrice": 3553.65
-    }
+      "totalLabor": 856,
+      "totalMat": 1393.27,
+      "directCost": 2249.27,
+      "bidPrice": 3598.83
+    },
+    "wageMode": "npw"
   },
   "mastic-1000lf": {
     "activities": {
@@ -389,16 +414,18 @@
             "days": 1
           }
         },
-        "total": 3386.5,
-        "material": 319.9
+        "total": 2572.97,
+        "material": 287.89,
+        "crewRate": 212.33
       }
     },
     "summary": {
-      "totalLabor": 2480.16,
-      "totalMat": 906.34,
-      "directCost": 3386.5,
-      "bidPrice": 5418.4
-    }
+      "totalLabor": 1698.64,
+      "totalMat": 874.33,
+      "directCost": 2572.97,
+      "bidPrice": 4116.75
+    },
+    "wageMode": "npw"
   },
   "speedbumps-4": {
     "activities": {
@@ -417,16 +444,18 @@
             "days": 1
           }
         },
-        "total": 3317.08,
-        "material": 2240
+        "total": 3244.4,
+        "material": 2388.4,
+        "crewRate": 214
       }
     },
     "summary": {
-      "totalLabor": 1077.08,
-      "totalMat": 2240,
-      "directCost": 3317.08,
-      "bidPrice": 5307.33
-    }
+      "totalLabor": 856,
+      "totalMat": 2388.4,
+      "directCost": 3244.4,
+      "bidPrice": 5191.04
+    },
+    "wageMode": "npw"
   },
   "speedhumps-3": {
     "activities": {
@@ -445,8 +474,9 @@
             "days": 1
           }
         },
-        "total": 3679.12,
-        "material": 595,
+        "total": 3568.72,
+        "material": 634.42,
+        "crewRate": 489.05,
         "equivalentUnits": 3,
         "tonnage": {
           "totalTons": 7,
@@ -457,11 +487,12 @@
       }
     },
     "summary": {
-      "totalLabor": 3084.12,
-      "totalMat": 595,
-      "directCost": 3679.12,
-      "bidPrice": 5886.59
-    }
+      "totalLabor": 2934.3,
+      "totalMat": 634.42,
+      "directCost": 3568.72,
+      "bidPrice": 5709.95
+    },
+    "wageMode": "npw"
   },
   "speedhumps-mixed-lengths": {
     "activities": {
@@ -480,8 +511,9 @@
             "days": 1
           }
         },
-        "total": 3679.12,
-        "material": 595,
+        "total": 3568.72,
+        "material": 634.42,
+        "crewRate": 489.05,
         "equivalentUnits": 2.6,
         "tonnage": {
           "totalTons": 7,
@@ -492,11 +524,12 @@
       }
     },
     "summary": {
-      "totalLabor": 3084.12,
-      "totalMat": 595,
-      "directCost": 3679.12,
-      "bidPrice": 5886.59
-    }
+      "totalLabor": 2934.3,
+      "totalMat": 634.42,
+      "directCost": 3568.72,
+      "bidPrice": 5709.95
+    },
+    "wageMode": "npw"
   },
   "speedhumps-deep-hump": {
     "activities": {
@@ -515,8 +548,9 @@
             "days": 1
           }
         },
-        "total": 2481.08,
-        "material": 425,
+        "total": 2409.36,
+        "material": 453.16,
+        "crewRate": 489.05,
         "equivalentUnits": 1,
         "tonnage": {
           "totalTons": 5,
@@ -527,11 +561,12 @@
       }
     },
     "summary": {
-      "totalLabor": 2056.08,
-      "totalMat": 425,
-      "directCost": 2481.08,
-      "bidPrice": 3969.73
-    }
+      "totalLabor": 1956.2,
+      "totalMat": 453.16,
+      "directCost": 2409.36,
+      "bidPrice": 3854.97
+    },
+    "wageMode": "npw"
   },
   "speedhumps-wide-hump": {
     "activities": {
@@ -550,8 +585,9 @@
             "days": 1
           }
         },
-        "total": 2481.08,
-        "material": 425,
+        "total": 2409.36,
+        "material": 453.16,
+        "crewRate": 489.05,
         "equivalentUnits": 1.6,
         "tonnage": {
           "totalTons": 5,
@@ -562,11 +598,12 @@
       }
     },
     "summary": {
-      "totalLabor": 2056.08,
-      "totalMat": 425,
-      "directCost": 2481.08,
-      "bidPrice": 3969.73
-    }
+      "totalLabor": 1956.2,
+      "totalMat": 453.16,
+      "directCost": 2409.36,
+      "bidPrice": 3854.97
+    },
+    "wageMode": "npw"
   },
   "inlet-2repair-1recon-1casting": {
     "activities": {
@@ -585,16 +622,18 @@
             "days": 1
           }
         },
-        "total": 4314.84,
-        "material": 750
+        "total": 4490.29,
+        "material": 799.69,
+        "crewRate": 307.55
       }
     },
     "summary": {
-      "totalLabor": 3564.84,
-      "totalMat": 750,
-      "directCost": 4314.84,
-      "bidPrice": 6903.74
-    }
+      "totalLabor": 3690.6,
+      "totalMat": 799.69,
+      "directCost": 4490.29,
+      "bidPrice": 7184.46
+    },
+    "wageMode": "npw"
   },
   "paintremoval-2000lf": {
     "activities": {
@@ -613,16 +652,18 @@
             "days": 1
           }
         },
-        "total": 2616,
-        "material": 0
+        "total": 2452.64,
+        "material": 0,
+        "crewRate": 225.33
       }
     },
     "summary": {
-      "totalLabor": 1966,
+      "totalLabor": 1802.64,
       "totalMat": 650,
-      "directCost": 2616,
-      "bidPrice": 4185.6
-    }
+      "directCost": 2452.64,
+      "bidPrice": 3924.22
+    },
+    "wageMode": "npw"
   },
   "heavy-cluster-multiactivity": {
     "activities": {
@@ -641,8 +682,9 @@
             "days": 1
           }
         },
-        "total": 2730.4,
-        "material": 510,
+        "total": 2499.99,
+        "material": 543.79,
+        "crewRate": 489.05,
         "tonnage": {
           "totalAsphaltTons": 6
         }
@@ -662,8 +704,8 @@
             "days": 1
           }
         },
-        "total": 1597.96,
-        "material": 550
+        "total": 1442.44,
+        "material": 586.44
       },
       "signs": {
         "tiers": {
@@ -680,8 +722,9 @@
             "days": 1
           }
         },
-        "total": 3454.38,
-        "material": 1290
+        "total": 2659.46,
+        "material": 1375.46,
+        "crewRate": 214
       },
       "bollards": {
         "tiers": {
@@ -698,16 +741,111 @@
             "days": 1
           }
         },
-        "total": 1962.92,
-        "material": 520
+        "total": 1410.45,
+        "material": 554.45,
+        "crewRate": 214
       }
     },
     "summary": {
-      "totalLabor": 6875.66,
-      "totalMat": 2870,
-      "directCost": 9745.66,
-      "bidPrice": 15593.06
-    }
+      "totalLabor": 4952.2,
+      "totalMat": 3060.14,
+      "directCost": 8012.34,
+      "bidPrice": 12819.74
+    },
+    "wageMode": "npw"
+  },
+  "pw-signs-bollard-6": {
+    "activities": {
+      "signs": {
+        "tiers": {
+          "cons": {
+            "hours": 12,
+            "days": 2
+          },
+          "std": {
+            "hours": 10,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 6494.85,
+        "material": 2750.92,
+        "crewRate": 374.39
+      }
+    },
+    "summary": {
+      "totalLabor": 3743.92,
+      "totalMat": 2750.92,
+      "directCost": 6494.85,
+      "bidPrice": 10391.76
+    },
+    "wageMode": "pw"
+  },
+  "pw-asphalt-3000sf": {
+    "activities": {
+      "asphaltRepair": {
+        "tiers": {
+          "cons": {
+            "hours": 22,
+            "days": 3
+          },
+          "std": {
+            "hours": 18,
+            "days": 3
+          },
+          "agg": {
+            "hours": 18,
+            "days": 3
+          }
+        },
+        "total": 16600.05,
+        "material": 3806.51,
+        "crewRate": 710.75,
+        "tonnage": {
+          "totalAsphaltTons": 42
+        }
+      }
+    },
+    "summary": {
+      "totalLabor": 12793.54,
+      "totalMat": 3806.51,
+      "directCost": 16600.05,
+      "bidPrice": 26560.09
+    },
+    "wageMode": "pw"
+  },
+  "travel-crackfill-4000-1hr": {
+    "activities": {
+      "crackFill": {
+        "tiers": {
+          "cons": {
+            "hours": 10,
+            "days": 1
+          },
+          "std": {
+            "hours": 8,
+            "days": 1
+          },
+          "agg": {
+            "hours": 8,
+            "days": 1
+          }
+        },
+        "total": 2913.07,
+        "material": 810.35,
+        "crewRate": 232.33
+      }
+    },
+    "summary": {
+      "totalLabor": 2102.72,
+      "totalMat": 810.35,
+      "directCost": 2913.07,
+      "bidPrice": 4660.91
+    },
+    "wageMode": "npw"
   },
   "signs-bollard-6-cons-tier": {
     "activities": {
@@ -726,16 +864,18 @@
             "days": 1
           }
         },
-        "total": 6908.76,
-        "material": 2580
+        "total": 5318.92,
+        "material": 2750.92,
+        "crewRate": 214
       }
     },
     "summary": {
-      "totalLabor": 4328.76,
-      "totalMat": 2580,
-      "directCost": 6908.76,
-      "bidPrice": 11054.02
-    }
+      "totalLabor": 2568,
+      "totalMat": 2750.92,
+      "directCost": 5318.92,
+      "bidPrice": 8510.28
+    },
+    "wageMode": "npw"
   },
   "signs-bollard-6-agg-tier": {
     "activities": {
@@ -754,15 +894,17 @@
             "days": 1
           }
         },
-        "total": 5465.84,
-        "material": 2580
+        "total": 4462.92,
+        "material": 2750.92,
+        "crewRate": 214
       }
     },
     "summary": {
-      "totalLabor": 2885.84,
-      "totalMat": 2580,
-      "directCost": 5465.84,
-      "bidPrice": 8745.34
-    }
+      "totalLabor": 1712,
+      "totalMat": 2750.92,
+      "directCost": 4462.92,
+      "bidPrice": 7140.68
+    },
+    "wageMode": "npw"
   }
 }

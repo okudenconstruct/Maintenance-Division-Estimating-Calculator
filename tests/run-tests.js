@@ -194,6 +194,21 @@ const SCENARIOS = [
     { name: 'inlet-2repair-1recon-1casting', inputs: { in_repair: 2, in_recon: 1, in_casting: 1 } },
     { name: 'paintremoval-2000lf', inputs: { pr_lf: 2000 } },
     { name: 'heavy-cluster-multiactivity', inputs: { ar_sf: 400, ws_new: 10, sg_bollard: 3, bo_qty: 2, asphaltPrice: 85 } },
+    { name: 'pw-signs-bollard-6', inputs: { sg_bollard: 6 }, pw: true,
+      assert: s => [
+          // Sign crew 1F+2L: standard 214.00 -> PW 374.39 (+160.39 wage differential)
+          ['PW sign crew rate', s.activities.signs.crewRate, 374.39]
+      ] },
+    { name: 'pw-asphalt-3000sf', inputs: { ar_sf: 3000, asphaltPrice: 85, baseAsphaltPrice: 80 }, pw: true,
+      assert: s => [
+          // Patch crew 1F+3L: standard 489.05 -> PW 710.75
+          ['PW patch crew rate', s.activities.asphaltRepair.crewRate, 710.75]
+      ] },
+    { name: 'travel-crackfill-4000-1hr', inputs: { cf_lf: 4000, globalTravel: 1 },
+      assert: s => [
+          // Travel is labor-only at 1.5x, NOT the all-in crew rate
+          ['crack fill crew rate unchanged by travel', s.activities.crackFill.crewRate, 232.33]
+      ] },
     { name: 'signs-bollard-6-cons-tier', inputs: { sg_bollard: 6 }, tier: 'cons' },
     { name: 'signs-bollard-6-agg-tier', inputs: { sg_bollard: 6 }, tier: 'agg' }
 ];
@@ -214,6 +229,7 @@ function extract(snap) {
             total: +((act.costs && act.costs.total) || 0).toFixed(2),
             material: +((act.costs && act.costs.material) || 0).toFixed(2)
         };
+        if (act.rates && act.rates.crewRate !== undefined) out.activities[key].crewRate = +act.rates.crewRate.toFixed(2);
         // Size-weighted production driver (speed humps) — part of the audit trail
         if (act.equivalentUnits !== undefined) {
             out.activities[key].equivalentUnits = +act.equivalentUnits.toFixed(3);
@@ -230,6 +246,7 @@ function extract(snap) {
             out.activities[key].tonnage = ton;
         }
     }
+    out.wageMode = snap.settings ? snap.settings.wageMode : undefined;
     const s = snap.summary;
     out.summary = {
         totalLabor: +s.totalLabor.toFixed(2),
@@ -245,6 +262,7 @@ function runScenario(sc) {
     for (const [id, val] of Object.entries(sc.inputs)) {
         sandbox.document.getElementById(id).value = String(val);
     }
+    if (sc.pw) sandbox.document.getElementById('pwMode').checked = true;
     if (sc.tier) vm.runInContext(`setCostTier('${sc.tier}')`, ctx);
     vm.runInContext('calculateAll()', ctx);
     const snap = sandbox.window.lastCalcSnapshot;

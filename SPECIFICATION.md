@@ -251,6 +251,56 @@ Collapsible panel (`togglePanel()`) containing five rate sections in a CSS grid.
 
 Note: Inlet repair uses units/day while inlet reconstruction uses hours/unit — these are different rate formats reflecting how the rates were originally described in field data. They are calculated differently in the code.
 
+### 5.4.x Labor & Wage Mode (resource-based)
+
+The app mirrors the bid system resource costing. Fully-loaded straight-time cost per manhour:
+
+```
+loaded/MH = base x (1 + tax%) x (1 + WC%) + fringe
+```
+
+| Input | Description | Standard default |
+|---|---|---|
+| `pwMode` | Prevailing Wage toggle (global) | off |
+| `wageForemanBase` / `wageForemanFringe` | Foreman base / fringe $/MH | 52.50 / 10.50 |
+| `wageLaborerBase` / `wageLaborerFringe` | Laborer base / fringe $/MH | 37.50 / 5.50 |
+| `wageTaxPct` | Payroll tax % | 16.5 |
+| `wageWcPct` | Workers comp % (NJ5500), applied on top of tax | 6.93 |
+| `salesTaxPct` | NJ sales tax on all material | 6.625 |
+| `rateLaborerAdj` | **Derived, read-only** — loaded laborer $/MH at the active mode | 52.22 |
+
+PW wage table (from the wage sheet, not user-editable): Foreman base 89.71 / fringe 0 / tax 18.5%; Laborer base 52.25 / fringe 47.318 / tax 18.5%.
+
+**Loaded $/MH:** Standard - Foreman $75.90, Laborer $52.22. PW - Foreman $113.67, Laborer $113.53.
+
+**WC derivation:** 6.93% is the loading that reconciles the bid system actual burden on BOTH a standard job (16.5% tax to 24.59% effective) and a PW job (18.5% to 26.70%). Both independently yield ~6.93%.
+
+**Crew composition rule:** every crew is **1 Foreman + (N-1) General Laborers** - verified across 6 the bid system jobs (patch, crack fill, sealcoat, striping, sign) in both standard and PW.
+
+**Crew rate formula:**
+```
+rate = baseRate + crewLabor(currentCrew, mode) - crewLabor(baseCrew, standard)
+```
+The configured base rate is the **work-hours-only** standard-wage rate (crew labor + equipment, no travel). At base size in standard mode it returns baseRate unchanged; growing the crew adds a loaded laborer; PW adds the wage differential for every person. Equipment is unaffected by either.
+
+**Travel (mirrors the bid system):** travel is booked as extra manhours paid at **1.5x** base, and **equipment is NOT charged during travel**:
+```
+travelCost = travelHrsPerDay x crewTravelPerHr(crewSize, mode) x days
+```
+A 1 hr/shift round trip yields MH x 1.125 and the bid system's 105.56% Tax/OT factor: `(8 + 1x1.5) / 9 = 1.0556`. Verified against a 0.25 hr case too, which the bid system shows as 102.94%.
+
+**Mastic crew:** mirrors the crack fill crew (1F+2L) but runs a **rental mastic machine instead of the crack melter**, so its equipment is surface blower + crew truck ($32/hr). The machine is billed separately as `matMasticMachine` x days, and boxes as material - unchanged from the existing model.
+
+**Material sales tax:** all material is billed `qty x unit cost x (1 + salesTaxPct)`. the bid system bills takeoff quantity with no waste, so the crack fill / sealcoat / striping / mastic waste factors default to **0**. Asphalt (7%) and speed-hump (5%) waste factors remain - those are tonnage-conversion allowances, and the bid system's entered tonnages match them.
+
+**Validation vs the bid system actuals:**
+
+| Job | the bid system | App | Delta |
+|---|---|---|---|
+| McLean patch 360 SF @2" | 2,516.00 | 2,515.86 | -0.01% |
+| Needleman crack fill 5,000 LF | 3,581.53 | 3,580.32 | -0.03% |
+| Winzinger **PW** sign crew (labor+equip) | 1,716.39 | 1,716.46 | +0.004% |
+
 **5.4.4 Default Crew Sizes — 12 inputs**
 
 | ID | Label | Default | Range |
