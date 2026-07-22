@@ -277,19 +277,19 @@
       "asphaltRepair": {
         "tiers": {
           "cons": {
-            "hours": 22,
-            "days": 3
+            "hours": 32,
+            "days": 4
           },
           "std": {
-            "hours": 18,
-            "days": 3
+            "hours": 32,
+            "days": 4
           },
           "agg": {
-            "hours": 18,
-            "days": 3
+            "hours": 32,
+            "days": 4
           }
         },
-        "total": 12609.41,
+        "total": 19456.11,
         "material": 3806.51,
         "crewRate": 489.05,
         "tonnage": {
@@ -298,10 +298,43 @@
       }
     },
     "summary": {
-      "totalLabor": 8802.9,
+      "totalLabor": 15649.6,
       "totalMat": 3806.51,
-      "directCost": 12609.41,
-      "bidPrice": 20175.06
+      "directCost": 19456.11,
+      "bidPrice": 31129.78
+    },
+    "wageMode": "npw"
+  },
+  "asphalt-975sf-4s-material-capped": {
+    "activities": {
+      "asphaltRepair": {
+        "tiers": {
+          "cons": {
+            "hours": 16,
+            "days": 2
+          },
+          "std": {
+            "hours": 16,
+            "days": 2
+          },
+          "agg": {
+            "hours": 16,
+            "days": 2
+          }
+        },
+        "total": 9974.17,
+        "material": 2149.37,
+        "crewRate": 489.05,
+        "tonnage": {
+          "totalAsphaltTons": 27
+        }
+      }
+    },
+    "summary": {
+      "totalLabor": 7824.8,
+      "totalMat": 2149.37,
+      "directCost": 9974.17,
+      "bidPrice": 15958.67
     },
     "wageMode": "npw"
   },
@@ -789,19 +822,19 @@
       "asphaltRepair": {
         "tiers": {
           "cons": {
-            "hours": 22,
-            "days": 3
+            "hours": 32,
+            "days": 4
           },
           "std": {
-            "hours": 18,
-            "days": 3
+            "hours": 32,
+            "days": 4
           },
           "agg": {
-            "hours": 18,
-            "days": 3
+            "hours": 32,
+            "days": 4
           }
         },
-        "total": 16600.05,
+        "total": 26550.59,
         "material": 3806.51,
         "crewRate": 710.75,
         "tonnage": {
@@ -810,10 +843,10 @@
       }
     },
     "summary": {
-      "totalLabor": 12793.54,
+      "totalLabor": 22744.07,
       "totalMat": 3806.51,
-      "directCost": 16600.05,
-      "bidPrice": 26560.09
+      "directCost": 26550.59,
+      "bidPrice": 42480.94
     },
     "wageMode": "pw"
   },

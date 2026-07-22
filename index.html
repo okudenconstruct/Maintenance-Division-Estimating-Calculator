@@ -835,7 +835,7 @@
                 <div class="rate-row"><label>&nbsp;&nbsp;301 - 600 SF</label><input type="number" id="prodAR_lg" value="825"></div>
                 <div class="rate-row"><label>&nbsp;&nbsp;601 - 1,200 SF</label><input type="number" id="prodAR_xl" value="1700"></div>
                 <div class="rate-row"><label>&nbsp;&nbsp;&gt; 1,200 SF</label><input type="number" id="prodAR_xxl" value="1450"></div>
-                <div class="rate-row" style="border-bottom:1px solid var(--border-color); padding-bottom:0.4rem; margin-bottom:0.4rem;"><label><span class="tip" data-tip="One triaxle load of hot mix placeable/compactable per day. At 2&quot; &asymp; 1,450 SF; deeper configs yield fewer SF. Applied as a per-day tonnage floor on days (not a rate clip) so one-load jobs run at burst pace and only multi-load or deep-section jobs get stretched. Surface+base only, not DGA.">Asphalt Max Tons/Day</span></label><input type="number" id="maxAsphaltTons" value="20" step="1"></div>
+                <div class="rate-row" style="border-bottom:1px solid var(--border-color); padding-bottom:0.4rem; margin-bottom:0.4rem;"><label><span class="tip" data-tip="Hot mix the crew can place and compact per day. Calibrated to 13.5 T/day from the bid system actuals (Camden: 27 T over 2 shifts). Applied as a RATE CLIP: when tonnage limits the day, SF/day is clipped and hours grow with it. At 2&quot; &asymp; 988 SF/day; deeper sections yield fewer SF. Surface+base only, not DGA.">Asphalt Max Tons/Day</span></label><input type="number" id="maxAsphaltTons" value="13.5" step="1"></div>
                 <div class="rate-row"><label><span class="tip" data-tip="New install: drill, set, pin. Field-calibrated Q21.">WS Install (UN/day)</span></label><input type="number" id="prodWsInstall" value="80"></div>
                 <div class="rate-row"><label><span class="tip" data-tip="Re-pin existing stop. ~2x faster than install (no drilling). Field Q21.">WS Reset (UN/day)</span></label><input type="number" id="prodWsReset" value="155"></div>
                 <div class="rate-row"><label><span class="tip" data-tip="Remove & dispose. ~2.5-3x faster than install. Field Q21.">WS Removal (UN/day)</span></label><input type="number" id="prodWsRemoval" value="220"></div>
@@ -2509,8 +2509,13 @@ function calculateAll() {
         // Probe std-tier labor-only days to flag when material is the binding constraint
         const stdRawHrs = sf > 0 ? (sf / Math.max(laborRate, 0.01)) * stdShift : 0;
         const stdLaborOnly = optimizeShifts(stdRawHrs, stdShift, maxShift, phases);
-        const capBinding = sf > 0 && minDaysByMaterial > stdLaborOnly.days;
-        const stdEffRate = capBinding ? capSF : laborRate;
+        // The material cap is a genuine RATE CLIP, not just a floor on days. If the
+        // crew can only place maxAsphaltTons/day, that limits SF/day — so hours grow
+        // with the stretched schedule instead of staying at the labor-only figure.
+        // (Previously it only forced extra days, producing e.g. 8 hrs spread over
+        // 2 days, which understated labor and overstated travel days.)
+        const capBinding = sf > 0 && capSF < laborRate;
+        const stdEffRate = Math.min(laborRate, capSF);
 
         const crewIsLarge = totalAsphaltTons > 4;
         const baseCrewRate = crewIsLarge ? gv('rateAsphaltLarge') : gv('rateAsphaltSmall');
@@ -2534,7 +2539,7 @@ function calculateAll() {
         // Build three tiers manually so the material floor binds on ALL tiers
         // (a faster crew cannot beat the truck; agg converges to the floor on multi-load jobs)
         function arTierCalc(factor) {
-            const effRate = laborRate * factor;
+            const effRate = Math.min(laborRate * factor, capSF);
             const adjHrs = sf > 0 ? (sf / Math.max(effRate, 0.01)) * stdShift : 0;
             const minDays = Math.max(phases, minDaysByMaterial);
             return optimizeShifts(adjHrs, stdShift, maxShift, minDays);

@@ -781,6 +781,13 @@ The `calculateAll()` function (~850 lines) runs the following calculation for ea
 - Apply waste factor to each tonnage
 - Total asphalt tons = surface + base (DGA is separate)
 - **Crew selection**: If `totalAsphaltTons > 4` → triaxle crew (rateAsphaltLarge, crewAsphaltLarge), else → hot box crew (rateAsphaltSmall, crewAsphaltSmall)
+- **Material cap (`maxAsphaltTons`, default 13.5 T/day)** — the hot mix the crew can place and compact per day. Applied as a **rate clip**, not merely a floor on days:
+  ```
+  capSF   = maxAsphaltTons / tonsPerSF
+  effRate = min(laborRate x tierFactor, capSF)
+  ```
+  Previously the cap only forced extra days while hours were computed from the labor rate alone, producing artifacts like *8 crew-hours spread over 2 days* — understating labor and overstating travel days. As a rate clip, hours grow with the stretched schedule.
+- **Calibration**: 13.5 T/day comes from the bid system actuals (Camden: 975 SF @4", 27 T over 2 shifts). The app now reproduces that job exactly at **16 crew-hours / 2 days**. Small and shallow jobs are labor-limited and unaffected by the cap; deep or large sections are the ones it stretches.
 - Material cost: `surfTons × asphaltPrice + baseTons × baseAsphaltPrice + dgaTons × dgaPrice`
 - Snapshot includes `tonnage`, `crewType`, `depthConfig`
 

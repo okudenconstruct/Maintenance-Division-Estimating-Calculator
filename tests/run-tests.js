@@ -154,6 +154,13 @@ const SCENARIOS = [
     { name: 'sealcoat-52000', inputs: { sc_sf: 52000 } },
     { name: 'asphalt-500sf-2s', inputs: { ar_sf: 500, asphaltPrice: 85 } },
     { name: 'asphalt-3000sf-2s4b-multiload', inputs: { ar_sf: 3000, asphaltPrice: 85, baseAsphaltPrice: 80 } },
+    { name: 'asphalt-975sf-4s-material-capped', inputs: { ar_sf: 975, ar_depth: '4s', asphaltPrice: 74.66 },
+      assert: s => [
+          // the bid system actual (Camden, 27 T over 2 shifts): 16 crew-hours / 2 days.
+          // The material cap is a RATE CLIP, so hours grow with the stretched schedule.
+          ['material-capped hours match the bid system', s.activities.asphaltRepair.tiers.std.hours, 16],
+          ['material-capped days match the bid system', s.activities.asphaltRepair.tiers.std.days, 2]
+      ] },
     { name: 'asphalt-100sf-4s-depthmult', inputs: { ar_sf: 100, ar_depth: '4s', asphaltPrice: 85 } },
     { name: 'striping-mix', inputs: { st_4line: 8000, st_hc: 10, st_arrow: 6 } },
     { name: 'wheelstops-20new-10reset-10remove', inputs: { ws_new: 20, ws_reset: 10, ws_remove: 10 } },
