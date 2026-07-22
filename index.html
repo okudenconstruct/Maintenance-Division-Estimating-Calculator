@@ -681,7 +681,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v4.4 | Field-Calibrated | Size-Tiered Patching | Three-Tier Output | Crew Clustering | Estimate Confidence</span>
+            <span>v5.0 | Resource-Based Costing | Prevailing Wage | Field-Calibrated | Size-Tiered Patching | Three-Tier Output | Crew Clustering</span>
         </div>
     </div>
     <div class="header-controls">
@@ -1450,7 +1450,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v4.4 | Field-Calibrated Production Rates | Size-Tiered Patching | Crew Clustering | Estimate Confidence | Calendar Duration<br>
+    Maintenance Division Estimating Calculator v5.0 | Resource-Based Costing | Prevailing Wage Mode | Field-Calibrated Production Rates | Size-Tiered Patching | Crew Clustering<br>
     All rates subject to superintendent review.
 </div>
 
@@ -5361,11 +5361,29 @@ th{background:#f5f5f5;font-weight:700;font-size:9px;text-transform:uppercase;let
 }
 
 // ===== INIT =====
-const CALC_VERSION = '4.4';
+const CALC_VERSION = '5.0';
 // Keys intentionally recalibrated in this release. On version migration these
 // are dropped from the user's saved rates so the new field-calibrated defaults
 // apply; all other saved values are preserved.
-const MIGRATION_RESET_KEYS = ['prodBollard', 'prodSignPost', 'prodSignBollard'];
+const MIGRATION_RESET_KEYS = [
+    // v5.0 — all crew rates rebuilt bottom-up from the the bid system labor + equipment sheets
+    'rateCrackFill', 'rateSealcoat', 'rateStriping', 'rateAsphaltSmall', 'rateAsphaltLarge',
+    'rateWsInstall', 'rateWsReset', 'rateWsRemove', 'rateSpeedBump', 'rateBollard', 'rateSign',
+    'rateMastic', 'rateInlet', 'rateSpeedHump',
+    // laborer adjustment is now DERIVED from the wage table, not user-entered
+    'rateLaborerAdj',
+    // wage table + taxes (new in v5.0)
+    'wageForemanBase', 'wageForemanFringe', 'wageLaborerBase', 'wageLaborerFringe',
+    'wageTaxPct', 'wageWcPct', 'salesTaxPct',
+    // the bid system bills takeoff qty + sales tax, so these waste factors now default to 0
+    'wasteCrackFill', 'wasteSealcoat', 'wasteStriping', 'wasteMastic',
+    // mastic box is now priced PRE-tax (was tax-inclusive)
+    'matMasticBox',
+    // crew sizes corrected to real the bid system compositions
+    'crewStriping', 'crewSign', 'crewBollard', 'crewMastic',
+    // material cap recalibrated and its semantics changed (rate clip)
+    'maxAsphaltTons'
+];
 // v4.4: Code-review fixes. (1) prodSignPost now zero-guarded — previously a cleared/zero
 //       post-sign rate silently dropped ALL bollard-sign hours to zero. (2) Work-type output
 //       panels now display the selected cost tier (Cons/Std/Agg) with a tier label, matching
@@ -5379,6 +5397,29 @@ const MIGRATION_RESET_KEYS = ['prodBollard', 'prodSignPost', 'prodSignBollard'];
 //       instead of wiping everything. (7) Sign panel note corrected 32/day → 30/day (rates
 //       updated 7/9/26 per Darrell Bishop email: bollards 6/day, post signs 30/day, bollard
 //       signs 5/day additive). Restore logic deduplicated into applyRatesData().
+// v5.0: MAJOR — the calculator now mirrors the bid system resource costing.
+//       (1) Labor model: loaded/MH = base x (1 + tax%) x (1 + WC%) + fringe, with a new
+//       Labor & Wage Mode config section. WC 6.93% is derived — it reconciles the bid system's actual
+//       burden on BOTH a standard job (16.5% tax -> 24.59% effective) and a prevailing-wage
+//       job (18.5% -> 26.70%). Every crew is 1 Foreman + (N-1) General Laborers, verified
+//       across 6 the bid system jobs. (2) PREVAILING WAGE toggle: swaps the labor content of every crew
+//       to the PW wage table; equipment and material unchanged. (3) All crew rates rebuilt
+//       bottom-up as work-hours-only (crew labor + equipment) — sign/bollard/wheel stops/
+//       speed bump share one 1F+2L crew; mastic mirrors the crack fill crew minus the melter.
+//       (4) TRAVEL now mirrors the bid system: booked as extra manhours at 1.5x base with NO equipment
+//       charged during travel, replacing the old all-in-rate multiplication. A 1 hr/shift
+//       round trip reproduces the bid system's 105.56% Tax/OT factor. (5) 6.625% NJ sales tax on all
+//       material; crack fill/sealcoat/striping/mastic waste factors default to 0 (the bid system bills
+//       takeoff qty). Asphalt 7% and speed hump 5% waste remain — those are tonnage-conversion
+//       allowances. (6) Asphalt material cap is now a genuine RATE CLIP, not just a floor on
+//       days — previously it produced artifacts like 8 crew-hours spread over 2 days. Default
+//       recalibrated 20 -> 13.5 T/day. Validated against the bid system actuals to within a few cents:
+//       McLean patch 2,516.00 vs 2,515.86; Needleman crack fill 3,581.53 vs 3,580.32;
+//       Winzinger PW sign crew 1,716.39 vs 1,716.46. Production rates deliberately untouched.
+// v4.5: Speed humps take per-hump length, width and max depth. Tonnage scales with all three
+//       (anchored so the standard 16x13x2.64 hump still yields 2.13 T). Production is driven
+//       by footprint AREA (SF, matching the bid system) via alpha-weighted standard-hump equivalents,
+//       so depth changes material but not crew time.
 // v4.3: Asphalt patching production is now size-tiered (6 editable bands derived from 106
 //       historical patch records). Replaces the previous flat 600 SF/day. The 20-ton material
 //       constraint is implemented as a per-day tonnage FLOOR on days (not a rate clip), so
