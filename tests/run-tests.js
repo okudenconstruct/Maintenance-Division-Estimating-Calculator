@@ -163,13 +163,33 @@ const SCENARIOS = [
       assert: s => [
           // No per-hump lengths set → each falls back to the standard 16' → 2.13 T/hump
           ['speed hump total tons (std fallback)', s.activities.speedHumps.tonnage.totalTons, 7],
-          ['speed hump avg tons/hump (std)', s.activities.speedHumps.tonnage.avgTonsPerHump, 2.13]
+          ['speed hump avg tons/hump (std)', s.activities.speedHumps.tonnage.avgTonsPerHump, 2.13],
+          // All-standard humps → equiv = qty exactly (α cancels), so production is unchanged
+          ['speed hump equiv units (std fallback)', s.activities.speedHumps.equivalentUnits, 3]
       ] },
     { name: 'speedhumps-mixed-lengths', inputs: { sh_qty: 2, sh_len_0: 16, sh_len_1: 32, asphaltPrice: 85 },
       assert: s => [
           // Tonnage is linear in length: (16+32)×0.133125=6.39 raw, ×1.05 waste = 6.71 → ceil 7
           ['speed hump mixed-length total tons', s.activities.speedHumps.tonnage.totalTons, 7],
-          ['speed hump total length', s.activities.speedHumps.tonnage.totalLength, 48]
+          ['speed hump total length', s.activities.speedHumps.tonnage.totalLength, 48],
+          // Production: 16' → 1.0 equiv; 32' (2× area) → 0.4 + 0.6×2 = 1.6 equiv; total 2.6
+          ['speed hump equiv units (mixed, α=0.4)', s.activities.speedHumps.equivalentUnits, 2.6]
+      ] },
+    { name: 'speedhumps-deep-hump', inputs: { sh_qty: 1, sh_dep_0: 5.28, asphaltPrice: 85 },
+      assert: s => [
+          // Double depth → double tonnage: 2×2.13=4.26 raw, ×1.05=4.47 → ceil 5
+          ['speed hump deep total tons', s.activities.speedHumps.tonnage.totalTons, 5],
+          // Depth does NOT affect footprint area → production equiv stays 1.0 (like patching SF)
+          ['speed hump deep footprint SF', s.activities.speedHumps.tonnage.totalArea, 208],
+          ['speed hump deep equiv units (unchanged)', s.activities.speedHumps.equivalentUnits, 1]
+      ] },
+    { name: 'speedhumps-wide-hump', inputs: { sh_qty: 1, sh_wid_0: 26, asphaltPrice: 85 },
+      assert: s => [
+          // Double width → double tonnage AND double footprint area
+          ['speed hump wide total tons', s.activities.speedHumps.tonnage.totalTons, 5],
+          ['speed hump wide footprint SF', s.activities.speedHumps.tonnage.totalArea, 416],
+          // Area doubles → equiv = 0.4 + 0.6×2 = 1.6 (production scales, unlike depth)
+          ['speed hump wide equiv units (α=0.4)', s.activities.speedHumps.equivalentUnits, 1.6]
       ] },
     { name: 'inlet-2repair-1recon-1casting', inputs: { in_repair: 2, in_recon: 1, in_casting: 1 } },
     { name: 'paintremoval-2000lf', inputs: { pr_lf: 2000 } },
@@ -194,6 +214,10 @@ function extract(snap) {
             total: +((act.costs && act.costs.total) || 0).toFixed(2),
             material: +((act.costs && act.costs.material) || 0).toFixed(2)
         };
+        // Size-weighted production driver (speed humps) — part of the audit trail
+        if (act.equivalentUnits !== undefined) {
+            out.activities[key].equivalentUnits = +act.equivalentUnits.toFixed(3);
+        }
         // Tonnage (asphalt repairs, speed humps) — part of the audit trail
         if (act.tonnage) {
             const t = act.tonnage;
@@ -201,6 +225,7 @@ function extract(snap) {
             if (t.totalTons !== undefined)         ton.totalTons = t.totalTons;
             if (t.totalAsphaltTons !== undefined)  ton.totalAsphaltTons = t.totalAsphaltTons;
             if (t.totalLength !== undefined)       ton.totalLength = t.totalLength;
+            if (t.totalArea !== undefined)         ton.totalArea = t.totalArea;
             if (t.avgTonsPerHump !== undefined)    ton.avgTonsPerHump = t.avgTonsPerHump;
             out.activities[key].tonnage = ton;
         }

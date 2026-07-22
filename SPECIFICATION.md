@@ -245,7 +245,8 @@ Collapsible panel (`togglePanel()`) containing five rate sections in a CSS grid.
 | `prodMastic` | Mastic | 1,000 | LF/day |
 | `prodInletRepair` | Inlet Repair | 6 | UN/day |
 | `prodInletRecon` | Inlet Reconstruct | 8 | hrs/unit |
-| `prodSpeedHump` | Speed Humps | 4 | UN/day |
+| `prodSpeedHump` | Speed Humps | 4 | **standard** UN/day (2.13-ton humps) |
+| `shSetupFrac` | Speed Hump Setup Frac (α) | 0.4 | fraction of hump labor that is fixed setup |
 | `prodPaintRemoval` | Paint Removal | 2,000 | LF/day |
 
 Note: Inlet repair uses units/day while inlet reconstruction uses hours/unit — these are different rate formats reflecting how the rates were originally described in field data. They are calculated differently in the code.
@@ -348,9 +349,9 @@ Twelve collapsible work type panels. Each uses `toggleWorkType()` for expand/col
 
 **5.5.10 Asphalt Speed Humps**
 - Panel ID: `wt_speedhump` | Enable: `en_speedhump` | Cluster: Heavy (orange)
-- Inputs: Speed Humps qty (`sh_qty`), Phases (`sh_phases`), Travel hrs (`sh_travel`), and one per-hump length field (`sh_len_0`…`sh_len_{n-1}`) rendered dynamically when qty changes (each defaults to the standard 16')
-- Note: "Sinusoidal profile, 13' width × 2.64" max depth. Set each hump's length (across-road, ft); standard 16' = 2.13 tons of 9.5mm asphalt. Tonnage scales linearly with length."
-- Output displays: Asphalt tons, then tier table
+- Inputs: Speed Humps qty (`sh_qty`), Phases (`sh_phases`), Travel hrs (`sh_travel`), and per-hump length/width/depth fields (`sh_len_i` / `sh_wid_i` / `sh_dep_i`, i = 0…n−1) rendered dynamically when qty changes (each defaults to the standard 16' / 13' / 2.64")
+- Note: "Sinusoidal (half-sine) profile. Set each hump's length, width, and max depth; standard 16'×13'×2.64" = 2.13 tons. Tonnage scales with length×width×depth; production is driven by footprint area (SF) so depth changes material but not crew time."
+- Output displays: Total length (ft), Footprint area (SF), Asphalt tons, then tier table
 - Notes: `note_sh`
 
 **5.5.11 Inlet Repair / Reconstruction**
@@ -767,14 +768,22 @@ The `calculateAll()` function (~850 lines) runs the following calculation for ea
 - Material: `reconQty × matBlock + castingQty × matCasting`
 - Separate unit checks for repair and reconstruction
 
-**Speed Humps (Per-Hump Length → Tonnage Calculation):**
-- Geometry: sinusoidal (half-sine) profile of fixed 13' width and 2.64" max depth, extruded across the road for a per-hump length. Holding profile + width + depth constant, asphalt tonnage is exactly **linear in length**.
-- Calibration anchor: the standard hump (16' length) = 2.13 tons of 9.5mm asphalt, so `SH_TONS_PER_FT = 2.13 / 16 = 0.133125` tons per linear foot (this constant carries the half-sine average-height factor 2/π, the 13' width, the 2.64" depth, and the ~146 lb/ft³ compacted density baked into the original 2.13 figure).
-- Per hump: `tonsPerHump(L) = SH_TONS_PER_FT × L`
-- Lengths come from the dynamic `sh_len_i` inputs; any absent/blank length falls back to the standard 16' (so headless/test DOM and untouched fields reproduce the legacy 2.13/hump).
-- `totalTons = ceil(SH_TONS_PER_FT × Σ lengths × wasteFactor)`
+**Speed Humps (Per-Hump Dimensions → Tonnage):**
+- Geometry: sinusoidal (half-sine) profile with **fully variable per-hump length, width, and max depth**. Asphalt volume = half-sine average height × footprint, so tonnage is linear in each dimension.
+- Calibration anchor: the standard hump (16'×13'×2.64") = 2.13 tons of 9.5mm asphalt. `SH_TON_FACTOR = 2.13 / (2.64 × 13 × 16) ≈ 0.0038789` tons per (in·ft·ft) folds in the half-sine factor 2/π, the inch→ft and lb→ton conversions, and the ~146 lb/ft³ compacted density — derived from the anchor so the standard hump still yields exactly 2.13 tons.
+- Per hump: `tons_i = SH_TON_FACTOR × depth_i × width_i × length_i` (depth in inches, width/length in feet).
+- Dimensions come from the dynamic `sh_len_i` / `sh_wid_i` / `sh_dep_i` inputs; any absent/blank value falls back to the standard 16' / 13' / 2.64" (so headless/test DOM and untouched fields reproduce the legacy 2.13/hump).
+- `totalTons = ceil(Σ tons_i × wasteFactor)`
 - Material cost: `totalTons × asphaltPrice`
-- Snapshot `tonnage` records `totalTons`, `avgTonsPerHump`, `lengths[]`, `totalLength`, `tonsPerFt`, `stdLength`, `width`, `maxDepth`.
+- Snapshot `tonnage` records `totalTons`, `avgTonsPerHump`, `lengths[]`, `widths[]`, `depths[]`, `totalLength`, `totalArea`, `stdArea`, `tonFactor`, and the `stdLength`/`stdWidth`/`stdDepth` references.
+
+**Speed Humps (Footprint-Area-Weighted Production):**
+- `prodSpeedHump` (4/day) is **standard-hump** throughput, not raw count. Off-size humps are converted to standard-hump equivalents before applying it. The size proxy is **footprint area (length × width, SF)** — matching how the crew's rate is tracked in the bid system (SF/day, like patching). Depth therefore drives material tonnage but **not** crew time.
+- Per hump: `equiv_i = α + (1 − α) × (area_i / SH_STD_AREA)`, where `area_i = length_i × width_i`, `SH_STD_AREA = 16 × 13 = 208 SF`, and `α = shSetupFrac` (default 0.4) is the fraction of a hump's labor that is fixed setup (marking, edge prep, forming the profile) and does not scale with size.
+- `equivalentUnits = Σ equiv_i` is passed to `calcThreeTier` in place of `qty`; hours ≈ `(equivalentUnits / prodSpeedHump) × stdShift` (phased/tiered as usual).
+- **Bounds & backward compatibility**: at standard footprint `area_i = 208` so `equiv_i = 1` for any α → an all-standard job gives `equivalentUnits = qty` and reproduces legacy hours exactly (golden-test safe). `α = 1` → pure unit count (legacy behavior at all sizes); `α = 0` → pure SF-driven (≡ `prodSpeedHump × 208` SF/day).
+- Production (α, area) is independent of material (tonnage, depth, waste factor); changing depth or waste affects tons/cost only, not hours.
+- Snapshot records `equivalentUnits`, `sizeProxy: 'area'`, `totalArea`, and `rates.setupFraction`; `rawProductionHrs` uses `equivalentUnits`.
 
 **Paint Removal:**
 - Uses striping crew + grinder rental per production day

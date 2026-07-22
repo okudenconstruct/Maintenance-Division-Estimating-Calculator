@@ -447,9 +447,11 @@
         },
         "total": 3679.12,
         "material": 595,
+        "equivalentUnits": 3,
         "tonnage": {
           "totalTons": 7,
           "totalLength": 48,
+          "totalArea": 624,
           "avgTonsPerHump": 2.13
         }
       }
@@ -466,7 +468,42 @@
       "speedHumps": {
         "tiers": {
           "cons": {
+            "hours": 8,
+            "days": 1
+          },
+          "std": {
             "hours": 6,
+            "days": 1
+          },
+          "agg": {
+            "hours": 6,
+            "days": 1
+          }
+        },
+        "total": 3679.12,
+        "material": 595,
+        "equivalentUnits": 2.6,
+        "tonnage": {
+          "totalTons": 7,
+          "totalLength": 48,
+          "totalArea": 624,
+          "avgTonsPerHump": 3.195
+        }
+      }
+    },
+    "summary": {
+      "totalLabor": 3084.12,
+      "totalMat": 595,
+      "directCost": 3679.12,
+      "bidPrice": 5886.59
+    }
+  },
+  "speedhumps-deep-hump": {
+    "activities": {
+      "speedHumps": {
+        "tiers": {
+          "cons": {
+            "hours": 4,
             "days": 1
           },
           "std": {
@@ -478,20 +515,57 @@
             "days": 1
           }
         },
-        "total": 2651.08,
-        "material": 595,
+        "total": 2481.08,
+        "material": 425,
+        "equivalentUnits": 1,
         "tonnage": {
-          "totalTons": 7,
-          "totalLength": 48,
-          "avgTonsPerHump": 3.195
+          "totalTons": 5,
+          "totalLength": 16,
+          "totalArea": 208,
+          "avgTonsPerHump": 4.26
         }
       }
     },
     "summary": {
       "totalLabor": 2056.08,
-      "totalMat": 595,
-      "directCost": 2651.08,
-      "bidPrice": 4241.73
+      "totalMat": 425,
+      "directCost": 2481.08,
+      "bidPrice": 3969.73
+    }
+  },
+  "speedhumps-wide-hump": {
+    "activities": {
+      "speedHumps": {
+        "tiers": {
+          "cons": {
+            "hours": 4,
+            "days": 1
+          },
+          "std": {
+            "hours": 4,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 2481.08,
+        "material": 425,
+        "equivalentUnits": 1.6,
+        "tonnage": {
+          "totalTons": 5,
+          "totalLength": 16,
+          "totalArea": 416,
+          "avgTonsPerHump": 4.26
+        }
+      }
+    },
+    "summary": {
+      "totalLabor": 2056.08,
+      "totalMat": 425,
+      "directCost": 2481.08,
+      "bidPrice": 3969.73
     }
   },
   "inlet-2repair-1recon-1casting": {
