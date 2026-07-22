@@ -1115,11 +1115,13 @@
     </button>
     <div class="panel-content" id="wt_speedhump">
         <div class="wt-grid">
-            <div class="input-group"><label>Speed Humps (qty)</label><input type="number" id="sh_qty" placeholder="0" min="0" oninput="calculateAll()"></div>
+            <div class="input-group"><label>Speed Humps (qty)</label><input type="number" id="sh_qty" placeholder="0" min="0" step="1" oninput="renderSpeedHumpLengths(); calculateAll();"></div>
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sh_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
         </div>
-        <p class="note">2.13 tons of 9.5mm asphalt per hump (sinusoidal profile, 16'x13'x2.64").</p>
+        <div id="sh_lengths" class="wt-grid"></div>
+        <p class="note">Sinusoidal profile, 13' width × 2.64" max depth. Set each hump's length (across-road, ft); standard 16' = 2.13 tons of 9.5mm asphalt. Tonnage scales linearly with length.</p>
         <div class="output-section"><h5>Speed Hump Output</h5>
+            <div class="output-row"><span class="lbl">Total length (ft)</span><span class="val" id="sh_totlen">0</span></div>
             <div class="output-row"><span class="lbl">Asphalt (tons)</span><span class="val" id="sh_tons">0</span></div>
             <div class="output-divider"></div>
             <div id="sh_output"></div>
@@ -1720,6 +1722,30 @@ const BASE_CREW_SIZES = {
 };
 
 /**
+ * Asphalt speed-hump tonnage geometry.
+ *
+ * A speed hump is a sinusoidal (half-sine) profile of standard max depth and
+ * standard width (the travel-direction shape a vehicle drives over), extruded
+ * across the road for a chosen LENGTH. Holding the profile and width constant,
+ * asphalt volume — and therefore tonnage — is exactly LINEAR in length.
+ *
+ * The legacy standard hump (16' length × 13' width × 2.64" max depth, 9.5mm
+ * asphalt) = 2.13 tons. We keep that as the calibration anchor so a hump at the
+ * standard 16' length still yields 2.13 tons, and scale linearly for others:
+ *
+ *     tonsPerHump(L) = SH_TONS_PER_FT × L
+ *
+ * (2.13 / 16 = 0.133125 tons per linear foot of length. This implicitly carries
+ *  the half-sine average-height factor (2/π), the 13' width, the 2.64" depth,
+ *  and the ~146 lb/ft³ compacted density baked into the original 2.13 figure.)
+ */
+const SH_STD_LENGTH  = 16;                    // ft — standard across-road length
+const SH_STD_WIDTH   = 13;                    // ft — fixed travel-direction (profile) width
+const SH_MAX_DEPTH   = 2.64;                  // in — fixed sinusoidal max depth
+const SH_STD_TONS    = 2.13;                  // tons per hump at the standard length
+const SH_TONS_PER_FT = SH_STD_TONS / SH_STD_LENGTH;  // 0.133125 tons per linear foot
+
+/**
  * Returns the effective crew hourly rate adjusted for crew size changes.
  * Formula: baseRate + (currentCrew − baseCrew) × laborerRate
  * If crew shrinks below base, rate decreases (laborer removed from truck).
@@ -2131,6 +2157,37 @@ function clusterize(snapshot, stdShift, maxShift) {
     }
 
     return activeClusters;
+}
+
+// ===== SPEED-HUMP PER-HUMP LENGTH INPUTS =====
+// Renders one length field per speed hump (qty), preserving any values already
+// entered. New humps default to the standard 16' length. Called when sh_qty
+// changes; the delegated document 'input' listener re-runs calculateAll() as the
+// individual length fields are edited, so they don't need inline handlers.
+const SH_LEN_RENDER_CAP = 60;   // don't render more than this many fields
+function renderSpeedHumpLengths() {
+    const container = document.getElementById('sh_lengths');
+    if (!container) return;
+    const qty = Math.max(0, Math.floor(gv('sh_qty')));
+    // Preserve existing entered values before rebuilding.
+    const prev = [];
+    for (let i = 0; i < container.querySelectorAll('input').length + qty; i++) {
+        const el = document.getElementById('sh_len_' + i);
+        if (el) prev[i] = el.value;
+    }
+    const shown = Math.min(qty, SH_LEN_RENDER_CAP);
+    let html = '';
+    for (let i = 0; i < shown; i++) {
+        const val = (prev[i] !== undefined && prev[i] !== '') ? prev[i] : SH_STD_LENGTH;
+        html += '<div class="input-group"><label>Hump ' + (i + 1) + ' length (ft)</label>' +
+                '<input type="number" id="sh_len_' + i + '" value="' + val + '" min="1" step="0.5"></div>';
+    }
+    if (qty > SH_LEN_RENDER_CAP) {
+        html += '<p class="note" style="grid-column:1/-1;">Showing first ' + SH_LEN_RENDER_CAP +
+                ' humps; the remaining ' + (qty - SH_LEN_RENDER_CAP) +
+                ' use the standard ' + SH_STD_LENGTH + "' length.</p>";
+    }
+    container.innerHTML = html;
 }
 
 // ===== MAIN CALCULATION =====
@@ -2624,10 +2681,23 @@ function calculateAll() {
         const crew = gv('crewSpeedHump');
         const crewRate = adjustedRate(baseCrewRate, crew, BASE_CREW_SIZES.speedHump);
         const travel = globalTravel;
-        const tonsPerHump = 2.13;
-        const tons = qty > 0 ? Math.ceil(qty * tonsPerHump * wf.sh) : 0;
+        // Per-hump lengths: read each sh_len_i input, defaulting to the standard
+        // length when absent (headless/test DOM) or blank. Tonnage is linear in
+        // length, so total pre-waste tons = SH_TONS_PER_FT × Σ lengths.
+        const nHumps = Math.max(0, Math.floor(qty));
+        const lengths = [];
+        for (let i = 0; i < nHumps; i++) {
+            const el = document.getElementById('sh_len_' + i);
+            const L = (el && parseFloat(el.value) > 0) ? parseFloat(el.value) : SH_STD_LENGTH;
+            lengths.push(L);
+        }
+        const totalLength = lengths.reduce((a, b) => a + b, 0);
+        const rawTons = totalLength * SH_TONS_PER_FT;
+        const tons = nHumps > 0 ? Math.ceil(rawTons * wf.sh) : 0;
+        const avgTonsPerHump = nHumps > 0 ? +(rawTons / nHumps).toFixed(3) : 0;
         const matCost = tons * asphaltPrice;
         sv('sh_tons', tons);
+        sv('sh_totlen', totalLength);
         const tier = calcThreeTier(qty, prod, stdShift, maxShift, phases, crew);
         const shT = tier ? tier[COST_TIER] : null;
         const travelDays = shT ? shT.days : 0;
@@ -2637,10 +2707,11 @@ function calculateAll() {
             sumLabor.sh = shT.hours * crewRate + travelCost;
             sumMat.sh = matCost;
             hbRows.push({ name: 'Speed Humps', tier, travel, travelDays });
-            snapshot.activities.speedHumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel }, tonnage: { tonsPerHump, totalTons: tons }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedHump, prodPerDay: prod, baseProdPerDay: baseProdSH, synergyMult: shSynMult }, tiers: tier, costs: { laborShift: shT.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
+            snapshot.activities.speedHumps = { enabled: true, rawProductionHrs: (qty / Math.max(prod, 0.01)) * stdShift, inputs: { qty, phases, travel, lengths }, tonnage: { totalTons: tons, tonsPerHump: avgTonsPerHump, avgTonsPerHump, lengths, totalLength, tonsPerFt: SH_TONS_PER_FT, stdLength: SH_STD_LENGTH, width: SH_STD_WIDTH, maxDepth: SH_MAX_DEPTH }, rates: { crewRate, baseCrewRate, crewSize: crew, baseCrewSize: BASE_CREW_SIZES.speedHump, prodPerDay: prod, baseProdPerDay: baseProdSH, synergyMult: shSynMult }, tiers: tier, costs: { laborShift: shT.hours * crewRate, laborTravel: travelCost, material: matCost, total: sumLabor.sh + sumMat.sh } };
         }
     } else {
         sv('sh_tons', '0');
+        sv('sh_totlen', '0');
         renderTierTable('sh_output', null);
     }
 
@@ -3888,6 +3959,7 @@ function resetForm() {
         const noteEl = document.getElementById('scope_note_' + item.id);
         if (noteEl) noteEl.value = '';
     });
+    renderSpeedHumpLengths();
     calculateAll();
     showToast('Form reset');
 }
@@ -4731,6 +4803,13 @@ function exportComprehensiveText() {
             const t = act.tonnage;
             if (t.surfTons !== undefined) {
                 L.push('  Tonnage: Surface ' + t.surfTons + 'T, Base ' + t.baseTons + 'T, DGA ' + t.dgaTons + 'T (Total Asphalt: ' + t.totalAsphaltTons + 'T)');
+            } else if (t.lengths && t.lengths.length) {
+                const allStd = t.lengths.every(l => l === t.stdLength);
+                const lenStr = allStd
+                    ? t.lengths.length + " @ " + t.stdLength + "' (std)"
+                    : t.lengths.map(l => l + "'").join(', ');
+                L.push('  Tonnage: ' + t.totalTons + 'T  |  Lengths: ' + lenStr +
+                       '  |  ' + t.avgTonsPerHump + 'T/hump avg (' + t.width + "' wide × " + t.maxDepth + '" deep)');
             } else {
                 L.push('  Tonnage: ' + t.totalTons + 'T (' + t.tonsPerHump + 'T/hump)');
             }
@@ -5259,6 +5338,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.matches('input, select')) calculateAll();
     });
 
+    renderSpeedHumpLengths();
     calculateAll();
 });
 </script>

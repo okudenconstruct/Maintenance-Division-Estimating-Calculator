@@ -159,7 +159,18 @@ const SCENARIOS = [
     { name: 'wheelstops-20new-10reset-10remove', inputs: { ws_new: 20, ws_reset: 10, ws_remove: 10 } },
     { name: 'mastic-1000lf', inputs: { ma_lf: 1000 } },
     { name: 'speedbumps-4', inputs: { sb_qty: 4 } },
-    { name: 'speedhumps-3', inputs: { sh_qty: 3, asphaltPrice: 85 } },
+    { name: 'speedhumps-3', inputs: { sh_qty: 3, asphaltPrice: 85 },
+      assert: s => [
+          // No per-hump lengths set → each falls back to the standard 16' → 2.13 T/hump
+          ['speed hump total tons (std fallback)', s.activities.speedHumps.tonnage.totalTons, 7],
+          ['speed hump avg tons/hump (std)', s.activities.speedHumps.tonnage.avgTonsPerHump, 2.13]
+      ] },
+    { name: 'speedhumps-mixed-lengths', inputs: { sh_qty: 2, sh_len_0: 16, sh_len_1: 32, asphaltPrice: 85 },
+      assert: s => [
+          // Tonnage is linear in length: (16+32)×0.133125=6.39 raw, ×1.05 waste = 6.71 → ceil 7
+          ['speed hump mixed-length total tons', s.activities.speedHumps.tonnage.totalTons, 7],
+          ['speed hump total length', s.activities.speedHumps.tonnage.totalLength, 48]
+      ] },
     { name: 'inlet-2repair-1recon-1casting', inputs: { in_repair: 2, in_recon: 1, in_casting: 1 } },
     { name: 'paintremoval-2000lf', inputs: { pr_lf: 2000 } },
     { name: 'heavy-cluster-multiactivity', inputs: { ar_sf: 400, ws_new: 10, sg_bollard: 3, bo_qty: 2, asphaltPrice: 85 } },
@@ -183,6 +194,16 @@ function extract(snap) {
             total: +((act.costs && act.costs.total) || 0).toFixed(2),
             material: +((act.costs && act.costs.material) || 0).toFixed(2)
         };
+        // Tonnage (asphalt repairs, speed humps) — part of the audit trail
+        if (act.tonnage) {
+            const t = act.tonnage;
+            const ton = {};
+            if (t.totalTons !== undefined)         ton.totalTons = t.totalTons;
+            if (t.totalAsphaltTons !== undefined)  ton.totalAsphaltTons = t.totalAsphaltTons;
+            if (t.totalLength !== undefined)       ton.totalLength = t.totalLength;
+            if (t.avgTonsPerHump !== undefined)    ton.avgTonsPerHump = t.avgTonsPerHump;
+            out.activities[key].tonnage = ton;
+        }
     }
     const s = snap.summary;
     out.summary = {

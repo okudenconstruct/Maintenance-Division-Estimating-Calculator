@@ -241,7 +241,10 @@
           }
         },
         "total": 3925.6,
-        "material": 595
+        "material": 595,
+        "tonnage": {
+          "totalAsphaltTons": 7
+        }
       }
     },
     "summary": {
@@ -269,7 +272,10 @@
           }
         },
         "total": 13561.8,
-        "material": 3570
+        "material": 3570,
+        "tonnage": {
+          "totalAsphaltTons": 42
+        }
       }
     },
     "summary": {
@@ -297,7 +303,10 @@
           }
         },
         "total": 1660.4,
-        "material": 255
+        "material": 255,
+        "tonnage": {
+          "totalAsphaltTons": 3
+        }
       }
     },
     "summary": {
@@ -437,7 +446,12 @@
           }
         },
         "total": 3679.12,
-        "material": 595
+        "material": 595,
+        "tonnage": {
+          "totalTons": 7,
+          "totalLength": 48,
+          "avgTonsPerHump": 2.13
+        }
       }
     },
     "summary": {
@@ -445,6 +459,39 @@
       "totalMat": 595,
       "directCost": 3679.12,
       "bidPrice": 5886.59
+    }
+  },
+  "speedhumps-mixed-lengths": {
+    "activities": {
+      "speedHumps": {
+        "tiers": {
+          "cons": {
+            "hours": 6,
+            "days": 1
+          },
+          "std": {
+            "hours": 4,
+            "days": 1
+          },
+          "agg": {
+            "hours": 4,
+            "days": 1
+          }
+        },
+        "total": 2651.08,
+        "material": 595,
+        "tonnage": {
+          "totalTons": 7,
+          "totalLength": 48,
+          "avgTonsPerHump": 3.195
+        }
+      }
+    },
+    "summary": {
+      "totalLabor": 2056.08,
+      "totalMat": 595,
+      "directCost": 2651.08,
+      "bidPrice": 4241.73
     }
   },
   "inlet-2repair-1recon-1casting": {
@@ -521,7 +568,10 @@
           }
         },
         "total": 2730.4,
-        "material": 510
+        "material": 510,
+        "tonnage": {
+          "totalAsphaltTons": 6
+        }
       },
       "wheelStops": {
         "tiers": {
