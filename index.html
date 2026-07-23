@@ -681,7 +681,7 @@
         <div class="logo-icon">M</div>
         <div class="logo-text">
             <h1>Maintenance Division Estimating Calculator</h1>
-            <span>v5.0 | Resource-Based Costing | Prevailing Wage | Field-Calibrated | Size-Tiered Patching | Three-Tier Output | Crew Clustering</span>
+            <span>v5.0 &mdash; Resource-level crew costing &middot; field-calibrated production &middot; three-tier ranged output &middot; standard &amp; prevailing wage</span>
         </div>
     </div>
     <div class="header-controls">
@@ -758,7 +758,7 @@
     <div class="panel-content" id="rateContent">
         <div class="rate-grid">
             <div class="rate-section">
-                <h4><span class="tip" data-tip="Labor wage table mirroring the bid system. Loaded $/MH = base x (1 + tax%) x (1 + WC%) + fringe. Every crew is 1 Foreman + (N-1) General Laborers.">Labor &amp; Wage Mode</span></h4>
+                <h4><span class="tip" data-tip="Labor wage table. Loaded $/MH = base x (1 + tax%) x (1 + WC%) + fringe. Every crew is 1 Foreman + (N-1) General Laborers.">Labor &amp; Wage Mode</span></h4>
                 <div class="rate-row" style="background:var(--bg-secondary); padding:0.4rem 0.5rem; border-radius:4px; margin-bottom:0.5rem;">
                     <label style="font-weight:700; color:var(--accent-orange);"><span class="tip" data-tip="ON = prevailing wage. Swaps every crew's labor content to the PW wage table. Equipment and material are unchanged.">Prevailing Wage (PW)</span></label>
                     <input type="checkbox" id="pwMode" onchange="calculateAll()" style="width:auto; accent-color:var(--accent-orange);">
@@ -768,8 +768,8 @@
                 <div class="rate-row"><label>Laborer base ($/MH)</label><input type="number" id="wageLaborerBase" value="37.50" step="0.01"></div>
                 <div class="rate-row"><label>Laborer fringe ($/MH)</label><input type="number" id="wageLaborerFringe" value="5.50" step="0.01"></div>
                 <div class="rate-row"><label>Payroll tax (%)</label><input type="number" id="wageTaxPct" value="16.5" step="0.01"></div>
-                <div class="rate-row"><label><span class="tip" data-tip="Workers' comp loading (NJ5500), applied on top of payroll tax. Derived from the bid system actuals: reconciles both the 16.5% standard and 18.5% PW jobs at ~6.93%.">Workers' comp (%)</span></label><input type="number" id="wageWcPct" value="6.93" step="0.01"></div>
-                <div class="rate-row"><label><span class="tip" data-tip="NJ sales tax applied to all material costs. the bid system shows this as the 106.625 Tax/OT factor on material lines.">Sales tax on material (%)</span></label><input type="number" id="salesTaxPct" value="6.625" step="0.001"></div>
+                <div class="rate-row"><label><span class="tip" data-tip="Workers' comp loading (NJ5500), applied on top of payroll tax. Derived from reference job actuals: reconciles both the 16.5% standard and 18.5% PW jobs at ~6.93%.">Workers' comp (%)</span></label><input type="number" id="wageWcPct" value="6.93" step="0.01"></div>
+                <div class="rate-row"><label><span class="tip" data-tip="NJ sales tax applied to all material costs. Appears as the 106.625 Tax/OT factor on material lines.">Sales tax on material (%)</span></label><input type="number" id="salesTaxPct" value="6.625" step="0.001"></div>
                 <div class="rate-row" style="border-top:1px solid var(--border-color); padding-top:0.4rem; margin-top:0.4rem;">
                     <label><span class="tip" data-tip="Derived, not editable. Straight-time loaded cost of one added/removed General Laborer at the active wage mode. Used when crew size differs from base.">Laborer adj (derived)</span></label>
                     <input type="number" id="rateLaborerAdj" value="52.22" step="0.01" readonly style="opacity:0.65;">
@@ -835,7 +835,7 @@
                 <div class="rate-row"><label>&nbsp;&nbsp;301 - 600 SF</label><input type="number" id="prodAR_lg" value="825"></div>
                 <div class="rate-row"><label>&nbsp;&nbsp;601 - 1,200 SF</label><input type="number" id="prodAR_xl" value="1700"></div>
                 <div class="rate-row"><label>&nbsp;&nbsp;&gt; 1,200 SF</label><input type="number" id="prodAR_xxl" value="1450"></div>
-                <div class="rate-row" style="border-bottom:1px solid var(--border-color); padding-bottom:0.4rem; margin-bottom:0.4rem;"><label><span class="tip" data-tip="Hot mix the crew can place and compact per day. Calibrated to 13.5 T/day from the bid system actuals (Camden: 27 T over 2 shifts). Applied as a RATE CLIP: when tonnage limits the day, SF/day is clipped and hours grow with it. At 2&quot; &asymp; 988 SF/day; deeper sections yield fewer SF. Surface+base only, not DGA.">Asphalt Max Tons/Day</span></label><input type="number" id="maxAsphaltTons" value="13.5" step="1"></div>
+                <div class="rate-row" style="border-bottom:1px solid var(--border-color); padding-bottom:0.4rem; margin-bottom:0.4rem;"><label><span class="tip" data-tip="Hot mix the crew can place and compact per day. Calibrated to 13.5 T/day from reference job actuals (Camden: 27 T over 2 shifts). Applied as a RATE CLIP: when tonnage limits the day, SF/day is clipped and hours grow with it. At 2&quot; &asymp; 988 SF/day; deeper sections yield fewer SF. Surface+base only, not DGA.">Asphalt Max Tons/Day</span></label><input type="number" id="maxAsphaltTons" value="13.5" step="1"></div>
                 <div class="rate-row"><label><span class="tip" data-tip="New install: drill, set, pin. Field-calibrated Q21.">WS Install (UN/day)</span></label><input type="number" id="prodWsInstall" value="80"></div>
                 <div class="rate-row"><label><span class="tip" data-tip="Re-pin existing stop. ~2x faster than install (no drilling). Field Q21.">WS Reset (UN/day)</span></label><input type="number" id="prodWsReset" value="155"></div>
                 <div class="rate-row"><label><span class="tip" data-tip="Remove & dispose. ~2.5-3x faster than install. Field Q21.">WS Removal (UN/day)</span></label><input type="number" id="prodWsRemoval" value="220"></div>
@@ -1139,7 +1139,7 @@
             <div class="input-group"><label><span class="tip" data-tip="Number of separate mobilizations. Each phase = one crew trip. Multi-phase adds setup/breakdown each visit.">Phases</span></label><input type="number" id="sh_phases" class="phase-input" value="1" min="1" step="1" oninput="calculateAll()"></div>
         </div>
         <div id="sh_dims"></div>
-        <p class="note">Sinusoidal (half-sine) profile. Set each hump's length, width, and max depth; standard 16'×13'×2.64" = 2.13 tons of 9.5mm asphalt. Tonnage scales with length×width×depth. Production is driven by footprint area (length×width, SF) — matching the bid system's SF tracking — so depth changes material but not crew time.</p>
+        <p class="note">Sinusoidal (half-sine) profile. Set each hump's length, width, and max depth; standard 16'×13'×2.64" = 2.13 tons of 9.5mm asphalt. Tonnage scales with length×width×depth. Production is driven by footprint area (length×width, SF) — matching the SF basis used for patching — so depth changes material but not crew time.</p>
         <div class="output-section"><h5>Speed Hump Output</h5>
             <div class="output-row"><span class="lbl">Total length (ft)</span><span class="val" id="sh_totlen">0</span></div>
             <div class="output-row"><span class="lbl">Footprint area (SF)</span><span class="val" id="sh_totarea">0</span></div>
@@ -1450,7 +1450,7 @@
 </div>
 
 <div class="footer">
-    Maintenance Division Estimating Calculator v5.0 | Resource-Based Costing | Prevailing Wage Mode | Field-Calibrated Production Rates | Size-Tiered Patching | Crew Clustering<br>
+    Maintenance Division Estimating Calculator v5.0 &mdash; Resource-level crew costing, field-calibrated production rates, three-tier ranged output, standard &amp; prevailing wage<br>
     All rates subject to superintendent review.
 </div>
 
@@ -1730,35 +1730,35 @@ function applySealcoatMethod() {
 const BASE_CREW_SIZES = {
     crackFill:    3,
     sealcoat:     4,  // dynamic — overridden by SEALCOAT_METHODS based on sc_method
-    striping:     3,   // 1F+2L (the bid system Paint Crew)
+    striping:     3,   // 1F+2L (Paint Crew)
     asphaltSmall: 4,
     asphaltLarge: 4,
     wsInstall:    3,   // wheel stops (all operations share one crew)
     speedBump:    3,
-    bollard:      3,   // 1F+2L (the bid system Sign & Bollard Crew)
-    sign:         3,   // 1F+2L (the bid system Sign & Bollard Crew)
+    bollard:      3,   // 1F+2L (Sign & Bollard Crew)
+    sign:         3,   // 1F+2L (Sign & Bollard Crew)
     mastic:       3,   // 1F+2L — same crew as crack fill
     inlet:        4,
     speedHump:    4
 };
 
 /**
- * LABOR COST MODEL — mirrors the bid system resource costing.
+ * LABOR COST MODEL — uses resource-level costing.
  *
  * Fully-loaded straight-time cost per manhour:
  *     loaded/MH = base × (1 + tax%) × (1 + WC%) + fringe
  *
- * WC% (workers' comp, NJ5500) is derived: it is the loading that reconciles the bid system's
+ * WC% (workers' comp, NJ5500) is derived: it is the loading that reconciles
  * actual burden on BOTH a non-prevailing job (16.5% tax → 24.59% effective) and a
  * prevailing-wage job (18.5% tax → 26.70% effective). Both independently yield
  * ~6.93%.
  *
  * TRAVEL is booked as EXTRA MANHOURS paid at 1.5× base (the travel hour pushes the
  * day past 8), and equipment is NOT charged during travel. A 1 hr/shift round trip
- * therefore yields MH × 1.125 and the bid system's 105.56% "Tax/OT" factor:
+ * therefore yields MH × 1.125 and the 105.56% "Tax/OT" factor:
  *     (8 + 1×1.5) ÷ 9 = 1.0556
  *
- * Every crew is 1 Foreman + (N−1) General Laborers — verified across 6 the bid system jobs
+ * Every crew is 1 Foreman + (N−1) General Laborers — verified across 6 reference jobs
  * (patch, crack fill, sealcoat, striping, sign) in both NPW and PW.
  */
 const WC_PCT         = 6.93;   // workers' comp loading applied on top of tax %
@@ -1829,7 +1829,7 @@ function taxMult() { return 1 + (gv('salesTaxPct') / 100); }
  *     SH_TON_FACTOR = 2.13 / (2.64 × 13 × 16) ≈ 0.0038789   (implied ρ ≈ 146 pcf)
  *
  * PRODUCTION, by contrast, is driven by footprint AREA (length × width, SF) —
- * matching how the crew's rate is tracked in the bid system (SF/day, like patching).
+ * matching how the crew's rate is tracked for patching (SF/day).
  * Depth therefore affects material tonnage but NOT crew time. See the speed-hump
  * calc for the α-weighted equivalent-units model built on SH_STD_AREA.
  */
@@ -2804,8 +2804,8 @@ function calculateAll() {
         //   area_i = length × width                           (footprint SF)
         const nHumps = Math.max(0, Math.floor(qty));
         // Setup fraction α: share of a hump's labor that is fixed setup and does
-        // NOT scale with size. Production is driven by footprint AREA (SF, matching
-        // the bid system): equiv = α + (1−α)×(area/area_std). At standard size equiv = 1,
+        // NOT scale with size. Production is driven by footprint AREA (SF, the basis
+        // used for patching): equiv = α + (1−α)×(area/area_std). At standard size equiv = 1,
         // so an all-standard job reduces exactly to unit count. Depth does not enter
         // production — only tonnage — so a deeper hump costs more asphalt, not time.
         const alpha = Math.min(1, Math.max(0, gv('shSetupFrac')));
@@ -4539,7 +4539,7 @@ function generateAnalysis(snap) {
         if (hasStriping) sequence.push('Stripe');
         if (sequence.length >= 2) {
             const reasons = [`Standard field sequence: ${sequence.join(' → ')} (Q12). Each layer depends on the one below being cured.`];
-            if (hasCrackFill && hasSealcoat) reasons.push('Crack fill → sealcoat requires 24-48 hrs cure time. Sealcoat → striping requires 24-48 hrs cure. Scheduling in the bid system should account for cure windows between mobilizations.');
+            if (hasCrackFill && hasSealcoat) reasons.push('Crack fill → sealcoat requires 24-48 hrs cure time. Sealcoat → striping requires 24-48 hrs cure. Scheduling should account for cure windows between mobilizations.');
             observations.push({ activity: 'Work Sequencing', flag: 'INFO', reasons });
         }
     }
@@ -4547,7 +4547,7 @@ function generateAnalysis(snap) {
     if (totalStdHrs > 40) {
         observations.push({
             activity: 'Job Scale', flag: 'INFO', reasons: [
-                `Large job scope: ${totalStdHrs.toFixed(1)} standard hours, ${snap.hbRows.reduce((s, r) => s + r.tier.std.days, 0)} crew-days across ${activeCount} activities. Verify shift scheduling in the bid system accounts for crew availability, sequencing, and cure windows between activities.`
+                `Large job scope: ${totalStdHrs.toFixed(1)} standard hours, ${snap.hbRows.reduce((s, r) => s + r.tier.std.days, 0)} crew-days across ${activeCount} activities. Verify shift scheduling accounts for crew availability, sequencing, and cure windows between activities.`
             ]
         });
     }
@@ -4727,7 +4727,7 @@ function exportComprehensiveText() {
     if (snap.hbRows.length > 0) {
         L.push('='.repeat(W));
         L.push('CREW & DURATION SUMMARY');
-        L.push('Primary output for the bid system line-item entry');
+        L.push('Primary output for bid system line-item entry');
         L.push('='.repeat(W));
         L.push(padR('Activity', 22) + padR('Crew', 6) + padR('Cons', 9) + padR('Std', 9) + padR('Agg', 9) + padR('Tvl/Day', 8));
         L.push('-'.repeat(W));
@@ -5366,7 +5366,7 @@ const CALC_VERSION = '5.0';
 // are dropped from the user's saved rates so the new field-calibrated defaults
 // apply; all other saved values are preserved.
 const MIGRATION_RESET_KEYS = [
-    // v5.0 — all crew rates rebuilt bottom-up from the the bid system labor + equipment sheets
+    // v5.0 — all crew rates rebuilt bottom-up from the labor + equipment rate tables
     'rateCrackFill', 'rateSealcoat', 'rateStriping', 'rateAsphaltSmall', 'rateAsphaltLarge',
     'rateWsInstall', 'rateWsReset', 'rateWsRemove', 'rateSpeedBump', 'rateBollard', 'rateSign',
     'rateMastic', 'rateInlet', 'rateSpeedHump',
@@ -5375,11 +5375,11 @@ const MIGRATION_RESET_KEYS = [
     // wage table + taxes (new in v5.0)
     'wageForemanBase', 'wageForemanFringe', 'wageLaborerBase', 'wageLaborerFringe',
     'wageTaxPct', 'wageWcPct', 'salesTaxPct',
-    // the bid system bills takeoff qty + sales tax, so these waste factors now default to 0
+    // billing basis is takeoff quantity + sales tax, so these waste factors now default to 0
     'wasteCrackFill', 'wasteSealcoat', 'wasteStriping', 'wasteMastic',
     // mastic box is now priced PRE-tax (was tax-inclusive)
     'matMasticBox',
-    // crew sizes corrected to real the bid system compositions
+    // crew sizes corrected to real crew compositions
     'crewStriping', 'crewSign', 'crewBollard', 'crewMastic',
     // material cap recalibrated and its semantics changed (rate clip)
     'maxAsphaltTons'
@@ -5397,28 +5397,28 @@ const MIGRATION_RESET_KEYS = [
 //       instead of wiping everything. (7) Sign panel note corrected 32/day → 30/day (rates
 //       updated 7/9/26 per Darrell Bishop email: bollards 6/day, post signs 30/day, bollard
 //       signs 5/day additive). Restore logic deduplicated into applyRatesData().
-// v5.0: MAJOR — the calculator now mirrors the bid system resource costing.
+// v5.0: MAJOR — the calculator now uses resource-level costing.
 //       (1) Labor model: loaded/MH = base x (1 + tax%) x (1 + WC%) + fringe, with a new
-//       Labor & Wage Mode config section. WC 6.93% is derived — it reconciles the bid system's actual
+//       Labor & Wage Mode config section. WC 6.93% is derived — it reconciles actual
 //       burden on BOTH a standard job (16.5% tax -> 24.59% effective) and a prevailing-wage
 //       job (18.5% -> 26.70%). Every crew is 1 Foreman + (N-1) General Laborers, verified
-//       across 6 the bid system jobs. (2) PREVAILING WAGE toggle: swaps the labor content of every crew
+//       across 6 reference jobs. (2) PREVAILING WAGE toggle: swaps the labor content of every crew
 //       to the PW wage table; equipment and material unchanged. (3) All crew rates rebuilt
 //       bottom-up as work-hours-only (crew labor + equipment) — sign/bollard/wheel stops/
 //       speed bump share one 1F+2L crew; mastic mirrors the crack fill crew minus the melter.
-//       (4) TRAVEL now mirrors the bid system: booked as extra manhours at 1.5x base with NO equipment
+//       (4) TRAVEL is now booked as extra manhours at 1.5x base with NO equipment
 //       charged during travel, replacing the old all-in-rate multiplication. A 1 hr/shift
-//       round trip reproduces the bid system's 105.56% Tax/OT factor. (5) 6.625% NJ sales tax on all
-//       material; crack fill/sealcoat/striping/mastic waste factors default to 0 (the bid system bills
+//       round trip reproduces the 105.56% Tax/OT factor. (5) 6.625% NJ sales tax on all
+//       material; crack fill/sealcoat/striping/mastic waste factors default to 0 (billing basis is
 //       takeoff qty). Asphalt 7% and speed hump 5% waste remain — those are tonnage-conversion
 //       allowances. (6) Asphalt material cap is now a genuine RATE CLIP, not just a floor on
 //       days — previously it produced artifacts like 8 crew-hours spread over 2 days. Default
-//       recalibrated 20 -> 13.5 T/day. Validated against the bid system actuals to within a few cents:
+//       recalibrated 20 -> 13.5 T/day. Validated against reference job actuals to within a few cents:
 //       McLean patch 2,516.00 vs 2,515.86; Needleman crack fill 3,581.53 vs 3,580.32;
 //       Winzinger PW sign crew 1,716.39 vs 1,716.46. Production rates deliberately untouched.
 // v4.5: Speed humps take per-hump length, width and max depth. Tonnage scales with all three
 //       (anchored so the standard 16x13x2.64 hump still yields 2.13 T). Production is driven
-//       by footprint AREA (SF, matching the bid system) via alpha-weighted standard-hump equivalents,
+//       by footprint AREA (SF, matching the SF basis used for patching) via alpha-weighted standard-hump equivalents,
 //       so depth changes material but not crew time.
 // v4.3: Asphalt patching production is now size-tiered (6 editable bands derived from 106
 //       historical patch records). Replaces the previous flat 600 SF/day. The 20-ton material
@@ -5466,7 +5466,7 @@ const MIGRATION_RESET_KEYS = [
 //       4th man required for manual spray bar. Added crew clustering engine: activities sharing
 //       equipment cluster (heavy, paint, sealcoat, crack fill, mastic) share one mobilization.
 //       Shift optimizer runs per cluster, not per activity. Hours apportioned back to activities
-//       for the bid system entry. Cluster deployment summary added to estimate output and exports.
+//       for bid system entry. Cluster deployment summary added to estimate output and exports.
 
 document.addEventListener('DOMContentLoaded', function() {
     renderScopeChecklist();

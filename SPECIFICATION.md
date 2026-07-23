@@ -251,9 +251,9 @@ Collapsible panel (`togglePanel()`) containing five rate sections in a CSS grid.
 
 Note: Inlet repair uses units/day while inlet reconstruction uses hours/unit — these are different rate formats reflecting how the rates were originally described in field data. They are calculated differently in the code.
 
-### 5.4.x Labor & Wage Mode (resource-based)
+### 5.4.x Labor & Wage Mode
 
-The app mirrors the bid system resource costing. Fully-loaded straight-time cost per manhour:
+The app uses resource-level costing. Fully-loaded straight-time cost per manhour:
 
 ```
 loaded/MH = base x (1 + tax%) x (1 + WC%) + fringe
@@ -273,9 +273,9 @@ PW wage table (from the wage sheet, not user-editable): Foreman base 89.71 / fri
 
 **Loaded $/MH:** Standard - Foreman $75.90, Laborer $52.22. PW - Foreman $113.67, Laborer $113.53.
 
-**WC derivation:** 6.93% is the loading that reconciles the bid system actual burden on BOTH a standard job (16.5% tax to 24.59% effective) and a PW job (18.5% to 26.70%). Both independently yield ~6.93%.
+**WC derivation:** 6.93% is the loading that reconciles actual burden on reference jobs on BOTH a standard job (16.5% tax to 24.59% effective) and a PW job (18.5% to 26.70%). Both independently yield ~6.93%.
 
-**Crew composition rule:** every crew is **1 Foreman + (N-1) General Laborers** - verified across 6 the bid system jobs (patch, crack fill, sealcoat, striping, sign) in both standard and PW.
+**Crew composition rule:** every crew is **1 Foreman + (N-1) General Laborers** - verified across 6 reference jobs (patch, crack fill, sealcoat, striping, sign) in both standard and PW.
 
 **Crew rate formula:**
 ```
@@ -283,19 +283,19 @@ rate = baseRate + crewLabor(currentCrew, mode) - crewLabor(baseCrew, standard)
 ```
 The configured base rate is the **work-hours-only** standard-wage rate (crew labor + equipment, no travel). At base size in standard mode it returns baseRate unchanged; growing the crew adds a loaded laborer; PW adds the wage differential for every person. Equipment is unaffected by either.
 
-**Travel (mirrors the bid system):** travel is booked as extra manhours paid at **1.5x** base, and **equipment is NOT charged during travel**:
+**Travel:** travel is booked as extra manhours paid at **1.5x** base, and **equipment is NOT charged during travel**:
 ```
 travelCost = travelHrsPerDay x crewTravelPerHr(crewSize, mode) x days
 ```
-A 1 hr/shift round trip yields MH x 1.125 and the bid system's 105.56% Tax/OT factor: `(8 + 1x1.5) / 9 = 1.0556`. Verified against a 0.25 hr case too, which the bid system shows as 102.94%.
+A 1 hr/shift round trip yields MH x 1.125 and the 105.56% Tax/OT factor: `(8 + 1x1.5) / 9 = 1.0556`. Verified against a 0.25 hr case too, which shows as 102.94%.
 
 **Mastic crew:** mirrors the crack fill crew (1F+2L) but runs a **rental mastic machine instead of the crack melter**, so its equipment is surface blower + crew truck ($32/hr). The machine is billed separately as `matMasticMachine` x days, and boxes as material - unchanged from the existing model.
 
-**Material sales tax:** all material is billed `qty x unit cost x (1 + salesTaxPct)`. the bid system bills takeoff quantity with no waste, so the crack fill / sealcoat / striping / mastic waste factors default to **0**. Asphalt (7%) and speed-hump (5%) waste factors remain - those are tonnage-conversion allowances, and the bid system's entered tonnages match them.
+**Material sales tax:** all material is billed `qty x unit cost x (1 + salesTaxPct)`. billing basis is takeoff quantity with no waste, so the crack fill / sealcoat / striping / mastic waste factors default to **0**. Asphalt (7%) and speed-hump (5%) waste factors remain - those are tonnage-conversion allowances, and the entered tonnages match them.
 
-**Validation vs the bid system actuals:**
+**Validation vs reference job actuals:**
 
-| Job | the bid system | App | Delta |
+| Job | Reference | App | Delta |
 |---|---|---|---|
 | McLean patch 360 SF @2" | 2,516.00 | 2,515.86 | -0.01% |
 | Needleman crack fill 5,000 LF | 3,581.53 | 3,580.32 | -0.03% |
@@ -787,7 +787,7 @@ The `calculateAll()` function (~850 lines) runs the following calculation for ea
   effRate = min(laborRate x tierFactor, capSF)
   ```
   Previously the cap only forced extra days while hours were computed from the labor rate alone, producing artifacts like *8 crew-hours spread over 2 days* — understating labor and overstating travel days. As a rate clip, hours grow with the stretched schedule.
-- **Calibration**: 13.5 T/day comes from the bid system actuals (Camden: 975 SF @4", 27 T over 2 shifts). The app now reproduces that job exactly at **16 crew-hours / 2 days**. Small and shallow jobs are labor-limited and unaffected by the cap; deep or large sections are the ones it stretches.
+- **Calibration**: 13.5 T/day comes from reference job actuals (Camden: 975 SF @4", 27 T over 2 shifts). The app now reproduces that job exactly at **16 crew-hours / 2 days**. Small and shallow jobs are labor-limited and unaffected by the cap; deep or large sections are the ones it stretches.
 - Material cost: `surfTons × asphaltPrice + baseTons × baseAsphaltPrice + dgaTons × dgaPrice`
 - Snapshot includes `tonnage`, `crewType`, `depthConfig`
 
@@ -835,7 +835,7 @@ The `calculateAll()` function (~850 lines) runs the following calculation for ea
 - Snapshot `tonnage` records `totalTons`, `avgTonsPerHump`, `lengths[]`, `widths[]`, `depths[]`, `totalLength`, `totalArea`, `stdArea`, `tonFactor`, and the `stdLength`/`stdWidth`/`stdDepth` references.
 
 **Speed Humps (Footprint-Area-Weighted Production):**
-- `prodSpeedHump` (4/day) is **standard-hump** throughput, not raw count. Off-size humps are converted to standard-hump equivalents before applying it. The size proxy is **footprint area (length × width, SF)** — matching how the crew's rate is tracked in the bid system (SF/day, like patching). Depth therefore drives material tonnage but **not** crew time.
+- `prodSpeedHump` (4/day) is **standard-hump** throughput, not raw count. Off-size humps are converted to standard-hump equivalents before applying it. The size proxy is **footprint area (length × width, SF)** — matching how the crew's rate is tracked for patching (SF/day). Depth therefore drives material tonnage but **not** crew time.
 - Per hump: `equiv_i = α + (1 − α) × (area_i / SH_STD_AREA)`, where `area_i = length_i × width_i`, `SH_STD_AREA = 16 × 13 = 208 SF`, and `α = shSetupFrac` (default 0.4) is the fraction of a hump's labor that is fixed setup (marking, edge prep, forming the profile) and does not scale with size.
 - `equivalentUnits = Σ equiv_i` is passed to `calcThreeTier` in place of `qty`; hours ≈ `(equivalentUnits / prodSpeedHump) × stdShift` (phased/tiered as usual).
 - **Bounds & backward compatibility**: at standard footprint `area_i = 208` so `equiv_i = 1` for any α → an all-standard job gives `equivalentUnits = qty` and reproduces legacy hours exactly (golden-test safe). `α = 1` → pure unit count (legacy behavior at all sizes); `α = 0` → pure SF-driven (≡ `prodSpeedHump × 208` SF/day).

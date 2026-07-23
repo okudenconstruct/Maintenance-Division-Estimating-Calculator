@@ -32,21 +32,21 @@ output. See [tests/README.md](tests/README.md).
 
 ## v5.0 — Resource-Based Costing
 
-Crew costs are now built bottom-up from the same labor and equipment resources used in
-the bid system, rather than calibrated top-down from historical job totals.
+Crew costs are now built bottom-up from the same labor and equipment resources used to
+price the work, rather than calibrated top-down from historical job totals.
 
 - **Labor model** — `loaded/MH = base x (1 + tax%) x (1 + WC%) + fringe`. Every crew is
-  1 Foreman + (N-1) General Laborers, verified across six the bid system jobs.
+  1 Foreman + (N-1) General Laborers, verified across six reference jobs.
 - **Prevailing Wage toggle** — swaps the labor content of every crew to the PW wage table.
   Equipment and material are unchanged, since neither moves under prevailing wage.
-- **Travel mirrors the bid system** — booked as extra manhours at 1.5x base, with no equipment charged
-  during travel. A 1 hr/shift round trip reproduces the bid system's 105.56% Tax/OT factor.
-- **NJ sales tax (6.625%)** on all material; the bid system bills takeoff quantity, so the crack fill,
+- **Travel model** — booked as extra manhours at 1.5x base, with no equipment charged
+  during travel. A 1 hr/shift round trip reproduces the 105.56% Tax/OT factor.
+- **NJ sales tax (6.625%)** on all material; billing basis is takeoff quantity, so the crack fill,
   sealcoat, striping and mastic waste factors default to 0.
 - **Asphalt material cap is a rate clip** (13.5 T/day) — hours now grow with the stretched
   schedule instead of the cap only padding days.
 
-Validated against the bid system actuals to within a few cents (McLean patch, Needleman crack
+Validated against reference job actuals to within a few cents (McLean patch, Needleman crack
 fill, and a prevailing-wage sign job). Production rates were deliberately left untouched.
 
 ---
